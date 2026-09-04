@@ -364,7 +364,7 @@ export class Viewport extends HTMLElement {
     private readonly pointerOut = (event: PointerEvent) => {
         // While a button is held, pointerout fires when crossing child overlays
         // (flyout, view controls) even with capture — do not abort the gesture.
-        if (event.buttons !== 0) {
+        if ((event.buttons ?? 0) !== 0) {
             return;
         }
         this.handleEvent("pointerOut", event);

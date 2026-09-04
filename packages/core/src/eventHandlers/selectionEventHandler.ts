@@ -117,7 +117,8 @@ export abstract class SelectionHandler implements IEventHandler {
         // cancel an in-progress pick / rect-select — pointerup owns that.
         // Key off buttons (not mouse.isDown alone) so a post-release hover leave
         // still clears highlights.
-        if (event.buttons !== 0) {
+        // Treat missing buttons (synthetic/test events) as released.
+        if ((event.buttons ?? 0) !== 0) {
             return;
         }
         if (event.isPrimary) {
