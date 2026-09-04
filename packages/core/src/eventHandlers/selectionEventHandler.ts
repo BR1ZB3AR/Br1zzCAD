@@ -1,11 +1,11 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
+import { Config } from "../config";
 import type { IDocument } from "../document";
 import type { AsyncController } from "../foundation";
+import { matchesNavigationTrigger } from "../navigation";
 import type { IEventHandler, IView } from "../visual";
-
-const MOUSE_MIDDLE = 4;
 
 const SelectionRectStyle = `
     border: 1px solid var(--primary-color);
@@ -58,7 +58,10 @@ export abstract class SelectionHandler implements IEventHandler {
     }
 
     pointerMove(view: IView, event: PointerEvent): void {
-        if (event.buttons === MOUSE_MIDDLE) return;
+        // Skip while a camera-nav chord is active (Middle/Right, or Alt-gated Left).
+        if (matchesNavigationTrigger(Config.instance.navigation3D, event, "move")) {
+            return;
+        }
         if (this.rect) this.updateRect(this.rect, event);
 
         this.setHighlight(view, event);
@@ -83,6 +86,11 @@ export abstract class SelectionHandler implements IEventHandler {
 
     pointerDown(view: IView, event: PointerEvent): void {
         event.preventDefault();
+        // Alt+Left (Maya/Gesture/OpenSCAD) is camera orbit — must not start a pick.
+        if (matchesNavigationTrigger(Config.instance.navigation3D, event, "down")) {
+            this.pointerEventMap.set(event.pointerId, event);
+            return;
+        }
         if (event.button === 0 && event.isPrimary) {
             this.mouse = { isDown: true, x: event.offsetX, y: event.offsetY };
             if (this.multiMode && this.showRect) {

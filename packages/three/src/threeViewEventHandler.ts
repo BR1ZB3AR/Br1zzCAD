@@ -5,8 +5,8 @@ import {
     Config,
     type IEventHandler,
     type IView,
-    Navigation3D,
     type NavButton,
+    Navigation3D,
     navigationTriggers,
 } from "@chili3d/core";
 
@@ -29,12 +29,14 @@ export class ThreeViewHandler implements IEventHandler {
 
     /** Finds the trigger (if any) of the active navigation scheme that matches
      * the buttons currently held and, when required, the Alt modifier. */
-    private matchTrigger(event: MouseEvent): { mask: number; base: NavButton } | undefined {
+    private matchTrigger(
+        event: MouseEvent,
+    ): { mask: number; base: NavButton; requireAlt: boolean } | undefined {
         const triggers = navigationTriggers(Config.instance.navigation3D);
         for (const trigger of triggers) {
             const mask = BUTTON_MASK[trigger.button];
             if (event.buttons === mask && (!trigger.requireAlt || event.altKey)) {
-                return { mask, base: trigger.button };
+                return { mask, base: trigger.button, requireAlt: trigger.requireAlt };
             }
         }
         return undefined;
@@ -73,7 +75,7 @@ export class ThreeViewHandler implements IEventHandler {
         if (!trigger) {
             return;
         }
-        const { base } = trigger;
+        const { base, requireAlt } = trigger;
 
         let dx = 0;
         let dy = 0;
@@ -83,15 +85,24 @@ export class ThreeViewHandler implements IEventHandler {
             this._offsetPoint = { x: event.offsetX, y: event.offsetY };
         }
 
-        const key = Navigation3D.getKey(event, base);
+        let key = Navigation3D.getKey(event, base);
         const navigatioMap = Navigation3D.navigationKeyMap();
+        // Accidental Alt on Middle/Right schemes must not swallow pan/rotate chords
+        // that do not include Alt (Chili3d/Revit/Blender/Creo/Solidworks/TinkerCAD/…).
+        if (!requireAlt && event.altKey && navigatioMap.pan !== key && navigatioMap.rotate !== key) {
+            key = Navigation3D.getKey(
+                { shiftKey: event.shiftKey, ctrlKey: event.ctrlKey, altKey: false } as MouseEvent,
+                base,
+            );
+        }
         if (navigatioMap.pan === key) {
             view.cameraController.pan(dx, dy);
         } else if (navigatioMap.rotate === key && this.canRotate) {
             view.cameraController.rotate(dx, dy);
         }
 
-        if (dx !== 0 && dy !== 0) this._lastDown = undefined;
+        // Any real movement cancels the pending double-click fitContent window.
+        if (dx !== 0 || dy !== 0) this._lastDown = undefined;
     }
 
     private handleTouchMove(view: IView, event: PointerEvent) {
@@ -202,8 +213,11 @@ export class ThreeViewHandler implements IEventHandler {
 
     pointerUp(view: IView, event: PointerEvent): void {
         const triggers = navigationTriggers(Config.instance.navigation3D);
+        // On button release, `event.buttons` is the remaining mask (usually 0). Arm the
+        // 500ms double-click window only once the nav chord has ended — previously the
+        // condition was inverted and the timeout never ran on a normal release.
         const stillTriggered = triggers.some((trigger) => BUTTON_MASK[trigger.button] === event.buttons);
-        if (stillTriggered && this._lastDown) {
+        if (!stillTriggered && this._lastDown) {
             this._clearDownId = window.setTimeout(() => {
                 this._lastDown = undefined;
                 this._clearDownId = undefined;

@@ -34,7 +34,11 @@ export interface NavTrigger {
 export function navigationTriggers(scheme: Navigation3DType): NavTrigger[] {
     switch (scheme) {
         case "TinkerCAD":
-            return [{ button: "Right", requireAlt: false }];
+            // FreeCAD TinkerCAD: Right = rotate, Middle = pan.
+            return [
+                { button: "Right", requireAlt: false },
+                { button: "Middle", requireAlt: false },
+            ];
         case "Maya":
             // Real Maya is Alt+Left=tumble, Alt+Middle=track, Alt+Right=dolly;
             // dolly is left to the scroll wheel, which already zooms in every scheme.
@@ -54,6 +58,31 @@ export function navigationTriggers(scheme: Navigation3DType): NavTrigger[] {
         default:
             return [{ button: "Middle", requireAlt: false }];
     }
+}
+
+const BUTTON_FROM_CODE: Record<number, NavButton> = { 0: "Left", 1: "Middle", 2: "Right" };
+const BUTTON_MASK: Record<NavButton, number> = { Left: 1, Middle: 4, Right: 2 };
+
+/** True when the pointer event matches a camera-navigation trigger for the scheme.
+ * Used so selection/sketching handlers do not also treat Alt+Left (etc.) as a pick. */
+export function matchesNavigationTrigger(
+    scheme: Navigation3DType,
+    event: Pick<MouseEvent, "button" | "buttons" | "altKey">,
+    mode: "down" | "move",
+): boolean {
+    for (const trigger of navigationTriggers(scheme)) {
+        if (trigger.requireAlt && !event.altKey) {
+            continue;
+        }
+        if (mode === "down") {
+            if (BUTTON_FROM_CODE[event.button] === trigger.button) {
+                return true;
+            }
+        } else if (event.buttons === BUTTON_MASK[trigger.button]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export class Navigation3D {
@@ -97,7 +126,7 @@ export class Navigation3D {
                 rotate: "Middle",
             },
             ["TinkerCAD"]: {
-                pan: "Shift+Right",
+                pan: "Middle",
                 rotate: "Right",
             },
             ["Maya"]: {

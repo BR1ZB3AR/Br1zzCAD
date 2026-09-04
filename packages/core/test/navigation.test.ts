@@ -2,7 +2,12 @@
 // See LICENSE file in the project root for full license information.
 
 import { Config } from "../src/config";
-import { Navigation3D, Navigation3DTypes, navigationTriggers } from "../src/navigation";
+import {
+    matchesNavigationTrigger,
+    Navigation3D,
+    Navigation3DTypes,
+    navigationTriggers,
+} from "../src/navigation";
 import { mockLocalStorage } from "../test-utils";
 
 describe("Navigation3DTypes", () => {
@@ -183,10 +188,10 @@ describe("Navigation3D.navigationKeyMap", () => {
     });
 
     describe("TinkerCAD", () => {
-        test("should return Shift+Right for pan", () => {
+        test("should return Middle for pan (FreeCAD TinkerCAD)", () => {
             Config.instance.init("testNavigation");
             Config.instance.navigation3D = "TinkerCAD";
-            expect(Navigation3D.navigationKeyMap().pan).toBe("Shift+Right");
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Middle");
         });
 
         test("should return Right for rotate", () => {
@@ -254,5 +259,36 @@ describe("navigationTriggers", () => {
         for (const scheme of Navigation3DTypes) {
             expect(navigationTriggers(scheme).length).toBeGreaterThan(0);
         }
+    });
+
+    test("TinkerCAD exposes ungated Right rotate and Middle pan triggers", () => {
+        expect(navigationTriggers("TinkerCAD")).toEqual([
+            { button: "Right", requireAlt: false },
+            { button: "Middle", requireAlt: false },
+        ]);
+    });
+});
+
+describe("matchesNavigationTrigger", () => {
+    test("Chili3d middle-button move matches", () => {
+        expect(matchesNavigationTrigger("Chili3d", { button: 1, buttons: 4, altKey: false }, "move")).toBe(
+            true,
+        );
+    });
+
+    test("Maya plain left-button down does not match (selection must keep LMB)", () => {
+        expect(matchesNavigationTrigger("Maya", { button: 0, buttons: 1, altKey: false }, "down")).toBe(
+            false,
+        );
+    });
+
+    test("Maya Alt+left-button down matches camera orbit", () => {
+        expect(matchesNavigationTrigger("Maya", { button: 0, buttons: 1, altKey: true }, "down")).toBe(true);
+    });
+
+    test("Gesture right-button move matches pan", () => {
+        expect(matchesNavigationTrigger("Gesture", { button: 2, buttons: 2, altKey: false }, "move")).toBe(
+            true,
+        );
     });
 });
