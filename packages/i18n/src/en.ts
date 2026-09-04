@@ -7,9 +7,15 @@ export default {
     display: "English",
     language: "en",
     translation: {
+        "ai.capabilities":
+            "Creates boxes, cylinders, spheres, and cones (mm). Uses a local WebGPU model — nothing is sent to a server.",
         "ai.loadingModel": "Loading AI model (first run downloads ~2GB, cached after)…",
+        "ai.noActions": "No shapes were created. Try a simpler request, e.g. “add a 40x20x10 box”.",
+        "ai.noWebGPU": "This browser cannot run the local AI assistant.",
         "ai.placeholder": 'Describe what to create, e.g. "add a 40x20x10 box"',
-        "ai.ready": "Ready.",
+        "ai.ready":
+            "Ready — describe solids to add. Tip: include sizes in mm and say how parts should be placed.",
+        "ai.retryHint": "You can edit your prompt and try again.",
         "ai.send": "Send",
         "ai.thinking": "Thinking…",
         "arc.angle": "Angle",
