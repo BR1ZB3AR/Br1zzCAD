@@ -8,7 +8,7 @@ import {
     type IShape,
     type IWire,
     ParameterShapeNode,
-    type Result,
+    Result,
     ShapeTypes,
     serializable,
     serialize,
@@ -62,14 +62,23 @@ export class SweepedNode extends ParameterShapeNode {
     }
 
     private ensureWire(path: IEdge | IWire) {
-        let wire = path as IWire;
-        if (path.shapeType !== ShapeTypes.wire) {
-            wire = shapeFactory.wire([path as unknown as IEdge]).value;
+        if (path.shapeType === ShapeTypes.wire) {
+            return path as IWire;
         }
-        return wire;
+        const wire = shapeFactory.wire([path as unknown as IEdge]);
+        if (!wire.isOk) {
+            throw new Error(`Cannot convert edge to wire: ${wire.error}`);
+        }
+        return wire.value;
     }
 
     override generateShape(): Result<IShape> {
+        if (!this.profile || this.profile.length === 0) {
+            return Result.err("Sweep profile is empty.");
+        }
+        if (!this.path) {
+            return Result.err("Sweep path is null.");
+        }
         return shapeFactory.sweep(this.profile, this.path, this.round);
     }
 }

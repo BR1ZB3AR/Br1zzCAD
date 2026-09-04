@@ -156,7 +156,7 @@ export class ShapeFactory implements IShapeFactory {
         if (shape instanceof OccShape) {
             return convertShapeResult(wasm.ShapeFactory.fillet, [shape.shape, edges, radius], "Fillet Error");
         }
-        return Result.err("Not OccShape");
+        return Result.err("Expected an OCC shape.");
     }
 
     chamfer(shape: IShape, edges: number[], distance: number): Result<IShape> {
@@ -175,7 +175,7 @@ export class ShapeFactory implements IShapeFactory {
                 "Chamfer Error",
             );
         }
-        return Result.err("Not OccShape");
+        return Result.err("Expected an OCC shape.");
     }
 
     fillet2d(face: IFace, edge1: IEdge, edge2: IEdge, radius: number): Result<IFace> {
@@ -232,7 +232,7 @@ export class ShapeFactory implements IShapeFactory {
 
     removeFeature(shape: IShape, faces: IFace[]): Result<IShape> {
         if (!(shape instanceof OccShape)) {
-            return Result.err("Not OccShape");
+            return Result.err("Expected an OCC shape.");
         }
         const occFaces = ensureOccShape(faces);
         const result = wasm.ShapeFactory.removeFeature(shape.shape, occFaces);
@@ -251,7 +251,7 @@ export class ShapeFactory implements IShapeFactory {
 
     removeFillet(shape: IShape, faces: IFace[]) {
         if (!(shape instanceof OccShape)) {
-            return Result.err("Not OccShape");
+            return Result.err("Expected an OCC shape.");
         }
         const occFaces = ensureOccShape(faces);
         const result = wasm.ShapeFactory.removeFillet(shape.shape, occFaces);
@@ -354,6 +354,13 @@ export class ShapeFactory implements IShapeFactory {
         pitch: number,
         angle: number,
     ): Result<IWire> {
+        const radiusErr = requirePositiveRadius(radius);
+        if (radiusErr) return radiusErr;
+        const pitchErr = requireNonZeroExtent(pitch, "Helix pitch");
+        if (pitchErr) return pitchErr;
+        if (!(Math.abs(angle) >= Precision.Angle)) {
+            return Result.err("Helix angle is too small.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.helix,
             [origin, normal, xDir, radius, pitch, MathUtils.degToRad(angle)],
@@ -371,6 +378,9 @@ export class ShapeFactory implements IShapeFactory {
         return convertShapeResult(wasm.ShapeFactory.line, [start, end], "Line Error") as Result<IEdge>;
     }
     arc(normal: XYZLike, center: XYZLike, start: XYZLike, angle: number): Result<IEdge> {
+        if (!(Math.abs(angle) >= Precision.Angle)) {
+            return Result.err("Arc angle is too small.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.arc,
             [normal, center, start, MathUtils.degToRad(angle)],
@@ -406,6 +416,9 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<IFace>;
     }
     polygon(points: XYZLike[]): Result<IWire> {
+        if (points.length < 3) {
+            return Result.err(`Polygon needs at least 3 points (got ${points.length}).`);
+        }
         return convertShapeResult(wasm.ShapeFactory.polygon, [points], "Polygon Error") as Result<IWire>;
     }
     box(plane: Plane, dx: number, dy: number, dz: number): Result<ISolid> {
@@ -502,6 +515,9 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     wire(edges: IEdge[]): Result<IWire> {
+        if (edges.length === 0) {
+            return Result.err("Wire has no edges.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.wire,
             [ensureOccShape(edges)],
@@ -523,14 +539,14 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     prism(shape: IShape, vec: XYZ): Result<IShape> {
-        if (vec.length() === 0) {
-            return Result.err(`The vector length is 0, the prism cannot be created.`);
+        if (!(vec.length() >= Precision.Distance)) {
+            return Result.err("Prism vector length is too small.");
         }
         return convertShapeResult(wasm.ShapeFactory.prism, [ensureOccShape(shape)[0], vec], "Prism Error");
     }
     pushPull(shape: IShape, face: IShape, vec: XYZ): Result<IShape> {
-        if (vec.length() === 0) {
-            return Result.err(`The vector length is 0, the prism cannot be created.`);
+        if (!(vec.length() >= Precision.Distance)) {
+            return Result.err("PushPull vector length is too small.");
         }
         return convertShapeResult(
             wasm.ShapeFactory.pushPull,
@@ -546,6 +562,9 @@ export class ShapeFactory implements IShapeFactory {
         );
     }
     sweep(profile: IShape[], path: IWire, isRound: boolean): Result<IShape> {
+        if (profile.length === 0) {
+            return Result.err("Sweep profile is empty.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.sweep,
             [ensureOccShape(profile), ensureOccShape(path)[0], true, isRound],
@@ -617,6 +636,8 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ICompound>;
     }
     makeThickSolidBySimple(shape: IShape, thickness: number): Result<IShape> {
+        const thicknessErr = requireNonZeroExtent(thickness, "Thickness");
+        if (thicknessErr) return thicknessErr;
         return convertShapeResult(
             wasm.ShapeFactory.makeThickSolidBySimple,
             [ensureOccShape(shape)[0], thickness],
@@ -650,6 +671,9 @@ export class ShapeFactory implements IShapeFactory {
         isRuled: boolean,
         continuity: Continuity,
     ): Result<IShape> {
+        if (sections.length === 0) {
+            return Result.err("Loft sections are empty.");
+        }
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             if (section.shapeType === ShapeTypes.edge) {

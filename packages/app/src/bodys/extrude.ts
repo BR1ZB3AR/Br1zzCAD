@@ -10,6 +10,7 @@ import {
     type IShape,
     type IWire,
     ParameterShapeNode,
+    Precision,
     property,
     Result,
     ShapeTypes,
@@ -32,7 +33,9 @@ export function closedProfileToFace(section: IShape): Result<IFace> {
         return shapeFactory.face([section as IWire]);
     }
     const wire = shapeFactory.wire([section as IEdge]);
-    if (!wire.isOk) return Result.err(wire.error);
+    if (!wire.isOk) {
+        return Result.err(`Cannot create wire from closed edge: ${wire.error}`);
+    }
     return shapeFactory.face([wire.value]);
 }
 
@@ -66,6 +69,9 @@ export class ExtrudeNode extends ParameterShapeNode {
     }
 
     override generateShape(): Result<IShape> {
+        if (!(Math.abs(this.length) >= Precision.Distance)) {
+            return Result.err("Extrude length is too small.");
+        }
         const normal = GeometryUtils.normal(this.section as any);
         const vec = normal.multiply(this.length);
         if (this.section.shapeType === ShapeTypes.face) {
