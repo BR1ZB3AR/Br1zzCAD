@@ -2,6 +2,11 @@
 // See LICENSE file in the project root for full license information.
 
 export const I18N_KEYS = [
+    "ai.loadingModel",
+    "ai.placeholder",
+    "ai.ready",
+    "ai.send",
+    "ai.thinking",
     "arc.angle",
     "arc.start",
     "axis.x",
@@ -40,6 +45,7 @@ export const I18N_KEYS = [
     "circle.center",
     "circle.radius",
     "command.act.alignCamera",
+    "command.ai.assistant",
     "command.boolean.common",
     "command.boolean.cut",
     "command.boolean.join",
