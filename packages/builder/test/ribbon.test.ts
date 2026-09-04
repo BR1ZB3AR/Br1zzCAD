@@ -54,6 +54,8 @@ describe("DefaultRibbon", () => {
         expect(drawGroup).toBeDefined();
         const allItems = flattenItems(drawGroup!.items);
         expect(allItems).toContain("create.extrude");
+        expect(allItems).toContain("create.sketch");
+        expect(drawGroup!.items[0]).toBe("create.sketch");
         expect(allItems).toContain("create.box");
     });
 
