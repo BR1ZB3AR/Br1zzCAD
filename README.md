@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./public/favicon.png" alt="Br1zzCAD logo" width="120" />
+</p>
+
 # Br1zzCAD
 
 A browser-based 3D CAD application for online model design and editing.
