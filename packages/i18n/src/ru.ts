@@ -326,6 +326,7 @@ export default {
         "snap.nearCurve": "К кривой",
         "snap.onSurface": "К поверхности",
         "snap.tangent": "Различия",
+        "statusBar.changeNavigation": "Нажмите, чтобы сменить схему навигации мыши",
         "statusBar.snap": "Привязка",
         "statusBar.tracking": "Отслеживание",
         "toast.command.{0}excuting": "Комманда {0} выполняется",

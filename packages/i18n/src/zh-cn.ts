@@ -339,6 +339,7 @@ export default {
         "snap.nearCurve": "在边线上",
         "snap.onSurface": "在面上",
         "snap.tangent": "切点",
+        "statusBar.changeNavigation": "点击切换鼠标导航方案",
         "statusBar.snap": "捕捉",
         "statusBar.tracking": "追踪",
         "toast.command.{0}excuting": "{0}命令正在执行",

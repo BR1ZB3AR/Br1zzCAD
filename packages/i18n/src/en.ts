@@ -339,6 +339,7 @@ export default {
         "snap.nearCurve": "On the Curve",
         "snap.onSurface": "On the surface",
         "snap.tangent": "Tangent",
+        "statusBar.changeNavigation": "Click to change mouse navigation scheme",
         "statusBar.snap": "Snap",
         "statusBar.tracking": "Tracking",
         "toast.command.{0}excuting": "Command {0} is runing",

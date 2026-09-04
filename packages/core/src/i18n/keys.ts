@@ -334,6 +334,7 @@ export const I18N_KEYS = [
     "snap.nearCurve",
     "snap.onSurface",
     "snap.tangent",
+    "statusBar.changeNavigation",
     "statusBar.snap",
     "statusBar.tracking",
     "toast.command.{0}excuting",
