@@ -3,7 +3,7 @@
 
 import { rs } from "@rstest/core";
 import type { INode, INodeFilter, ISelection, IVisualObject } from "../src";
-import { AsyncController, Matrix4, NodeSelectionHandler, VisualStates } from "../src";
+import { AsyncController, Config, Matrix4, NodeSelectionHandler, VisualStates } from "../src";
 import {
     createMockHighlighter,
     createMockSelection,
@@ -396,6 +396,20 @@ describe("NodeSelectionHandler", () => {
 
             expect(addCalls).toHaveLength(0);
         });
+
+        test("should skip highlighting during Gesture right-button pan", () => {
+            const { handler, view, addCalls } = setupNodeSelectionHandler();
+            const visualObj = createMockVisualObject();
+            view.detectVisual = () => [visualObj];
+            const orig = Config.instance.navigation3D;
+            (Config.instance as any)._navigation3D = "Gesture";
+            try {
+                handler.pointerMove(view, createPointerEvent({ buttons: 2 }));
+                expect(addCalls).toHaveLength(0);
+            } finally {
+                (Config.instance as any)._navigation3D = orig;
+            }
+        });
     });
 
     describe("pointerDown", () => {
@@ -446,6 +460,37 @@ describe("NodeSelectionHandler", () => {
             handler.pointerDown(view, event);
 
             expect((handler as any).mouse.isDown).toBe(false);
+        });
+
+        test("should not start selection on Alt+Left when Maya navigation is active", () => {
+            const { handler, view } = setupNodeSelectionHandler({ multiMode: true });
+            const orig = Config.instance.navigation3D;
+            (Config.instance as any)._navigation3D = "Maya";
+            try {
+                handler.pointerDown(
+                    view,
+                    createPointerEvent({ button: 0, buttons: 1, altKey: true, offsetX: 10, offsetY: 20 }),
+                );
+                expect((handler as any).mouse.isDown).toBe(false);
+                expect((handler as any).rect).toBeUndefined();
+            } finally {
+                (Config.instance as any)._navigation3D = orig;
+            }
+        });
+
+        test("should still start selection on plain Left under Maya navigation", () => {
+            const { handler, view } = setupNodeSelectionHandler();
+            const orig = Config.instance.navigation3D;
+            (Config.instance as any)._navigation3D = "Maya";
+            try {
+                handler.pointerDown(
+                    view,
+                    createPointerEvent({ button: 0, buttons: 1, altKey: false, offsetX: 10, offsetY: 20 }),
+                );
+                expect((handler as any).mouse.isDown).toBe(true);
+            } finally {
+                (Config.instance as any)._navigation3D = orig;
+            }
         });
     });
 

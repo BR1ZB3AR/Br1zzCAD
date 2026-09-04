@@ -399,6 +399,129 @@ describe("ThreeViewHandler — Alt-gated Left-button schemes", () => {
 });
 
 // ============================================================================
+// ThreeViewHandler — lastDown / accidental Alt / TinkerCAD
+// ============================================================================
+
+describe("ThreeViewHandler — lastDown / accidental Alt / TinkerCAD", () => {
+    function withNavigation<T>(navigation: Navigation3DType, fn: () => T): T {
+        const origNav = Config.instance.navigation3D;
+        (Config.instance as any)._navigation3D = navigation;
+        try {
+            return fn();
+        } finally {
+            (Config.instance as any)._navigation3D = origNav;
+        }
+    }
+
+    test("axis-aligned middle drag clears lastDown so the next click is not fitContent", () => {
+        const handler = new ThreeViewHandler();
+        let fitContentCalled = false;
+        const cc = createMockCameraController();
+        cc.fitContent = () => {
+            fitContentCalled = true;
+        };
+        const view = createHandlerMockView({ cameraController: cc });
+
+        handler.pointerDown(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 100, offsetY: 200 }),
+        );
+        // Horizontal-only drag previously failed to clear _lastDown (used && instead of ||).
+        handler.pointerMove(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 120, offsetY: 200 }),
+        );
+        handler.pointerUp(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 0, offsetX: 120, offsetY: 200 }),
+        );
+        handler.pointerDown(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 120, offsetY: 200 }),
+        );
+
+        expect(fitContentCalled).toBe(false);
+        handler.dispose();
+    });
+
+    test("accidental Alt does not block Chili3d middle-button pan", () => {
+        const handler = new ThreeViewHandler();
+        const panArgs: number[][] = [];
+        const cc = createMockCameraController();
+        cc.pan = (dx, dy) => {
+            panArgs.push([dx, dy]);
+        };
+        const view = createHandlerMockView({ cameraController: cc });
+
+        handler.pointerDown(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 100, offsetY: 200 }),
+        );
+        handler.pointerMove(
+            view,
+            createPointerEvent({
+                pointerType: "mouse",
+                buttons: 4,
+                altKey: true,
+                offsetX: 110,
+                offsetY: 210,
+            }),
+        );
+
+        expect(panArgs).toEqual([[10, 10]]);
+        handler.dispose();
+    });
+
+    test("TinkerCAD middle-button drag pans (FreeCAD TinkerCAD)", () => {
+        withNavigation("TinkerCAD", () => {
+            const handler = new ThreeViewHandler();
+            const panArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.pan = (dx, dy) => {
+                panArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 100, offsetY: 200 }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 110, offsetY: 210 }),
+            );
+
+            expect(panArgs).toEqual([[10, 10]]);
+            handler.dispose();
+        });
+    });
+
+    test("TinkerCAD right-button drag rotates", () => {
+        withNavigation("TinkerCAD", () => {
+            const handler = new ThreeViewHandler();
+            const rotateArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.rotate = (dx, dy) => {
+                rotateArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 100, offsetY: 200 }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 110, offsetY: 210 }),
+            );
+
+            expect(rotateArgs).toEqual([[10, 10]]);
+            handler.dispose();
+        });
+    });
+});
+
+// ============================================================================
 // ThreeViewHandler — pointerDown
 // ============================================================================
 
