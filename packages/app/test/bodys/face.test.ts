@@ -188,7 +188,7 @@ describe("FaceNode", () => {
             expect(face.mock.calls[0][0].length).toBe(1);
         });
 
-        test("should throw error when wire from unclosed edges fails", () => {
+        test("should return a Result error when wire from unclosed edges fails", () => {
             setupShapeFactoryMock({
                 wire: () => Result.err("cannot create wire"),
             });
@@ -196,7 +196,10 @@ describe("FaceNode", () => {
                 document: doc,
                 shapes: [mockLineEdge(0, 0, 10, 0)] as any,
             });
-            expect(() => node.generateShape()).toThrow("Cannot create wire from open shapes");
+            const result = node.generateShape();
+            expect(result.isOk).toBe(false);
+            expect(result.error).toContain("Cannot create wire from open shapes");
+            expect(result.error).toContain("cannot create wire");
         });
     });
 });

@@ -58,6 +58,12 @@ describe("ShapeFactory — basic primitives", () => {
             expect(faces.index.length).toBeGreaterThan(0);
             expect(faces.index.length % 3).toBe(0);
         });
+
+        test("should return a clear error when a dimension is too small", () => {
+            const result = factory.box(plane, 0, 20, 30);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toContain("Box dx is too small");
+        });
     });
 
     describe("sphere", () => {
@@ -66,6 +72,12 @@ describe("ShapeFactory — basic primitives", () => {
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.solid);
         });
+
+        test("should return a clear error when radius is too small", () => {
+            const result = factory.sphere(XYZ.zero, 0);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("The radius is too small.");
+        });
     });
 
     describe("cylinder", () => {
@@ -73,6 +85,11 @@ describe("ShapeFactory — basic primitives", () => {
             const result = factory.cylinder(XYZ.unitZ, XYZ.zero, 5, 20);
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.solid);
+        });
+
+        test("should return a clear error when radius or height is invalid", () => {
+            expect(factory.cylinder(XYZ.unitZ, XYZ.zero, 0, 20).error).toBe("The radius is too small.");
+            expect(factory.cylinder(XYZ.unitZ, XYZ.zero, 5, 0).error).toContain("Cylinder height is too small");
         });
     });
 

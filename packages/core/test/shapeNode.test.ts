@@ -70,6 +70,17 @@ describe("shapeNode", () => {
                 expect(node.shape.isOk).toBe(false);
             });
 
+            test("should keep previous shape when a later setShape fails", () => {
+                (node as any).setShape(Result.ok(mockShape));
+                expect(node.shape.isOk).toBe(true);
+
+                (node as any).setShape(Result.err("regeneration failed"));
+
+                // Keep the last good shape; do not read Result.value on the error Result.
+                expect(node.shape.isOk).toBe(true);
+                expect(node.shape.value).toBe(mockShape);
+            });
+
             test("should clear mesh cache when shape changes", () => {
                 const shapeResult = Result.ok(mockShape);
                 (node as any)._mesh = { test: "data" };

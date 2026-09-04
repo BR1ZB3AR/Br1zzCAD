@@ -40,12 +40,14 @@ export abstract class ShapeNode extends GeometryNode {
     }
 
     protected setShape(shape: Result<IShape>) {
-        if (this._shape.isOk && this._shape.value.isEqual(shape.value)) {
+        // Check isOk first — accessing Result.value on an error Result only warns and
+        // returns undefined, which would make isEqual throw or compare incorrectly.
+        if (!shape.isOk) {
+            PubSub.default.pub("displayError", shape.error);
             return;
         }
 
-        if (!shape.isOk) {
-            PubSub.default.pub("displayError", shape.error);
+        if (this._shape.isOk && this._shape.value.isEqual(shape.value)) {
             return;
         }
 
