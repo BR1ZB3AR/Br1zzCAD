@@ -190,4 +190,53 @@ describe("showDialog", () => {
 
         expect(onClickCalled).toBe(true);
     });
+
+    test("should close dialog on Escape even without a cancel button", () => {
+        const content = document.createElement("div");
+        const buttons: DialogButton[] = [
+            {
+                content: "common.ok" as I18nKeys,
+                onclick: async () => {},
+            },
+        ];
+        showDialog("dialog.title" as I18nKeys, content, buttons);
+
+        const dialog = mustQuery(document.body, "dialog");
+        dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+        expect(document.body.querySelector("dialog")).toBeNull();
+    });
+
+    test("should close default-button dialog on Enter without requiring onclick", () => {
+        const content = document.createElement("div");
+        showDialog("dialog.title" as I18nKeys, content);
+
+        const dialog = mustQuery(document.body, "dialog");
+        dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+        expect(document.body.querySelector("dialog")).toBeNull();
+    });
+
+    test("should keep dialog open on Enter when shouldClose returns false", () => {
+        let clicked = false;
+        const content = document.createElement("div");
+        const buttons: DialogButton[] = [
+            {
+                content: "common.confirm" as I18nKeys,
+                onclick: async () => {
+                    clicked = true;
+                },
+                shouldClose: () => false,
+            },
+            { content: "common.cancel" as I18nKeys },
+        ];
+        showDialog("dialog.title" as I18nKeys, content, buttons);
+
+        const dialog = mustQuery(document.body, "dialog");
+        dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+        expect(clicked).toBe(true);
+        expect(document.body.querySelector("dialog")).not.toBeNull();
+    });
+
 });

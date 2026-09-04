@@ -6,4 +6,6 @@
     margin-left: 15px;
     opacity: 0.75;
     z-index: 888;
+    /* Tip follows the cursor — must not steal hits from orbit/selection. */
+    pointer-events: none;
 }

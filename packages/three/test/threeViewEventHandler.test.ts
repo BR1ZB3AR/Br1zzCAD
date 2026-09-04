@@ -481,6 +481,25 @@ describe("ThreeViewHandler — pointerUp / pointerOut", () => {
         expect(mapsOf(handler).currentPointerEventMap.has(1)).toBe(false);
     });
 
+    test("pointerOut with buttons held preserves pan offset and lastDown", () => {
+        const handler = new ThreeViewHandler();
+        const view = createHandlerMockView({ cameraController: createMockCameraController() });
+
+        handler.pointerDown(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 40, offsetY: 50 }),
+        );
+        expect(offsetPointOf(handler)).toEqual({ x: 40, y: 50 });
+
+        handler.pointerOut(
+            view,
+            createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 60, offsetY: 70 }),
+        );
+
+        expect(offsetPointOf(handler)).toEqual({ x: 40, y: 50 });
+        handler.dispose();
+    });
+
     test("pointerUp with middle button clears the pan offset point", () => {
         const handler = new ThreeViewHandler();
         const view = createHandlerMockView({ cameraController: createMockCameraController() });

@@ -525,6 +525,21 @@ describe("NodeSelectionHandler", () => {
     });
 
     describe("pointerOut", () => {
+        test("pointerOut during active mouse drag does not abort the gesture", () => {
+            const { handler, view, addCalls, removeCalls } = setupNodeSelectionHandler();
+
+            const visualObj = createMockVisualObject();
+            (handler as any)._highlights = [visualObj];
+            (handler as any).mouse.isDown = true;
+
+            const event = createPointerEvent({ isPrimary: true, pointerId: 1, buttons: 1 });
+            handler.pointerOut!(view, event);
+
+            expect((handler as any).mouse.isDown).toBe(true);
+            expect((handler as any)._highlights).toEqual([visualObj]);
+            expect(removeCalls.length).toBe(0);
+        });
+
         test("should clean up on primary pointer out", () => {
             const { handler, view, addCalls, removeCalls } = setupNodeSelectionHandler();
 

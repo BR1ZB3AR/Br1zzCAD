@@ -30,20 +30,25 @@ function renderDialog(
 ) {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Enter") {
-            const confirmBtn = combinedButtons.find(
-                (btn) => btn.onclick && btn.shouldClose?.() !== false && btn.content !== "common.cancel",
-            );
-            if (confirmBtn) {
-                confirmBtn.onclick?.();
+            // Prefer explicit confirm; otherwise first non-cancel action button.
+            // DefaultButtons confirm has no onclick — still must close on Enter.
+            const confirmBtn =
+                combinedButtons.find((btn) => btn.content === "common.confirm") ??
+                combinedButtons.find((btn) => btn.content !== "common.cancel");
+            if (!confirmBtn) {
+                return;
+            }
+            if (confirmBtn.shouldClose?.() !== false) {
                 closeDialog();
             }
+            void confirmBtn.onclick?.();
         } else if (e.key === "Escape") {
             e.preventDefault();
             const cancelBtn = combinedButtons.find((btn) => btn.content === "common.cancel");
-            if (cancelBtn) {
-                cancelBtn.onclick?.();
-                closeDialog();
-            }
+            // Always dismiss on Escape — previously Escape was swallowed when no
+            // cancel button was present, leaving a stuck modal.
+            void cancelBtn?.onclick?.();
+            closeDialog();
         }
     };
     const closeDialog = () => {
