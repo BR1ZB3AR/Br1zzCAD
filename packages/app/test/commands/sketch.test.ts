@@ -2,12 +2,13 @@
 // See LICENSE file in the project root for full license information.
 
 import { Plane } from "@chili3d/core";
+import { DefaultRibbon } from "@chili3d/builder";
 import { describe, expect, test } from "@rstest/core";
 import {
+    CreateSketch,
     SKETCH_PLANES,
     SKETCH_TOOL_KEYS,
     SketchPlaneViewModel,
-    StartSketch,
 } from "../../src/commands/sketch";
 
 describe("SKETCH_PLANES mapping", () => {
@@ -31,10 +32,19 @@ describe("SketchPlaneViewModel", () => {
     });
 });
 
-describe("StartSketch", () => {
+describe("CreateSketch", () => {
     test("has create.sketch command metadata", () => {
-        const data = (StartSketch as any).prototype.data;
+        const data = (CreateSketch as any).prototype.data;
         expect(data).not.toBeNull();
         expect(data.key).toBe("create.sketch");
+        expect(data.icon).toBe("icon-setWorkingPlane");
+    });
+});
+
+describe("Ribbon placement", () => {
+    test("Sketch is first in the draw group", () => {
+        const draw = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.draw");
+        expect(draw).toBeDefined();
+        expect(draw!.items[0]).toBe("create.sketch");
     });
 });

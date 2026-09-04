@@ -331,6 +331,7 @@ export const I18N_KEYS = [
     "ribbon.tab.model",
     "ribbon.tab.plugin",
     "sketch.plane.front",
+    "sketch.plane.label",
     "sketch.plane.right",
     "sketch.plane.top",
     "snap.center",

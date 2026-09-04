@@ -320,6 +320,7 @@ export default {
         "ribbon.tab.manager": "Менеджер",
         "ribbon.tab.plugin": "Расширение",
         "sketch.plane.front": "Спереди",
+        \"sketch.plane.label\": \"Плоскость",
         "sketch.plane.right": "Справа",
         "sketch.plane.top": "Сверху",
         "snap.center": "Центр",

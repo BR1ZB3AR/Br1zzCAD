@@ -333,6 +333,7 @@ export default {
         "ribbon.tab.manager": "Manager",
         "ribbon.tab.plugin": "Plugin",
         "sketch.plane.front": "Front",
+        \"sketch.plane.label\": \"Plane",
         "sketch.plane.right": "Right",
         "sketch.plane.top": "Top",
         "snap.center": "Center",

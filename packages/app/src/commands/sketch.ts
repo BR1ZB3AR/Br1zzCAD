@@ -82,7 +82,7 @@ function pickSketchPlane(application: IApplication): Promise<boolean> {
                     const index = vm.planes.selectedIndexes[0] ?? 0;
                     view.workplane = SKETCH_PLANES[index] ?? Plane.XY;
                     sketchPlaneChosen = true;
-                    PubSub.default.pub("showToast", "toast.sketch.planeSet");
+                    PubSub.default.pub("showToast", "toast.sketch.planeSet{0}", sketchPlaneLabels()[index] ?? "");
                     finish(true);
                 },
             },
@@ -98,7 +98,7 @@ function pickSketchPlane(application: IApplication): Promise<boolean> {
 }
 
 export class SketchPlaneViewModel extends Observable {
-    @property("dialog.title.selectSketchPlane")
+    @property("sketch.plane.label")
     planes: SelectableItems<string>;
 
     constructor() {

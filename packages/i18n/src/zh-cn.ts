@@ -333,6 +333,7 @@ export default {
         "ribbon.tab.model": "模型",
         "ribbon.tab.plugin": "插件",
         "sketch.plane.front": "前视图",
+        \"sketch.plane.label\": \"平面",
         "sketch.plane.right": "右视图",
         "sketch.plane.top": "顶视图",
         "snap.center": "圆心",
