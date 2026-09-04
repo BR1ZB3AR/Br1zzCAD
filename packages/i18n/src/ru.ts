@@ -198,6 +198,7 @@ export default {
         "helix.pitch": "Шаг",
         "home.recent": "Недавние проекты",
         "home.recent.empty": "Пока нет недавних документов. Создайте или откройте документ, чтобы начать.",
+        "home.recent.empty.title": "Пока нет недавних проектов",
         "home.videos": "Видео сообщества",
         "home.videos.recent": "Обновления",
         "home.videos.cases": "Примеры",

@@ -295,10 +295,36 @@ export class Home extends HTMLElement {
 
     private documentCollection(documents: ObservableCollection<RecentDocumentDTO>) {
         if (documents.length === 0) {
-            return div({
-                className: style.empty,
-                textContent: new Localize("home.recent.empty"),
-            });
+            return div(
+                { className: style.empty },
+                div({
+                    className: style.emptyTitle,
+                    textContent: new Localize("home.recent.empty.title"),
+                }),
+                div({
+                    className: style.emptyBody,
+                    textContent: new Localize("home.recent.empty"),
+                }),
+                div(
+                    { className: style.emptyActions },
+                    button(
+                        {
+                            className: style.emptyAction,
+                            onclick: () => PubSub.default.pub("executeCommand", "doc.new"),
+                        },
+                        svg({ icon: "icon-plus" }),
+                        span({ textContent: new Localize("command.doc.new") }),
+                    ),
+                    button(
+                        {
+                            className: style.emptyActionSecondary,
+                            onclick: () => PubSub.default.pub("executeCommand", "doc.open"),
+                        },
+                        svg({ icon: "icon-folder" }),
+                        span({ textContent: new Localize("command.doc.open") }),
+                    ),
+                ),
+            );
         }
         return collection({
             className: style.documents,

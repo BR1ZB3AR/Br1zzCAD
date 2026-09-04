@@ -204,6 +204,7 @@ export default {
         "helix.pitch": "螺距",
         "home.recent": "最近项目",
         "home.recent.empty": "暂无最近文档，新建或打开一个文档即可开始。",
+        "home.recent.empty.title": "暂无最近项目",
         "home.videos": "社区视频",
         "home.videos.recent": "更新记录",
         "home.videos.cases": "案例展示",

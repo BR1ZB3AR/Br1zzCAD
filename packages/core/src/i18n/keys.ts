@@ -199,6 +199,7 @@ export const I18N_KEYS = [
     "helix.pitch",
     "home.recent",
     "home.recent.empty",
+    "home.recent.empty.title",
     "home.videos",
     "home.videos.recent",
     "home.videos.cases",
