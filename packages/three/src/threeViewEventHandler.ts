@@ -1,14 +1,21 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { Config, type IEventHandler, type IView, Navigation3D } from "@chili3d/core";
+import {
+    Config,
+    type IEventHandler,
+    type IView,
+    Navigation3D,
+    type NavButton,
+    navigationTriggers,
+} from "@chili3d/core";
 
 interface MouseDownData {
     time: number;
     key: number;
 }
 
-const MOUSE_MIDDLE = 4;
+const BUTTON_MASK: Record<NavButton, number> = { Left: 1, Middle: 4, Right: 2 };
 
 export class ThreeViewHandler implements IEventHandler {
     private _lastDown: MouseDownData | undefined;
@@ -19,6 +26,19 @@ export class ThreeViewHandler implements IEventHandler {
 
     canRotate: boolean = true;
     isEnabled = true;
+
+    /** Finds the trigger (if any) of the active navigation scheme that matches
+     * the buttons currently held and, when required, the Alt modifier. */
+    private matchTrigger(event: MouseEvent): { mask: number; base: NavButton } | undefined {
+        const triggers = navigationTriggers(Config.instance.navigation3D);
+        for (const trigger of triggers) {
+            const mask = BUTTON_MASK[trigger.button];
+            if (event.buttons === mask && (!trigger.requireAlt || event.altKey)) {
+                return { mask, base: trigger.button };
+            }
+        }
+        return undefined;
+    }
 
     dispose() {
         this.clearTimeout();
@@ -49,9 +69,11 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     private handleMouseMove(view: IView, event: PointerEvent) {
-        if (event.buttons !== MOUSE_MIDDLE) {
+        const trigger = this.matchTrigger(event);
+        if (!trigger) {
             return;
         }
+        const { base } = trigger;
 
         let dx = 0;
         let dy = 0;
@@ -61,7 +83,7 @@ export class ThreeViewHandler implements IEventHandler {
             this._offsetPoint = { x: event.offsetX, y: event.offsetY };
         }
 
-        const key = Navigation3D.getKey(event);
+        const key = Navigation3D.getKey(event, base);
         const navigatioMap = Navigation3D.navigationKeyMap();
         if (navigatioMap.pan === key) {
             view.cameraController.pan(dx, dy);
@@ -147,11 +169,15 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     private handleMouseDown(event: PointerEvent, view: IView) {
-        if (this._lastDown && this._lastDown.time + 500 > Date.now() && event.buttons === MOUSE_MIDDLE) {
+        const trigger = this.matchTrigger(event);
+        if (!trigger) {
+            return;
+        }
+        if (this._lastDown && this._lastDown.time + 500 > Date.now() && event.buttons === trigger.mask) {
             this._lastDown = undefined;
             view.cameraController.fitContent();
             view.update();
-        } else if (event.buttons === MOUSE_MIDDLE) {
+        } else {
             view.cameraController.startRotate(event.offsetX, event.offsetY);
             this._lastDown = {
                 time: Date.now(),
@@ -175,7 +201,9 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     pointerUp(view: IView, event: PointerEvent): void {
-        if (event.buttons === MOUSE_MIDDLE && this._lastDown) {
+        const triggers = navigationTriggers(Config.instance.navigation3D);
+        const stillTriggered = triggers.some((trigger) => BUTTON_MASK[trigger.button] === event.buttons);
+        if (stillTriggered && this._lastDown) {
             this._clearDownId = window.setTimeout(() => {
                 this._lastDown = undefined;
                 this._clearDownId = undefined;

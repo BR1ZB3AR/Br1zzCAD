@@ -67,10 +67,35 @@ export const CreoShortcuts: ShortcutMap = {
     ...DefaultShortcuts,
 };
 
+export const TinkerCADShortcuts: ShortcutMap = {
+    // TinkerCAD is a mouse/gesture-driven beginner tool with no real hotkey
+    // scheme of its own - keep the default keyboard shortcuts, only its
+    // right-mouse-button navigation (see navigation.ts) is distinctive.
+    ...DefaultShortcuts,
+};
+
+export const MayaShortcuts: ShortcutMap = {
+    // Maya is likewise mouse/Alt-drag driven for navigation; only its
+    // Alt-gated Left/Middle camera controls (see navigation.ts) are distinctive.
+    ...DefaultShortcuts,
+};
+
+export const GestureShortcuts: ShortcutMap = {
+    ...DefaultShortcuts,
+};
+
+export const OpenSCADShortcuts: ShortcutMap = {
+    ...DefaultShortcuts,
+};
+
 export const ShortcutProfiles: Record<Navigation3DType, ShortcutMap> = {
     Chili3d: Chili3dShortcuts,
     Revit: RevitShortcuts,
     Blender: BlenderShortcuts,
     Creo: CreoShortcuts,
     Solidworks: SolidworksShortcuts,
+    TinkerCAD: TinkerCADShortcuts,
+    Maya: MayaShortcuts,
+    Gesture: GestureShortcuts,
+    OpenSCAD: OpenSCADShortcuts,
 };

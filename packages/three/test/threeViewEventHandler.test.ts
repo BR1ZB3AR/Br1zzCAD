@@ -271,6 +271,134 @@ describe("ThreeViewHandler — pointerMove (mouse)", () => {
 });
 
 // ============================================================================
+// ThreeViewHandler — Alt-gated Left-button schemes (Maya/Gesture/OpenSCAD)
+// ============================================================================
+
+describe("ThreeViewHandler — Alt-gated Left-button schemes", () => {
+    function withNavigation<T>(navigation: Navigation3DType, fn: () => T): T {
+        const origNav = Config.instance.navigation3D;
+        (Config.instance as any)._navigation3D = navigation;
+        try {
+            return fn();
+        } finally {
+            (Config.instance as any)._navigation3D = origNav;
+        }
+    }
+
+    test("plain left-button drag does not engage Maya navigation (would steal clicks/selection)", () => {
+        withNavigation("Maya", () => {
+            const handler = new ThreeViewHandler();
+            let gestureCalled = false;
+            const cc = createMockCameraController();
+            cc.startRotate = () => {
+                gestureCalled = true;
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 1, offsetX: 100, offsetY: 200 }),
+            );
+
+            expect(gestureCalled).toBe(false);
+        });
+    });
+
+    test("Alt+left-button drag rotates in Maya navigation", () => {
+        withNavigation("Maya", () => {
+            const handler = new ThreeViewHandler();
+            const rotateArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.rotate = (dx, dy) => {
+                rotateArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({
+                    pointerType: "mouse",
+                    buttons: 1,
+                    altKey: true,
+                    offsetX: 100,
+                    offsetY: 200,
+                }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({
+                    pointerType: "mouse",
+                    buttons: 1,
+                    altKey: true,
+                    offsetX: 110,
+                    offsetY: 210,
+                }),
+            );
+
+            expect(rotateArgs).toEqual([[10, 10]]);
+        });
+    });
+
+    test("Alt+middle-button drag pans in Maya navigation", () => {
+        withNavigation("Maya", () => {
+            const handler = new ThreeViewHandler();
+            const panArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.pan = (dx, dy) => {
+                panArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({
+                    pointerType: "mouse",
+                    buttons: 4,
+                    altKey: true,
+                    offsetX: 100,
+                    offsetY: 200,
+                }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({
+                    pointerType: "mouse",
+                    buttons: 4,
+                    altKey: true,
+                    offsetX: 110,
+                    offsetY: 210,
+                }),
+            );
+
+            expect(panArgs).toEqual([[10, 10]]);
+        });
+    });
+
+    test("bare right-button drag pans in Gesture navigation (no Alt needed)", () => {
+        withNavigation("Gesture", () => {
+            const handler = new ThreeViewHandler();
+            const panArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.pan = (dx, dy) => {
+                panArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 100, offsetY: 200 }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 110, offsetY: 210 }),
+            );
+
+            expect(panArgs).toEqual([[10, 10]]);
+        });
+    });
+});
+
+// ============================================================================
 // ThreeViewHandler — pointerDown
 // ============================================================================
 

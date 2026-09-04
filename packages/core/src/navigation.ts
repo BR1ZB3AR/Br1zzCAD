@@ -3,13 +3,62 @@
 
 import { Config } from "./config";
 
-export const Navigation3DTypes = ["Chili3d", "Revit", "Blender", "Creo", "Solidworks"] as const;
+export const Navigation3DTypes = [
+    "Chili3d",
+    "Revit",
+    "Blender",
+    "Creo",
+    "Solidworks",
+    "TinkerCAD",
+    "Maya",
+    "Gesture",
+    "OpenSCAD",
+] as const;
 
 export type Navigation3DType = (typeof Navigation3DTypes)[number];
 
+export type NavButton = "Left" | "Middle" | "Right";
+
+export interface NavTrigger {
+    button: NavButton;
+    /** Left-button drags double as selection/sketching everywhere else in the
+     * app, so any scheme using Left must also require Alt to be held before it
+     * engages the camera - otherwise every plain click would be swallowed as a
+     * camera drag. Middle and Right are not used by any tool, so they need no gate. */
+    requireAlt: boolean;
+}
+
+/** Each scheme lists the (button, alt-gate) pairs that can engage camera
+ * navigation. Whichever configured button is actually held becomes the base
+ * for Navigation3D.getKey(). */
+export function navigationTriggers(scheme: Navigation3DType): NavTrigger[] {
+    switch (scheme) {
+        case "TinkerCAD":
+            return [{ button: "Right", requireAlt: false }];
+        case "Maya":
+            // Real Maya is Alt+Left=tumble, Alt+Middle=track, Alt+Right=dolly;
+            // dolly is left to the scroll wheel, which already zooms in every scheme.
+            return [
+                { button: "Left", requireAlt: true },
+                { button: "Middle", requireAlt: true },
+            ];
+        case "Gesture":
+        case "OpenSCAD":
+            // Real spec is bare Left=rotate, bare Right=pan. Right is safe as-is;
+            // Left is Alt-gated here so it doesn't steal plain clicks from
+            // selection/sketching tools.
+            return [
+                { button: "Left", requireAlt: true },
+                { button: "Right", requireAlt: false },
+            ];
+        default:
+            return [{ button: "Middle", requireAlt: false }];
+    }
+}
+
 export class Navigation3D {
-    static getKey(event: MouseEvent) {
-        let key = "Middle";
+    static getKey(event: MouseEvent, base: NavButton = "Middle") {
+        let key: string = base;
         if (event.shiftKey) {
             key = `Shift+${key}`;
         }
@@ -46,6 +95,22 @@ export class Navigation3D {
             ["Solidworks"]: {
                 pan: "Ctrl+Middle",
                 rotate: "Middle",
+            },
+            ["TinkerCAD"]: {
+                pan: "Shift+Right",
+                rotate: "Right",
+            },
+            ["Maya"]: {
+                pan: "Alt+Middle",
+                rotate: "Alt+Left",
+            },
+            ["Gesture"]: {
+                pan: "Right",
+                rotate: "Alt+Left",
+            },
+            ["OpenSCAD"]: {
+                pan: "Right",
+                rotate: "Alt+Left",
             },
         } satisfies Record<
             Navigation3DType,

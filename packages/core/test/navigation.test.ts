@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { Config } from "../src/config";
-import { Navigation3D, Navigation3DTypes } from "../src/navigation";
+import { Navigation3D, Navigation3DTypes, navigationTriggers } from "../src/navigation";
 import { mockLocalStorage } from "../test-utils";
 
 describe("Navigation3DTypes", () => {
@@ -26,8 +26,24 @@ describe("Navigation3DTypes", () => {
         expect(Navigation3DTypes).toContain("Solidworks");
     });
 
-    test("should have exactly 5 navigation types", () => {
-        expect(Navigation3DTypes).toHaveLength(5);
+    test("should contain TinkerCAD", () => {
+        expect(Navigation3DTypes).toContain("TinkerCAD");
+    });
+
+    test("should contain Maya", () => {
+        expect(Navigation3DTypes).toContain("Maya");
+    });
+
+    test("should contain Gesture", () => {
+        expect(Navigation3DTypes).toContain("Gesture");
+    });
+
+    test("should contain OpenSCAD", () => {
+        expect(Navigation3DTypes).toContain("OpenSCAD");
+    });
+
+    test("should have exactly 9 navigation types", () => {
+        expect(Navigation3DTypes).toHaveLength(9);
     });
 });
 
@@ -164,5 +180,79 @@ describe("Navigation3D.navigationKeyMap", () => {
             Config.instance.navigation3D = "Solidworks";
             expect(Navigation3D.navigationKeyMap().rotate).toBe("Middle");
         });
+    });
+
+    describe("TinkerCAD", () => {
+        test("should return Shift+Right for pan", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "TinkerCAD";
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Shift+Right");
+        });
+
+        test("should return Right for rotate", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "TinkerCAD";
+            expect(Navigation3D.navigationKeyMap().rotate).toBe("Right");
+        });
+    });
+
+    describe("Maya", () => {
+        test("should return Alt+Middle for pan", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "Maya";
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Alt+Middle");
+        });
+
+        test("should return Alt+Left for rotate", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "Maya";
+            expect(Navigation3D.navigationKeyMap().rotate).toBe("Alt+Left");
+        });
+    });
+
+    describe("Gesture", () => {
+        test("should return Right for pan", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "Gesture";
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Right");
+        });
+
+        test("should return Alt+Left for rotate", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "Gesture";
+            expect(Navigation3D.navigationKeyMap().rotate).toBe("Alt+Left");
+        });
+    });
+
+    describe("OpenSCAD", () => {
+        test("should return Right for pan", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "OpenSCAD";
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Right");
+        });
+
+        test("should return Alt+Left for rotate", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "OpenSCAD";
+            expect(Navigation3D.navigationKeyMap().rotate).toBe("Alt+Left");
+        });
+    });
+});
+
+describe("navigationTriggers", () => {
+    test("Left-button triggers require Alt across every scheme that defines one", () => {
+        for (const scheme of Navigation3DTypes) {
+            for (const trigger of navigationTriggers(scheme)) {
+                if (trigger.button === "Left") {
+                    expect(trigger.requireAlt, `${scheme}: Left trigger must require Alt`).toBe(true);
+                }
+            }
+        }
+    });
+
+    test("every scheme defines at least one trigger", () => {
+        for (const scheme of Navigation3DTypes) {
+            expect(navigationTriggers(scheme).length).toBeGreaterThan(0);
+        }
     });
 });
