@@ -261,8 +261,7 @@ export default {
         "regularPolygon.sides": "Число сторон",
         "pipe.bendRadius": "Радиус изгиба",
         "pipe.bendType": "Тип изгиба",
-        "prompt.default{0}{1}":
-            "{0} чтобы двигать вид, {1} чтобы повернуть вид, Колесико мыши чтобы увеличить или уменьшить.",
+        "prompt.default{0}{1}{2}": "[{0}] {1} — панорамирование, {2} — вращение, колесо мыши — масштаб",
         "prompt.deleteDocument{0}": "Удалить {0}?",
         "prompt.pickArcBulge": "выберите точку подъема, ESC для отмены",
         "prompt.pickArcEnd": "выберите точку завершения, ESC для отмены",
@@ -327,6 +326,7 @@ export default {
         "snap.nearCurve": "К кривой",
         "snap.onSurface": "К поверхности",
         "snap.tangent": "Различия",
+        "statusBar.changeNavigation": "Нажмите, чтобы сменить схему навигации мыши",
         "statusBar.snap": "Привязка",
         "statusBar.tracking": "Отслеживание",
         "toast.command.{0}excuting": "Комманда {0} выполняется",

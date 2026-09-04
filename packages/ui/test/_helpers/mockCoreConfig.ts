@@ -26,10 +26,13 @@ rs.mock("@chili3d/core", () => {
     const { LocalizeMock } = rs.hoisted(() => require("./coreMocks"));
     // `...actual` only contains real exports when the real core module was already
     // loaded — pull the real Navigation3DTypes directly so it always works.
-    const { Navigation3DTypes } = rs.hoisted(() => require("@chili3d/core/src/navigation"));
+    const { Navigation3DTypes, navigationKeyMapFor } = rs.hoisted(() =>
+        require("@chili3d/core/src/navigation"),
+    );
     return {
         ...actual,
         Navigation3DTypes,
+        navigationKeyMapFor,
         Localize: LocalizeMock,
         Config: { instance: configStub },
         I18n: {

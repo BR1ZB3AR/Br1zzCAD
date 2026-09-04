@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { Config } from "../src/config";
-import { Navigation3D, Navigation3DTypes, navigationTriggers } from "../src/navigation";
+import { Navigation3D, Navigation3DTypes, navigationKeyMapFor, navigationTriggers } from "../src/navigation";
 import { mockLocalStorage } from "../test-utils";
 
 describe("Navigation3DTypes", () => {
@@ -183,10 +183,10 @@ describe("Navigation3D.navigationKeyMap", () => {
     });
 
     describe("TinkerCAD", () => {
-        test("should return Shift+Right for pan", () => {
+        test("should return Middle for pan (FreeCAD TinkerCAD)", () => {
             Config.instance.init("testNavigation");
             Config.instance.navigation3D = "TinkerCAD";
-            expect(Navigation3D.navigationKeyMap().pan).toBe("Shift+Right");
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Middle");
         });
 
         test("should return Right for rotate", () => {
@@ -250,9 +250,63 @@ describe("navigationTriggers", () => {
         }
     });
 
+    test("Middle and Right triggers are ungated except Maya (Alt+Middle pan)", () => {
+        for (const scheme of Navigation3DTypes) {
+            for (const trigger of navigationTriggers(scheme)) {
+                if (trigger.button === "Left") continue;
+                // Real Maya pan is Alt+Middle; every other scheme leaves Middle/Right ungated.
+                const expectAlt = scheme === "Maya" && trigger.button === "Middle";
+                expect(trigger.requireAlt, `${scheme}: ${trigger.button}`).toBe(expectAlt);
+            }
+        }
+    });
+
     test("every scheme defines at least one trigger", () => {
         for (const scheme of Navigation3DTypes) {
             expect(navigationTriggers(scheme).length).toBeGreaterThan(0);
         }
+    });
+
+    test("TinkerCAD uses ungated Middle pan and Right rotate triggers", () => {
+        expect(navigationTriggers("TinkerCAD")).toEqual([
+            { button: "Right", requireAlt: false },
+            { button: "Middle", requireAlt: false },
+        ]);
+    });
+
+    test("Maya requires Alt on Left and Middle", () => {
+        expect(navigationTriggers("Maya")).toEqual([
+            { button: "Left", requireAlt: true },
+            { button: "Middle", requireAlt: true },
+        ]);
+    });
+
+    test("Gesture and OpenSCAD share primary triggers (FreeCAD parity)", () => {
+        expect(navigationTriggers("Gesture")).toEqual(navigationTriggers("OpenSCAD"));
+        expect(navigationTriggers("Gesture")).toEqual([
+            { button: "Left", requireAlt: true },
+            { button: "Right", requireAlt: false },
+        ]);
+    });
+
+    test("default Middle-button schemes (Chili3d/Revit/Blender/Creo/Solidworks)", () => {
+        for (const scheme of ["Chili3d", "Revit", "Blender", "Creo", "Solidworks"] as const) {
+            expect(navigationTriggers(scheme)).toEqual([{ button: "Middle", requireAlt: false }]);
+        }
+    });
+});
+
+describe("navigationKeyMapFor", () => {
+    test("returns the same map as Navigation3D.navigationKeyMap for the active scheme", () => {
+        Config.instance.init("testNavigationKeyMapFor");
+        for (const scheme of Navigation3DTypes) {
+            Config.instance.navigation3D = scheme;
+            expect(navigationKeyMapFor(scheme)).toEqual(Navigation3D.navigationKeyMap());
+            expect(Navigation3D.navigationKeyMap(scheme)).toEqual(navigationKeyMapFor(scheme));
+        }
+    });
+
+    test("Gesture and OpenSCAD key maps match for pan/rotate", () => {
+        expect(navigationKeyMapFor("Gesture")).toEqual(navigationKeyMapFor("OpenSCAD"));
     });
 });
