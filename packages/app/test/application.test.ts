@@ -33,7 +33,7 @@ function makeVisualFactory(): IVisualFactory {
 
 function makeSerializedDocData(name: string, id: string): Serialized {
     return {
-        version: "0.7.1",
+        version: __DOCUMENT_VERSION__,
         name,
         id,
         models: {
