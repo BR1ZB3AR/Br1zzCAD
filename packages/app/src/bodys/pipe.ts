@@ -83,6 +83,10 @@ export class PipeNode extends ParameterShapeNode {
     }
 
     override generateShape(): Result<IShape> {
+        if (!(this.radius >= Precision.Distance)) {
+            return Result.err("Pipe radius must be greater than zero.");
+        }
+
         const path = this.path;
         if (!path) return Result.err("Path is null");
 
