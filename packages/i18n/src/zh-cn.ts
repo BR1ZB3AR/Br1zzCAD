@@ -201,7 +201,7 @@ export default {
         "home.videos.recent": "更新记录",
         "home.videos.cases": "案例展示",
         "home.videos.more": "更多",
-        "home.welcome": "欢迎使用 chili3d",
+        "home.welcome": "欢迎使用 Br1zzCAD",
         "home.welcome.subtitle": "在浏览器中进行 3D 设计与建模。",
         "items.header": "项目",
         "items.tool.delete": "删除",

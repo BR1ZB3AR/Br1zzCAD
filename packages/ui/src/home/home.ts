@@ -113,7 +113,7 @@ export class Home extends HTMLElement {
             svg({ icon: "icon-chili" }),
             div(
                 { className: style.logoText },
-                span({ className: style.wordmark, textContent: "CHILI3D" }),
+                span({ className: style.wordmark, textContent: "BR1ZZCAD" }),
                 span({ className: style.version, textContent: `v${__APP_VERSION__}` }),
             ),
         );
@@ -186,24 +186,12 @@ export class Home extends HTMLElement {
             a(
                 {
                     className: style.socialItem,
-                    href: "https://github.com/xiangechen/chili3d",
+                    href: "https://github.com/BR1ZB3AR/Br1zzCAD",
                     target: "_blank",
                     rel: "noopener noreferrer",
                 },
                 svg({ icon: "icon-github" }),
                 label({ textContent: "GitHub" }),
-            ),
-            button(
-                {
-                    className: style.socialItem,
-                    onclick: () => {
-                        PubSub.default.pub("executeCommand", "wechat.group");
-                    },
-                },
-                svg({
-                    icon: "icon-wechatGroup",
-                }),
-                label({ textContent: new Localize("command.wechat.group") }),
             ),
         );
     }

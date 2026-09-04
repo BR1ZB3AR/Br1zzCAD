@@ -1,17 +1,14 @@
-# Chili3D
+# Br1zzCAD
 
 A browser-based 3D CAD application for online model design and editing.
 
 ![Screenshot](./screenshots/screenshot.png)
 
+> **Br1zzCAD is a fork of [Chili3D](https://github.com/xiangechen/chili3d)** by 仙阁 (xiangechen), extended and maintained by [BR1ZB3AR](https://github.com/BR1ZB3AR). All credit for the original architecture, OCCT/WASM kernel, and the vast majority of this codebase goes to the upstream Chili3D project — see [Upstream](#upstream) below.
+
 ## Overview
 
-[Chili3D](https://chili3d.com) is an [open-source](https://github.com/xiangechen/chili3d) browser-based 3D CAD (Computer-Aided Design) application built with TypeScript. It achieves near-native performance by compiling OpenCascade (OCCT) to WebAssembly and integrating with Three.js, enabling powerful online modeling, editing, and rendering — all without requiring local installation.
-
-You can access Chili3D online at:
-
-- Official website: [chili3d.com](https://chili3d.com)
-- Cloudflare deployment: [chili3d.pages.dev](https://chili3d.pages.dev)
+Br1zzCAD is an open-source browser-based 3D CAD (Computer-Aided Design) application built with TypeScript. It achieves near-native performance by compiling OpenCascade (OCCT) to WebAssembly and integrating with Three.js, enabling powerful online modeling, editing, and rendering — all without requiring local installation.
 
 ## Features
 
@@ -65,7 +62,7 @@ You can access Chili3D online at:
 
 ### Plugin System
 
-Chili3D supports a runtime plugin system with dynamic loading via URL parameters (`?plugin=`). Example plugins include:
+Br1zzCAD supports a runtime plugin system with dynamic loading via URL parameters (`?plugin=`). Example plugins include:
 
 - **helloworld-js** / **helloworld-ts** — Demo plugins showcasing the plugin API
 - **macro** — Create, edit, and run macros to automate repetitive tasks
@@ -79,7 +76,7 @@ Chili3D supports a runtime plugin system with dynamic loading via URL parameters
 
 ## Architecture
 
-Chili3D uses an npm workspace monorepo under `packages/` with an interface-driven, pluggable backend architecture:
+Br1zzCAD uses an npm workspace monorepo under `packages/` with an interface-driven, pluggable backend architecture:
 
 ```
 web ──> builder ──> app ──> core
@@ -112,12 +109,6 @@ element ──> core
 - **Testing**: Rstest + Happy-DOM
 - **Package Manager**: npm workspaces
 
-## Changelog
-
-You can view the full changelog [here](https://github.com/xiangechen/chili3d/releases).
-
-For Chinese users, you can also browse the [media](https://space.bilibili.com/539380032/lists/3108412?type=season).
-
 ## Getting Started
 
 ### Prerequisites
@@ -130,8 +121,8 @@ For Chinese users, you can also browse the [media](https://space.bilibili.com/53
 1. Clone the repository
 
     ```bash
-    git clone https://github.com/xiangechen/chili3d.git
-    cd chili3d
+    git clone https://github.com/BR1ZB3AR/Br1zzCAD.git
+    cd Br1zzCAD
     ```
 
 2. Install dependencies
@@ -200,27 +191,25 @@ docker compose up -d   # Builds and serves the app at http://localhost:8080
 
 ## Contributing
 
-We welcome contributions! Please feel free to submit pull requests or open issues.
+We welcome contributions to this fork! Please feel free to submit pull requests or open issues against [BR1ZB3AR/Br1zzCAD](https://github.com/BR1ZB3AR/Br1zzCAD).
 
 Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
-## Contact
+## Upstream
 
-- **Discussions**: Join our [GitHub discussions](https://github.com/xiangechen/chili3d/discussions) for general chat or questions
-- **Issues**: Use [GitHub issues](https://github.com/xiangechen/chili3d/issues) to report suggestions or bugs
-- **Email**: Contact us privately at xiangetg@msn.cn
+This project began as a fork of [xiangechen/chili3d](https://github.com/xiangechen/chili3d). For the original project — its official deployment, changelog, discussions, and commercial licensing inquiries — see:
+
+- Upstream repository: [github.com/xiangechen/chili3d](https://github.com/xiangechen/chili3d)
+- Official site: [chili3d.com](https://chili3d.com)
+- Upstream changelog: [releases](https://github.com/xiangechen/chili3d/releases)
 
 ## License
 
-Distributed under the GNU Affero General Public License v3.0 (AGPL-3.0). For commercial licensing options, contact xiangetg@msn.cn.
+Distributed under the GNU Affero General Public License v3.0 (AGPL-3.0), the same license as upstream Chili3D.
 
 Full license details: [LICENSE](LICENSE)
 
 The C++ WASM module (`cpp/`) is licensed under LGPL-3.0.
-
-## Analytics Notice
-
-Chili3D uses [Microsoft Clarity](https://clarity.microsoft.com) for growth analytics. To disable data collection, remove the Clarity script from `public/index.html`.
 
 ## Disclaimer
 

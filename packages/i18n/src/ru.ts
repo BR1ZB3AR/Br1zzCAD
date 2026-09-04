@@ -201,7 +201,7 @@ export default {
         "home.videos.recent": "Обновления",
         "home.videos.cases": "Примеры",
         "home.videos.more": "Больше",
-        "home.welcome": "Добро пожаловать в chili3d",
+        "home.welcome": "Добро пожаловать в Br1zzCAD",
         "home.welcome.subtitle": "Проектируйте и моделируйте в 3D прямо в браузере.",
         "items.header": "Компоненты",
         "items.tool.delete": "Удалить",
