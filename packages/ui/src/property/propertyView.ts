@@ -33,21 +33,37 @@ export class PropertyView extends HTMLElement {
         );
         PubSub.default.sub("showProperties", this.handleShowProperties);
         PubSub.default.sub("activeViewChanged", this.handleActiveViewChanged);
+        this.showEmptyState();
     }
 
     private readonly handleActiveViewChanged = (view: IView | undefined) => {
         if (view) {
             const nodes = view.document.selection.getSelectedNodes();
             this.handleShowProperties(view.document, nodes);
+        } else {
+            this.removeProperties();
+            this.showEmptyState();
         }
     };
 
     private readonly handleShowProperties = (document: IDocument, nodes: INode[]) => {
         this.removeProperties();
-        if (nodes.length === 0) return;
+        if (nodes.length === 0) {
+            this.showEmptyState();
+            return;
+        }
         this.addModel(document, nodes);
         this.addGeometry(nodes, document);
     };
+
+    private showEmptyState() {
+        this.panel.append(
+            div({
+                className: style.empty,
+                textContent: new Localize("properties.empty"),
+            }),
+        );
+    }
 
     private removeProperties() {
         while (this.panel.lastElementChild) {
