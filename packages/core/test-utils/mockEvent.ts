@@ -7,6 +7,7 @@ import type { MouseAndDetected } from "../src/snap/snap";
 export function createPointerEvent(overrides?: Partial<PointerEvent>): PointerEvent {
     return {
         button: 0,
+        buttons: 0,
         isPrimary: true,
         offsetX: 100,
         offsetY: 200,

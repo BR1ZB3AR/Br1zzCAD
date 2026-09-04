@@ -195,6 +195,13 @@ export class ThreeViewHandler implements IEventHandler {
     }
 
     pointerOut(view: IView, event: PointerEvent): void {
+        // Mid-drag pointerout (child overlays / leaving canvas) must not abort
+        // orbit/pan — pointerup and pointercancel own gesture teardown.
+        // Treat missing buttons as released. Only skip while a real chord is held
+        // (do not key off _offsetPoint alone — that blocked touch pointerOut cleanup).
+        if ((event.buttons ?? 0) !== 0) {
+            return;
+        }
         this._lastDown = undefined;
         this.lastPointerEventMap.delete(event.pointerId);
         this.currentPointerEventMap.delete(event.pointerId);

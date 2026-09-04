@@ -287,6 +287,7 @@ export class Viewport extends HTMLElement {
             ["pointermove", this.pointerMove],
             ["pointerout", this.pointerOut],
             ["pointerup", this.pointerUp],
+            ["pointercancel", this.pointerCancel],
             ["wheel", this.mouseWheel],
         ];
         events.forEach((v) => {
@@ -338,16 +339,47 @@ export class Viewport extends HTMLElement {
             this.view.document.application.activeView = this.view;
         }
 
+        // Keep receiving move/up outside the element (and over overlays) so orbit /
+        // selection do not abort mid-drag. viewGizmo already does this.
+        try {
+            this.setPointerCapture(event.pointerId);
+        } catch {
+            // Happy-DOM / detached nodes may not support capture — ignore.
+        }
+
         this.handleEvent("pointerDown", event);
     };
 
     private readonly pointerUp = (event: PointerEvent) => {
+        this.releaseCapturedPointer(event);
         this.handleEvent("pointerUp", event);
     };
 
-    private readonly pointerOut = (event: PointerEvent) => {
+    private readonly pointerCancel = (event: PointerEvent) => {
+        this.releaseCapturedPointer(event);
+        // Treat cancel like leaving the viewport with buttons released.
         this.handleEvent("pointerOut", event);
     };
+
+    private readonly pointerOut = (event: PointerEvent) => {
+        // While a button is held, pointerout fires when crossing child overlays
+        // (flyout, view controls) even with capture — do not abort the gesture.
+        if ((event.buttons ?? 0) !== 0) {
+            return;
+        }
+        this.handleEvent("pointerOut", event);
+    };
+
+    private releaseCapturedPointer(event: PointerEvent) {
+        if (!this.hasPointerCapture(event.pointerId)) {
+            return;
+        }
+        try {
+            this.releasePointerCapture(event.pointerId);
+        } catch {
+            // ignore
+        }
+    }
 
     private readonly mouseWheel = (event: WheelEvent) => {
         this.handleEvent("mouseWheel", event);

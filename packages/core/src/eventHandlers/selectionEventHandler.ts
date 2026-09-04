@@ -113,6 +113,14 @@ export abstract class SelectionHandler implements IEventHandler {
     }
 
     pointerOut(view: IView, event: PointerEvent): void {
+        // Crossing child overlays (or leaving the canvas mid-drag) must not
+        // cancel an in-progress pick / rect-select — pointerup owns that.
+        // Key off buttons (not mouse.isDown alone) so a post-release hover leave
+        // still clears highlights.
+        // Treat missing buttons (synthetic/test events) as released.
+        if ((event.buttons ?? 0) !== 0) {
+            return;
+        }
         if (event.isPrimary) {
             this.mouse.isDown = false;
             this.removeRect(view);
