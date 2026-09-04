@@ -2,9 +2,13 @@
 // See LICENSE file in the project root for full license information.
 
 export const I18N_KEYS = [
+    "ai.capabilities",
     "ai.loadingModel",
+    "ai.noActions",
+    "ai.noWebGPU",
     "ai.placeholder",
     "ai.ready",
+    "ai.retryHint",
     "ai.send",
     "ai.thinking",
     "arc.angle",

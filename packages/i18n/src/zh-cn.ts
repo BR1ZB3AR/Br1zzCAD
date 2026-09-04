@@ -7,9 +7,14 @@ export default {
     display: "简体中文",
     language: "zh-CN",
     translation: {
+        "ai.capabilities":
+            "可创建长方体、圆柱、球和圆锥（单位 mm）。模型在本地 WebGPU 运行，不会上传到服务器。",
         "ai.loadingModel": "正在加载 AI 模型（首次约 2GB，之后会缓存）…",
+        "ai.noActions": "没有创建任何形状。请尝试更简单的请求，例如“添加一个 40x20x10 的长方体”。",
+        "ai.noWebGPU": "当前浏览器无法运行本地 AI 助手。",
         "ai.placeholder": "描述你想创建的内容，例如“添加一个 40x20x10 的长方体”",
-        "ai.ready": "已就绪。",
+        "ai.ready": "已就绪 — 描述要添加的实体。提示：请给出毫米尺寸，并说明零件如何摆放。",
+        "ai.retryHint": "你可以修改提示后重试。",
         "ai.send": "发送",
         "ai.thinking": "思考中…",
         "arc.angle": "角度",

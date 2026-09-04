@@ -15,7 +15,10 @@
         "forceConsistentCasingInFileNames": true,
 
         "plugins": [{ "name": "typescript-plugin-css-modules" }],
-        "types": ["@rstest/core/globals"]
+        "types": ["@rstest/core/globals"],
+        "paths": {
+            "@mlc-ai/web-llm": ["./packages/web-llm"]
+        }
     },
     "include": ["packages", "plugins/*/src"],
     "exclude": ["packages/chili-wasm/lib"]
