@@ -274,7 +274,7 @@ export default {
         "regularPolygon.sides": "边数",
         "pipe.bendRadius": "弯管半径",
         "pipe.bendType": "弯管类型",
-        "prompt.default{0}{1}": "{0} 平移视图，{1} 旋转视图，滚轮缩放视图",
+        "prompt.default{0}{1}{2}": "[{0}] {1} 平移，{2} 旋转 — 滚轮缩放",
         "prompt.deleteDocument{0}": "是否删除 {0} ？",
         "prompt.pickArcBulge": "请选择凸点，按 ESC 键取消",
         "prompt.pickArcEnd": "请选择终点，按 ESC 键取消",

@@ -274,8 +274,7 @@ export default {
         "regularPolygon.sides": "Number of Sides",
         "pipe.bendRadius": "Bend Radius",
         "pipe.bendType": "Bend Type",
-        "prompt.default{0}{1}":
-            "{0} to pan the view, {1} to rotate the view, Mouse wheel to scroll the zoom view",
+        "prompt.default{0}{1}{2}": "[{0}] {1} to pan, {2} to rotate — mouse wheel zooms",
         "prompt.deleteDocument{0}": "Do you want to delete {0}?",
         "prompt.pickArcBulge": "pick bulge point, ESC key to cancel",
         "prompt.pickArcEnd": "pick end point, ESC key to cancel",

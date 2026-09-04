@@ -30,6 +30,7 @@ const configChanged = rs.hoisted(() => {
     const handlers = new Set<(prop: string) => void>();
     return {
         instance: {
+            navigation3D: "Chili3d",
             onPropertyChanged: (h: (prop: string) => void) => handlers.add(h),
         },
         emit: (prop: string) => handlers.forEach((h) => h(prop)),
@@ -57,7 +58,7 @@ import type { I18nKeys } from "@chili3d/core";
 import { Statusbar } from "../src/statusbar/statusbar";
 import { mustQuery } from "./_helpers/domHelpers";
 
-const DEFAULT_TIP_ARGS = ["textContent", "prompt.default{0}{1}", "Middle", "Shift+Middle"];
+const DEFAULT_TIP_ARGS = ["textContent", "prompt.default{0}{1}{2}", "Chili3d", "Middle", "Shift+Middle"];
 
 describe("Statusbar", () => {
     beforeEach(() => {

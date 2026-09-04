@@ -396,6 +396,52 @@ describe("ThreeViewHandler — Alt-gated Left-button schemes", () => {
             expect(panArgs).toEqual([[10, 10]]);
         });
     });
+
+    test("TinkerCAD right-button drag rotates (FreeCAD TinkerCAD)", () => {
+        withNavigation("TinkerCAD", () => {
+            const handler = new ThreeViewHandler();
+            const rotateArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.rotate = (dx, dy) => {
+                rotateArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 100, offsetY: 200 }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 2, offsetX: 110, offsetY: 210 }),
+            );
+
+            expect(rotateArgs).toEqual([[10, 10]]);
+        });
+    });
+
+    test("TinkerCAD middle-button drag pans (FreeCAD TinkerCAD)", () => {
+        withNavigation("TinkerCAD", () => {
+            const handler = new ThreeViewHandler();
+            const panArgs: number[][] = [];
+            const cc = createMockCameraController();
+            cc.pan = (dx, dy) => {
+                panArgs.push([dx, dy]);
+            };
+            const view = createHandlerMockView({ cameraController: cc });
+
+            handler.pointerDown(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 100, offsetY: 200 }),
+            );
+            handler.pointerMove(
+                view,
+                createPointerEvent({ pointerType: "mouse", buttons: 4, offsetX: 110, offsetY: 210 }),
+            );
+
+            expect(panArgs).toEqual([[10, 10]]);
+        });
+    });
 });
 
 // ============================================================================
