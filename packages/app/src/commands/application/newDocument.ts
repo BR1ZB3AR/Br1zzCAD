@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { command, type IApplication, type ICommand } from "@chili3d/core";
+import { command, I18n, type IApplication, type ICommand } from "@chili3d/core";
 
 let count = 1;
 
@@ -12,6 +12,7 @@ let count = 1;
 })
 export class NewDocument implements ICommand {
     async execute(app: IApplication): Promise<void> {
-        await app.newDocument(`undefined ${count++}`);
+        const name = I18n.translate("document.untitled{0}", count++) ?? `Document ${count - 1}`
+        await app.newDocument(name);
     }
 }

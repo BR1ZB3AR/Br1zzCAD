@@ -29,6 +29,6 @@ describe("NewDocument", () => {
         const cmd = new NewDocument();
         await cmd.execute(app);
 
-        expect(newDocName).toContain("undefined");
+        expect(newDocName).toMatch(/Document|文档|Документ/);
     });
 });

@@ -34,3 +34,15 @@
     grid-gap: 10px;
     align-items: center;
 }
+
+.empty {
+    margin: 8px 4px;
+    padding: 12px;
+    color: var(--statusbar-foreground-color, #9ca3af);
+    font-size: 12px;
+    line-height: 1.45;
+    opacity: 0.9;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+}
