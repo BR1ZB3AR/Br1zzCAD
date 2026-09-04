@@ -10,8 +10,8 @@ import {
     type SnapResult,
     Transaction,
 } from "@chili3d/core";
+import { ensureSketchPlane, SKETCH_TOOL_KEYS } from "./sketch";
 
-const count = 1;
 
 /**
  * Nodes whose whole shape was selected — the selected shape's type matches the
@@ -36,6 +36,14 @@ export function selectedWholeShapeNodes(stepDatas: SnapResult[]): INode[] {
 }
 
 export abstract class CreateCommand extends MultistepCommand {
+    protected override async canExcute(): Promise<boolean> {
+        const key = Object.getPrototypeOf(this).data?.key;
+        if (key && SKETCH_TOOL_KEYS.has(key)) {
+            return ensureSketchPlane(this.application);
+        }
+        return true;
+    }
+
     protected override executeMainTask() {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
             const node = this.geometryNode();

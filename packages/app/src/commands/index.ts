@@ -13,5 +13,6 @@ export * from "./importExport";
 export * from "./measure";
 export * from "./modify";
 export * from "./redo";
+export * from "./sketch";
 export * from "./undo";
 export * from "./workingPlane";

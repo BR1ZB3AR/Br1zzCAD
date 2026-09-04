@@ -10,6 +10,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
             {
                 groupName: "ribbon.group.draw",
                 items: [
+                    "create.sketch",
                     "create.line",
                     {
                         type: "split",
