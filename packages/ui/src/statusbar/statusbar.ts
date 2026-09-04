@@ -46,8 +46,9 @@ export class Statusbar extends HTMLElement {
 
     private readonly setDefaultTip = () => {
         this._isDefaultTip = true;
-        const { pan, rotate } = Navigation3D.navigationKeyMap();
-        I18n.set(this.tip, "textContent", "prompt.default{0}{1}", pan, rotate);
+        const scheme = Config.instance.navigation3D;
+        const { pan, rotate } = Navigation3D.navigationKeyMap(scheme);
+        I18n.set(this.tip, "textContent", "prompt.default{0}{1}{2}", scheme, pan, rotate);
     };
 }
 

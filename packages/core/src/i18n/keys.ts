@@ -269,7 +269,7 @@ export const I18N_KEYS = [
     "regularPolygon.sides",
     "pipe.bendRadius",
     "pipe.bendType",
-    "prompt.default{0}{1}",
+    "prompt.default{0}{1}{2}",
     "prompt.deleteDocument{0}",
     "prompt.pickArcBulge",
     "prompt.pickArcEnd",

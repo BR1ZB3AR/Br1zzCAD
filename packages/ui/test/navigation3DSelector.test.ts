@@ -60,4 +60,14 @@ describe("Navigation3DSelector", () => {
         const selector = Navigation3DSelector({ className: "home-nav3d" });
         expect(selector.className).toBe("home-nav3d");
     });
+
+    test("should expose pan/rotate chords on each option title", () => {
+        const selector = Navigation3DSelector({});
+        const options = selector.querySelectorAll("option");
+        expect(options[0].title).toContain("Pan:");
+        expect(options[0].title).toContain("Rotate:");
+        const tinkercad = [...options].find((o) => o.textContent === "TinkerCAD");
+        expect(tinkercad).toBeDefined();
+        expect(tinkercad!.title).toBe("Pan: Middle · Rotate: Right");
+    });
 });
