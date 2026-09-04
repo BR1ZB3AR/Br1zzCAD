@@ -41,7 +41,7 @@ export class FaceNode extends ParameterShapeNode {
         this.setPrivateValue("shapes", options.shapes);
     }
 
-    private getWires(): IWire[] {
+    private getWires(): Result<IWire[]> {
         const wires: IWire[] = [];
         const edges: IEdge[] = [];
         for (const shape of this.shapes) {
@@ -61,11 +61,13 @@ export class FaceNode extends ParameterShapeNode {
         // edges into a single wire.
         for (const group of FaceNode.groupConnectedEdges(edges)) {
             const wire = shapeFactory.wire(group);
-            if (!wire.isOk) throw new Error("Cannot create wire from open shapes");
+            if (!wire.isOk) {
+                return Result.err(`Cannot create wire from open shapes: ${wire.error}`);
+            }
             wires.push(wire.value);
         }
 
-        return wires;
+        return Result.ok(wires);
     }
 
     private static groupConnectedEdges(edges: IEdge[]): IEdge[][] {
@@ -102,7 +104,10 @@ export class FaceNode extends ParameterShapeNode {
     override generateShape(): Result<IShape> {
         if (this.shapes.length === 0) return Result.err("No shapes to create face");
 
-        const wires = this.getWires();
+        const wiresResult = this.getWires();
+        if (!wiresResult.isOk) return wiresResult;
+        const wires = wiresResult.value;
+        if (wires.length === 0) return Result.err("No closed wires to create face");
         FaceNode.orientOuterWire(wires[0]);
         return shapeFactory.face(wires);
     }
