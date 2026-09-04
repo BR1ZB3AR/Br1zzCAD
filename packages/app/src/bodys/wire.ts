@@ -7,7 +7,7 @@ import {
     type IEdge,
     type IShape,
     ParameterShapeNode,
-    type Result,
+    Result,
     serializable,
     serialize,
 } from "@chili3d/core";
@@ -37,6 +37,9 @@ export class WireNode extends ParameterShapeNode {
     }
 
     override generateShape(): Result<IShape> {
+        if (!this.edges || this.edges.length === 0) {
+            return Result.err("Wire has no edges.");
+        }
         return shapeFactory.wire(this.edges);
     }
 }

@@ -151,6 +151,15 @@ describe("SweepedNode", () => {
     });
 
     describe("generateShape", () => {
+        test("should return error when profile is empty", () => {
+            const w: any = createMockWire();
+            const node = new SweepedNode({ document: doc, profile: [w], path: w, round: false });
+            (node as any).setPrivateValue("profile", []);
+            const result = node.generateShape();
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Sweep profile is empty.");
+        });
+
         test("should call shapeFactory.sweep with correct parameters", () => {
             const wire = createMockWire();
             const sweep = rs.fn(() => Result.ok(createMockShape()));

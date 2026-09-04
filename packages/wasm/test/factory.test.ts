@@ -58,6 +58,12 @@ describe("ShapeFactory — basic primitives", () => {
             expect(faces.index.length).toBeGreaterThan(0);
             expect(faces.index.length % 3).toBe(0);
         });
+
+        test("should return a clear error when a dimension is too small", () => {
+            const result = factory.box(plane, 0, 20, 30);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toContain("Box dx is too small");
+        });
     });
 
     describe("sphere", () => {
@@ -66,6 +72,12 @@ describe("ShapeFactory — basic primitives", () => {
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.solid);
         });
+
+        test("should return a clear error when radius is too small", () => {
+            const result = factory.sphere(XYZ.zero, 0);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("The radius is too small.");
+        });
     });
 
     describe("cylinder", () => {
@@ -73,6 +85,11 @@ describe("ShapeFactory — basic primitives", () => {
             const result = factory.cylinder(XYZ.unitZ, XYZ.zero, 5, 20);
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.solid);
+        });
+
+        test("should return a clear error when radius or height is invalid", () => {
+            expect(factory.cylinder(XYZ.unitZ, XYZ.zero, 0, 20).error).toBe("The radius is too small.");
+            expect(factory.cylinder(XYZ.unitZ, XYZ.zero, 5, 0).error).toContain("Cylinder height is too small");
         });
     });
 
@@ -117,6 +134,12 @@ describe("ShapeFactory — curves & wires", () => {
             const result = factory.arc(XYZ.unitZ, XYZ.zero, XYZ.unitX, 90);
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.edge);
+        });
+
+        test("should return a clear error when angle is too small", () => {
+            const result = factory.arc(XYZ.unitZ, XYZ.zero, XYZ.unitX, 0);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Arc angle is too small.");
         });
 
         test("should create a full-circle arc (360°)", () => {
@@ -176,6 +199,12 @@ describe("ShapeFactory — curves & wires", () => {
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.wire);
         });
+
+        test("should return a clear error when fewer than 3 points are given", () => {
+            const result = factory.polygon([XYZ.zero, XYZ.unitX]);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toContain("Polygon needs at least 3 points");
+        });
     });
 
     describe("point", () => {
@@ -193,6 +222,12 @@ describe("ShapeFactory — curves & wires", () => {
             const result = factory.wire([e1, e2]);
             expect(result.isOk).toBe(true);
             expect(result.value.shapeType).toBe(ShapeTypes.wire);
+        });
+
+        test("should return a clear error when edges are empty", () => {
+            const result = factory.wire([]);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Wire has no edges.");
         });
 
         test("should return error for disconnected edges", () => {
@@ -508,13 +543,37 @@ describe("ShapeFactory — operations", () => {
         });
     });
 
-    describe("sweep", () => {
+    
+    describe("helix", () => {
+        test("should return clear errors for invalid radius, pitch, or angle", () => {
+            expect(factory.helix(XYZ.zero, XYZ.unitZ, XYZ.unitX, 0, 5, 360).error).toBe(
+                "The radius is too small.",
+            );
+            expect(factory.helix(XYZ.zero, XYZ.unitZ, XYZ.unitX, 5, 0, 360).error).toContain(
+                "Helix pitch is too small",
+            );
+            expect(factory.helix(XYZ.zero, XYZ.unitZ, XYZ.unitX, 5, 5, 0).error).toBe(
+                "Helix angle is too small.",
+            );
+        });
+    });
+
+describe("sweep", () => {
         test("should return error for non-OccShape profile", () => {
             const fakeShape = new MockShape({ shapeType: ShapeTypes.edge }) as unknown as IShape;
             const pathEdge = factory.line(XYZ.zero, new XYZ({ x: 0, y: 0, z: 10 })).value;
             const pathWire = factory.wire([pathEdge]).value;
             // ensureOccShape throws — verify we get an error
             expect(() => factory.sweep([fakeShape], pathWire, false)).toThrow();
+        });
+
+        test("should return a clear error when profile is empty", () => {
+            const path = factory.wire([
+                factory.line(XYZ.zero, XYZ.unitX).value,
+            ]).value;
+            const result = factory.sweep([], path, false);
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Sweep profile is empty.");
         });
 
         test.each([

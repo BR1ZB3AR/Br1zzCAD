@@ -47,6 +47,28 @@ function ensureOccShape(shapes: IShape | IShape[]): TopoDS_Shape[] {
     throw new Error("The OCC kernel only supports OCC geometries.");
 }
 
+function formatKernelError(operation: string, detail: unknown): string {
+    if (detail === undefined || detail === null || detail === "") {
+        return operation;
+    }
+    return `${operation}: ${detail}`;
+}
+
+/** Reject near-zero extents (signed dx/dy/dz are allowed; magnitude must be usable). */
+function requireNonZeroExtent(value: number, name: string): Result<never, string> | undefined {
+    if (!(Math.abs(value) >= Precision.Distance)) {
+        return Result.err(`${name} is too small (got ${value}).`);
+    }
+    return undefined;
+}
+
+function requirePositiveRadius(value: number, name = "The radius"): Result<never, string> | undefined {
+    if (!(value >= Precision.Distance)) {
+        return Result.err(`${name} is too small.`);
+    }
+    return undefined;
+}
+
 function convertShapeResult<P extends unknown[] = unknown[]>(
     factory: (...params: P) => ShapeResult,
     params: P,
@@ -56,18 +78,23 @@ function convertShapeResult<P extends unknown[] = unknown[]>(
     try {
         result = factory(...params);
     } catch (err) {
-        return Result.err(`${errorString}: ${err}`);
+        return Result.err(formatKernelError(errorString, err));
     }
 
     let res: Result<IShape, string>;
-    if (!result.isOk) {
-        res = Result.err(result.error);
-    } else {
-        res = Result.ok(OccShape.wrap(result.shape));
+    try {
+        if (!result.isOk) {
+            // Preserve kernel messages for UI / tests; fall back to operation label if empty.
+            res = Result.err(result.error ? String(result.error) : errorString);
+        } else if (!result.shape || result.shape.isNull()) {
+            res = Result.err(formatKernelError(errorString, "kernel returned a null shape"));
+        } else {
+            res = Result.ok(OccShape.wrap(result.shape));
+        }
+    } finally {
+        result.delete();
     }
-
-    result.delete();
-    return res;
+    return res!;
 }
 
 function convertShapesResult<P extends unknown[] = unknown[]>(
@@ -78,27 +105,33 @@ function convertShapesResult<P extends unknown[] = unknown[]>(
     let result: ShapesResult;
     try {
         result = factory(...params);
-    } catch {
-        return Result.err(errorString);
+    } catch (err) {
+        return Result.err(formatKernelError(errorString, err));
     }
 
     let res: Result<IShape[], string>;
-    if (!result.isOk) {
-        res = Result.err(result.error);
-    } else {
-        const shapes: IShape[] = [];
-        const arr = result.shapes;
-        for (let i = 0; i < arr.length; i++) {
-            const ts = arr[i];
-            if (ts && !ts.isNull()) {
-                shapes.push(OccShape.wrap(ts));
+    try {
+        if (!result.isOk) {
+            res = Result.err(result.error ? String(result.error) : errorString);
+        } else {
+            const shapes: IShape[] = [];
+            const arr = result.shapes;
+            for (let i = 0; i < arr.length; i++) {
+                const ts = arr[i];
+                if (ts && !ts.isNull()) {
+                    shapes.push(OccShape.wrap(ts));
+                }
+            }
+            if (shapes.length === 0) {
+                res = Result.err(formatKernelError(errorString, "kernel returned no shapes"));
+            } else {
+                res = Result.ok(shapes);
             }
         }
-        res = Result.ok(shapes);
+    } finally {
+        result.delete();
     }
-
-    result.delete();
-    return res;
+    return res!;
 }
 
 export class ShapeFactory implements IShapeFactory {
@@ -123,7 +156,7 @@ export class ShapeFactory implements IShapeFactory {
         if (shape instanceof OccShape) {
             return convertShapeResult(wasm.ShapeFactory.fillet, [shape.shape, edges, radius], "Fillet Error");
         }
-        return Result.err("Not OccShape");
+        return Result.err("Expected an OCC shape.");
     }
 
     chamfer(shape: IShape, edges: number[], distance: number): Result<IShape> {
@@ -142,7 +175,7 @@ export class ShapeFactory implements IShapeFactory {
                 "Chamfer Error",
             );
         }
-        return Result.err("Not OccShape");
+        return Result.err("Expected an OCC shape.");
     }
 
     fillet2d(face: IFace, edge1: IEdge, edge2: IEdge, radius: number): Result<IFace> {
@@ -199,51 +232,59 @@ export class ShapeFactory implements IShapeFactory {
 
     removeFeature(shape: IShape, faces: IFace[]): Result<IShape> {
         if (!(shape instanceof OccShape)) {
-            return Result.err("Not OccShape");
+            return Result.err("Expected an OCC shape.");
         }
         const occFaces = ensureOccShape(faces);
         const result = wasm.ShapeFactory.removeFeature(shape.shape, occFaces);
-        if (!result.isOk) {
-            return Result.err(result.error);
+        try {
+            if (!result.isOk) {
+                return Result.err(result.error ? String(result.error) : "RemoveFeature Error");
+            }
+            if (!result.shape || result.shape.isNull() || shape.shape.isEqual(result.shape)) {
+                return Result.err("Can not remove feature");
+            }
+            return Result.ok(OccShape.wrap(result.shape));
+        } finally {
+            result.delete();
         }
-        if (result.shape.isNull() || shape.shape.isEqual(result.shape)) {
-            return Result.err("Can not remove feature");
-        }
-        return Result.ok(OccShape.wrap(result.shape));
     }
 
     removeFillet(shape: IShape, faces: IFace[]) {
         if (!(shape instanceof OccShape)) {
-            return Result.err("Not OccShape");
+            return Result.err("Expected an OCC shape.");
         }
         const occFaces = ensureOccShape(faces);
         const result = wasm.ShapeFactory.removeFillet(shape.shape, occFaces);
-        if (!result.isOk) {
-            return Result.err(result.error);
-        }
-        if (result.shape.isNull() || shape.shape.isEqual(result.shape)) {
-            return Result.err("Can not remove fillet");
-        }
+        try {
+            if (!result.isOk) {
+                return Result.err(result.error ? String(result.error) : "RemoveFillet Error");
+            }
+            if (!result.shape || result.shape.isNull() || shape.shape.isEqual(result.shape)) {
+                return Result.err("Can not remove fillet");
+            }
 
-        const newEdges: OccEdge[] = [];
-        const visited = new Set();
-        const edges = result.newEdges;
-        for (let i = 0; i < edges.length; i++) {
-            const ts = edges[i];
-            if (
-                !ts ||
-                ts.shapeType() !== wasm.TopAbs_ShapeEnum.TopAbs_EDGE ||
-                visited.has(wasm.Shape.ptr(ts))
-            )
-                continue;
+            const newEdges: OccEdge[] = [];
+            const visited = new Set();
+            const edges = result.newEdges;
+            for (let i = 0; i < edges.length; i++) {
+                const ts = edges[i];
+                if (
+                    !ts ||
+                    ts.shapeType() !== wasm.TopAbs_ShapeEnum.TopAbs_EDGE ||
+                    visited.has(wasm.Shape.ptr(ts))
+                )
+                    continue;
 
-            newEdges.push(OccShape.wrap(ts) as OccEdge);
+                newEdges.push(OccShape.wrap(ts) as OccEdge);
+            }
+
+            return Result.ok({
+                shape: OccShape.wrap(result.shape),
+                newEdges,
+            });
+        } finally {
+            result.delete();
         }
-
-        return Result.ok({
-            shape: OccShape.wrap(result.shape),
-            newEdges,
-        });
     }
 
     removeSubShape(shape: IShape, subShapes: IShape[]): Result<IShape> {
@@ -313,6 +354,13 @@ export class ShapeFactory implements IShapeFactory {
         pitch: number,
         angle: number,
     ): Result<IWire> {
+        const radiusErr = requirePositiveRadius(radius);
+        if (radiusErr) return radiusErr;
+        const pitchErr = requireNonZeroExtent(pitch, "Helix pitch");
+        if (pitchErr) return pitchErr;
+        if (!(Math.abs(angle) >= Precision.Angle)) {
+            return Result.err("Helix angle is too small.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.helix,
             [origin, normal, xDir, radius, pitch, MathUtils.degToRad(angle)],
@@ -330,6 +378,9 @@ export class ShapeFactory implements IShapeFactory {
         return convertShapeResult(wasm.ShapeFactory.line, [start, end], "Line Error") as Result<IEdge>;
     }
     arc(normal: XYZLike, center: XYZLike, start: XYZLike, angle: number): Result<IEdge> {
+        if (!(Math.abs(angle) >= Precision.Angle)) {
+            return Result.err("Arc angle is too small.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.arc,
             [normal, center, start, MathUtils.degToRad(angle)],
@@ -337,6 +388,8 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<IEdge>;
     }
     circle(normal: XYZLike, center: XYZLike, radius: number): Result<IEdge> {
+        const radiusErr = requirePositiveRadius(radius);
+        if (radiusErr) return radiusErr;
         return convertShapeResult(
             wasm.ShapeFactory.circle,
             [normal, center, radius],
@@ -344,6 +397,10 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<IEdge>;
     }
     rect(plane: Plane, dx: number, dy: number): Result<IFace> {
+        const dxErr = requireNonZeroExtent(dx, "Rect dx");
+        if (dxErr) return dxErr;
+        const dyErr = requireNonZeroExtent(dy, "Rect dy");
+        if (dyErr) return dyErr;
         return convertShapeResult(
             wasm.ShapeFactory.rect,
             [
@@ -359,9 +416,18 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<IFace>;
     }
     polygon(points: XYZLike[]): Result<IWire> {
+        if (points.length < 3) {
+            return Result.err(`Polygon needs at least 3 points (got ${points.length}).`);
+        }
         return convertShapeResult(wasm.ShapeFactory.polygon, [points], "Polygon Error") as Result<IWire>;
     }
     box(plane: Plane, dx: number, dy: number, dz: number): Result<ISolid> {
+        const dxErr = requireNonZeroExtent(dx, "Box dx");
+        if (dxErr) return dxErr;
+        const dyErr = requireNonZeroExtent(dy, "Box dy");
+        if (dyErr) return dyErr;
+        const dzErr = requireNonZeroExtent(dz, "Box dz");
+        if (dzErr) return dzErr;
         return convertShapeResult(
             wasm.ShapeFactory.box,
             [
@@ -378,6 +444,10 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     cylinder(dir: XYZ, center: XYZ, radius: number, dz: number): Result<ISolid> {
+        const radiusErr = requirePositiveRadius(radius);
+        if (radiusErr) return radiusErr;
+        const dzErr = requireNonZeroExtent(dz, "Cylinder height");
+        if (dzErr) return dzErr;
         return convertShapeResult(
             wasm.ShapeFactory.cylinder,
             [dir, center, radius, dz],
@@ -385,6 +455,11 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     cone(dir: XYZ, center: XYZ, radius: number, radiusUp: number, dz: number): Result<ISolid> {
+        const dzErr = requireNonZeroExtent(dz, "Cone height");
+        if (dzErr) return dzErr;
+        if (Math.abs(radius) < Precision.Distance && Math.abs(radiusUp) < Precision.Distance) {
+            return Result.err("Cone radii are too small.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.cone,
             [dir, center, radius, radiusUp, dz],
@@ -392,6 +467,8 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     sphere(center: XYZ, radius: number): Result<ISolid> {
+        const radiusErr = requirePositiveRadius(radius);
+        if (radiusErr) return radiusErr;
         return convertShapeResult(
             wasm.ShapeFactory.sphere,
             [center, radius],
@@ -405,6 +482,10 @@ export class ShapeFactory implements IShapeFactory {
         majorRadius: number,
         minorRadius: number,
     ): Result<IEdge> {
+        const majorErr = requirePositiveRadius(majorRadius, "The major radius");
+        if (majorErr) return majorErr;
+        const minorErr = requirePositiveRadius(minorRadius, "The minor radius");
+        if (minorErr) return minorErr;
         return convertShapeResult(
             wasm.ShapeFactory.ellipse,
             [normal, center, xvec, majorRadius, minorRadius],
@@ -412,6 +493,12 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<IEdge>;
     }
     pyramid(plane: Plane, dx: number, dy: number, dz: number): Result<ISolid> {
+        const dxErr = requireNonZeroExtent(dx, "Pyramid dx");
+        if (dxErr) return dxErr;
+        const dyErr = requireNonZeroExtent(dy, "Pyramid dy");
+        if (dyErr) return dyErr;
+        const dzErr = requireNonZeroExtent(dz, "Pyramid height");
+        if (dzErr) return dzErr;
         return convertShapeResult(
             wasm.ShapeFactory.pyramid,
             [
@@ -428,6 +515,9 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     wire(edges: IEdge[]): Result<IWire> {
+        if (edges.length === 0) {
+            return Result.err("Wire has no edges.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.wire,
             [ensureOccShape(edges)],
@@ -449,14 +539,14 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ISolid>;
     }
     prism(shape: IShape, vec: XYZ): Result<IShape> {
-        if (vec.length() === 0) {
-            return Result.err(`The vector length is 0, the prism cannot be created.`);
+        if (!(vec.length() >= Precision.Distance)) {
+            return Result.err("Prism vector length is too small.");
         }
         return convertShapeResult(wasm.ShapeFactory.prism, [ensureOccShape(shape)[0], vec], "Prism Error");
     }
     pushPull(shape: IShape, face: IShape, vec: XYZ): Result<IShape> {
-        if (vec.length() === 0) {
-            return Result.err(`The vector length is 0, the prism cannot be created.`);
+        if (!(vec.length() >= Precision.Distance)) {
+            return Result.err("PushPull vector length is too small.");
         }
         return convertShapeResult(
             wasm.ShapeFactory.pushPull,
@@ -472,6 +562,9 @@ export class ShapeFactory implements IShapeFactory {
         );
     }
     sweep(profile: IShape[], path: IWire, isRound: boolean): Result<IShape> {
+        if (profile.length === 0) {
+            return Result.err("Sweep profile is empty.");
+        }
         return convertShapeResult(
             wasm.ShapeFactory.sweep,
             [ensureOccShape(profile), ensureOccShape(path)[0], true, isRound],
@@ -543,6 +636,8 @@ export class ShapeFactory implements IShapeFactory {
         ) as Result<ICompound>;
     }
     makeThickSolidBySimple(shape: IShape, thickness: number): Result<IShape> {
+        const thicknessErr = requireNonZeroExtent(thickness, "Thickness");
+        if (thicknessErr) return thicknessErr;
         return convertShapeResult(
             wasm.ShapeFactory.makeThickSolidBySimple,
             [ensureOccShape(shape)[0], thickness],
@@ -576,10 +671,22 @@ export class ShapeFactory implements IShapeFactory {
         isRuled: boolean,
         continuity: Continuity,
     ): Result<IShape> {
+        if (sections.length === 0) {
+            return Result.err("Loft sections are empty.");
+        }
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             if (section.shapeType === ShapeTypes.edge) {
-                sections[i] = this.wire([section as IEdge]).value;
+                const wire = this.wire([section as IEdge]);
+                if (!wire.isOk) {
+                    return Result.err(
+                        formatKernelError(
+                            "Loft Error",
+                            `failed to convert section ${i} edge to wire: ${wire.error}`,
+                        ),
+                    );
+                }
+                sections[i] = wire.value;
             }
         }
         return convertShapeResult(

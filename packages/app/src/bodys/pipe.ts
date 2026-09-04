@@ -70,8 +70,6 @@ export class PipeNode extends ParameterShapeNode {
 
     constructor(options: PipeOptions) {
         super(options);
-        if (!options.path) console.error("PipeNode: path is null");
-        if (options.radius <= 0) console.error("PipeNode: radius must be > 0", options.radius);
         this.setPrivateValue("radius", options.radius);
         this.setPrivateValue("path", this.ensureWire(options.path));
         if (options.bendRadius !== undefined) {
@@ -83,6 +81,10 @@ export class PipeNode extends ParameterShapeNode {
     }
 
     override generateShape(): Result<IShape> {
+        if (!(this.radius >= Precision.Distance)) {
+            return Result.err("Pipe radius must be greater than zero.");
+        }
+
         const path = this.path;
         if (!path) return Result.err("Path is null");
 
@@ -126,7 +128,7 @@ export class PipeNode extends ParameterShapeNode {
             return filleted.value;
         }
 
-        console.error("Path fillet failed", filleted.error);
+        // Keep the original path when bend fillets cannot be built.
         return path;
     }
 
@@ -188,11 +190,14 @@ export class PipeNode extends ParameterShapeNode {
     }
 
     private ensureWire(path: IEdge | IWire) {
-        let wire = path as IWire;
-        if (path.shapeType !== ShapeTypes.wire) {
-            wire = shapeFactory.wire([path as unknown as IEdge]).value;
+        if (path.shapeType === ShapeTypes.wire) {
+            return path as IWire;
         }
-        return wire;
+        const wire = shapeFactory.wire([path as unknown as IEdge]);
+        if (!wire.isOk) {
+            throw new Error(`Cannot convert path edge to wire: ${wire.error}`);
+        }
+        return wire.value;
     }
 }
 

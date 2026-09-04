@@ -145,6 +145,15 @@ describe("PipeNode", () => {
     });
 
     describe("generateShape error paths", () => {
+        test("should return error when radius is too small", () => {
+            const path: any = createMockWireWithEdgeLoop();
+            const node = new PipeNode({ document: doc, radius: 0, path });
+            setupShapeFactoryMock({});
+            const result = node.generateShape();
+            expect(result.isOk).toBe(false);
+            expect(result.error).toContain("Pipe radius");
+        });
+
         test("should return error when path has no edges", () => {
             const wireWithEdges: any = createMockWireWithEdgeLoop();
             const node = new PipeNode({ document: doc, radius: 5, path: wireWithEdges });

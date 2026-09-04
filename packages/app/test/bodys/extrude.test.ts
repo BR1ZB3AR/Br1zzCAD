@@ -83,6 +83,14 @@ describe("ExtrudeNode", () => {
     });
 
     describe("generateShape", () => {
+        test("should return error when length is too small", () => {
+            const section = createMockShape({ shapeType: ShapeTypes.face });
+            const node = new ExtrudeNode({ document: doc, section: section as any, length: 0 });
+            const result = node.generateShape();
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Extrude length is too small.");
+        });
+
         test("should call shapeFactory.prism for non-face wire section", () => {
             const prism = rs.fn((_shape: IShape, _vec: XYZ) => Result.ok(createMockShape() as any));
             setupShapeFactoryMock({ prism });

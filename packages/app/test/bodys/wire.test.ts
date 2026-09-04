@@ -65,6 +65,13 @@ describe("WireNode", () => {
     });
 
     describe("generateShape", () => {
+        test("should return error when edges are empty", () => {
+            const node = new WireNode({ document: doc, edges: [] });
+            const result = node.generateShape();
+            expect(result.isOk).toBe(false);
+            expect(result.error).toBe("Wire has no edges.");
+        });
+
         test("should call shapeFactory.wire with edges", () => {
             const wire = rs.fn(() => Result.ok(createMockWire() as any));
             setupShapeFactoryMock({ wire });
