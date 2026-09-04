@@ -155,7 +155,7 @@ describe("RibbonUI", () => {
         expect(ui.querySelector(".r-title-bar")).not.toBeNull();
 
         const appName = mustQuery(ui, "#appName");
-        expect(appName.textContent).toContain("Chili3D - v");
+        expect(appName.textContent).toContain("Br1zzCAD - v");
     });
 
     test("should render github link", () => {
