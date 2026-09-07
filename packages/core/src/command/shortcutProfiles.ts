@@ -88,6 +88,13 @@ export const OpenSCADShortcuts: ShortcutMap = {
     ...DefaultShortcuts,
 };
 
+export const FreeCADShortcuts: ShortcutMap = {
+    // FreeCAD's own keyboard shortcuts don't map onto Br1zzCAD's command set;
+    // only its distinctive "CAD" navigation-style mouse bindings (see
+    // navigation.ts) are adopted here.
+    ...DefaultShortcuts,
+};
+
 export const ShortcutProfiles: Record<Navigation3DType, ShortcutMap> = {
     Chili3d: Chili3dShortcuts,
     Revit: RevitShortcuts,
@@ -98,4 +105,5 @@ export const ShortcutProfiles: Record<Navigation3DType, ShortcutMap> = {
     Maya: MayaShortcuts,
     Gesture: GestureShortcuts,
     OpenSCAD: OpenSCADShortcuts,
+    FreeCAD: FreeCADShortcuts,
 };

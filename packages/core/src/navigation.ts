@@ -13,11 +13,12 @@ export const Navigation3DTypes = [
     "Maya",
     "Gesture",
     "OpenSCAD",
+    "FreeCAD",
 ] as const;
 
 export type Navigation3DType = (typeof Navigation3DTypes)[number];
 
-export type NavButton = "Left" | "Middle" | "Right";
+export type NavButton = "Left" | "Middle" | "Right" | "Middle+Left" | "Middle+Right";
 
 export interface NavTrigger {
     button: NavButton;
@@ -34,7 +35,12 @@ export interface NavTrigger {
 export function navigationTriggers(scheme: Navigation3DType): NavTrigger[] {
     switch (scheme) {
         case "TinkerCAD":
-            return [{ button: "Right", requireAlt: false }];
+            // FreeCAD's own bundled "TinkerCAD" navigation style: bare Middle
+            // pans, bare Right rotates, Left is left free for selection.
+            return [
+                { button: "Middle", requireAlt: false },
+                { button: "Right", requireAlt: false },
+            ];
         case "Maya":
             // Real Maya is Alt+Left=tumble, Alt+Middle=track, Alt+Right=dolly;
             // dolly is left to the scroll wheel, which already zooms in every scheme.
@@ -49,6 +55,19 @@ export function navigationTriggers(scheme: Navigation3DType): NavTrigger[] {
             // selection/sketching tools.
             return [
                 { button: "Left", requireAlt: true },
+                { button: "Right", requireAlt: false },
+            ];
+        case "FreeCAD":
+            // FreeCAD's default "CAD" navigation style: Middle+Left and
+            // Middle+Right chords rotate, bare Middle pans, and bare Right
+            // (only ever gated behind Shift/Ctrl in navigationActionMap) picks
+            // the modifier-driven rotate/pan/zoom-drag modes. The chords
+            // already require Middle to be held, and Right isn't used by any
+            // tool, so neither needs an Alt gate.
+            return [
+                { button: "Middle+Left", requireAlt: false },
+                { button: "Middle+Right", requireAlt: false },
+                { button: "Middle", requireAlt: false },
                 { button: "Right", requireAlt: false },
             ];
         default:
@@ -71,7 +90,10 @@ export class Navigation3D {
         return key;
     }
 
-    static navigationKeyMap(): {
+    /** Primary pan/rotate binding per scheme, for display (e.g. the status bar
+     * hint). Schemes with more than one binding for an action (see
+     * navigationActionMap) list their most representative one here. */
+    static navigationKeyMap(scheme: Navigation3DType = Config.instance.navigation3D): {
         pan: string;
         rotate: string;
     } {
@@ -97,7 +119,7 @@ export class Navigation3D {
                 rotate: "Middle",
             },
             ["TinkerCAD"]: {
-                pan: "Shift+Right",
+                pan: "Middle",
                 rotate: "Right",
             },
             ["Maya"]: {
@@ -112,6 +134,10 @@ export class Navigation3D {
                 pan: "Right",
                 rotate: "Alt+Left",
             },
+            ["FreeCAD"]: {
+                pan: "Middle",
+                rotate: "Middle+Left",
+            },
         } satisfies Record<
             Navigation3DType,
             {
@@ -119,6 +145,33 @@ export class Navigation3D {
                 rotate: string;
             }
         >;
-        return functionKey[Config.instance.navigation3D];
+        return functionKey[scheme];
     }
+}
+
+export interface NavigationActionMap {
+    pan: string[];
+    rotate: string[];
+    zoom: string[];
+}
+
+/** Full set of key bindings per action, for the view event handler. Most
+ * schemes have exactly one binding for pan and one for rotate, mirroring
+ * navigationKeyMap; FreeCAD's "CAD" navigation style is the exception, with
+ * several alternative chords/modifiers for the same action plus a
+ * drag-to-zoom binding. */
+export function navigationActionMap(scheme: Navigation3DType): NavigationActionMap {
+    if (scheme === "FreeCAD") {
+        return {
+            // Method 1 (Middle+Left) and Method 2 (Middle+Right) both rotate;
+            // Shift+Right is the alternate single-button rotate mode.
+            rotate: ["Middle+Left", "Middle+Right", "Shift+Right"],
+            // Bare Middle pans; Ctrl+Right is the alternate single-button pan mode.
+            pan: ["Middle", "Ctrl+Right"],
+            // Ctrl+Shift+Right is the drag-to-zoom mode.
+            zoom: ["Ctrl+Shift+Right"],
+        };
+    }
+    const { pan, rotate } = Navigation3D.navigationKeyMap(scheme);
+    return { pan: [pan], rotate: [rotate], zoom: [] };
 }

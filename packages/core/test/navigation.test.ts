@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import { Config } from "../src/config";
-import { Navigation3D, Navigation3DTypes, navigationTriggers } from "../src/navigation";
+import { Navigation3D, Navigation3DTypes, navigationActionMap, navigationTriggers } from "../src/navigation";
 import { mockLocalStorage } from "../test-utils";
 
 describe("Navigation3DTypes", () => {
@@ -42,8 +42,12 @@ describe("Navigation3DTypes", () => {
         expect(Navigation3DTypes).toContain("OpenSCAD");
     });
 
-    test("should have exactly 9 navigation types", () => {
-        expect(Navigation3DTypes).toHaveLength(9);
+    test("should contain FreeCAD", () => {
+        expect(Navigation3DTypes).toContain("FreeCAD");
+    });
+
+    test("should have exactly 10 navigation types", () => {
+        expect(Navigation3DTypes).toHaveLength(10);
     });
 });
 
@@ -183,10 +187,10 @@ describe("Navigation3D.navigationKeyMap", () => {
     });
 
     describe("TinkerCAD", () => {
-        test("should return Shift+Right for pan", () => {
+        test("should return Middle for pan", () => {
             Config.instance.init("testNavigation");
             Config.instance.navigation3D = "TinkerCAD";
-            expect(Navigation3D.navigationKeyMap().pan).toBe("Shift+Right");
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Middle");
         });
 
         test("should return Right for rotate", () => {
@@ -237,6 +241,65 @@ describe("Navigation3D.navigationKeyMap", () => {
             expect(Navigation3D.navigationKeyMap().rotate).toBe("Alt+Left");
         });
     });
+
+    describe("FreeCAD", () => {
+        test("should return Middle for pan", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "FreeCAD";
+            expect(Navigation3D.navigationKeyMap().pan).toBe("Middle");
+        });
+
+        test("should return Middle+Left for rotate", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "FreeCAD";
+            expect(Navigation3D.navigationKeyMap().rotate).toBe("Middle+Left");
+        });
+
+        test("should accept an explicit scheme override without touching Config", () => {
+            Config.instance.init("testNavigation");
+            Config.instance.navigation3D = "Blender";
+            expect(Navigation3D.navigationKeyMap("FreeCAD").pan).toBe("Middle");
+            expect(Config.instance.navigation3D).toBe("Blender");
+        });
+    });
+});
+
+describe("navigationActionMap", () => {
+    beforeEach(() => {
+        mockLocalStorage();
+    });
+
+    afterEach(() => {
+        Config.instance.init("config");
+    });
+
+    test("non-FreeCAD schemes fall back to a single pan/rotate binding and no zoom binding", () => {
+        Config.instance.init("testNavigation");
+        Config.instance.navigation3D = "Blender";
+        expect(navigationActionMap("Blender")).toEqual({
+            pan: ["Shift+Middle"],
+            rotate: ["Middle"],
+            zoom: [],
+        });
+    });
+
+    describe("FreeCAD", () => {
+        test("rotates on Middle+Left, Middle+Right, and Shift+Right", () => {
+            expect(navigationActionMap("FreeCAD").rotate).toEqual([
+                "Middle+Left",
+                "Middle+Right",
+                "Shift+Right",
+            ]);
+        });
+
+        test("pans on Middle and Ctrl+Right", () => {
+            expect(navigationActionMap("FreeCAD").pan).toEqual(["Middle", "Ctrl+Right"]);
+        });
+
+        test("zoom-drags on Ctrl+Shift+Right", () => {
+            expect(navigationActionMap("FreeCAD").zoom).toEqual(["Ctrl+Shift+Right"]);
+        });
+    });
 });
 
 describe("navigationTriggers", () => {
@@ -254,5 +317,19 @@ describe("navigationTriggers", () => {
         for (const scheme of Navigation3DTypes) {
             expect(navigationTriggers(scheme).length).toBeGreaterThan(0);
         }
+    });
+
+    test("FreeCAD triggers the Middle+Left/Middle+Right chords, bare Middle, and bare Right, none Alt-gated", () => {
+        const triggers = navigationTriggers("FreeCAD");
+        const buttons = triggers.map((t) => t.button).sort();
+        expect(buttons).toEqual(["Middle", "Middle+Left", "Middle+Right", "Right"].sort());
+        expect(triggers.every((t) => !t.requireAlt)).toBe(true);
+    });
+
+    test("TinkerCAD triggers bare Middle (pan) and bare Right (rotate), neither Alt-gated", () => {
+        const triggers = navigationTriggers("TinkerCAD");
+        const buttons = triggers.map((t) => t.button).sort();
+        expect(buttons).toEqual(["Middle", "Right"]);
+        expect(triggers.every((t) => !t.requireAlt)).toBe(true);
     });
 });

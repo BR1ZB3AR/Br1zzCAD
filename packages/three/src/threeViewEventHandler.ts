@@ -5,8 +5,9 @@ import {
     Config,
     type IEventHandler,
     type IView,
-    Navigation3D,
     type NavButton,
+    Navigation3D,
+    navigationActionMap,
     navigationTriggers,
 } from "@chili3d/core";
 
@@ -15,7 +16,13 @@ interface MouseDownData {
     key: number;
 }
 
-const BUTTON_MASK: Record<NavButton, number> = { Left: 1, Middle: 4, Right: 2 };
+const BUTTON_MASK: Record<NavButton, number> = {
+    Left: 1,
+    Middle: 4,
+    Right: 2,
+    "Middle+Left": 4 | 1,
+    "Middle+Right": 4 | 2,
+};
 
 export class ThreeViewHandler implements IEventHandler {
     private _lastDown: MouseDownData | undefined;
@@ -84,11 +91,13 @@ export class ThreeViewHandler implements IEventHandler {
         }
 
         const key = Navigation3D.getKey(event, base);
-        const navigatioMap = Navigation3D.navigationKeyMap();
-        if (navigatioMap.pan === key) {
+        const actionMap = navigationActionMap(Config.instance.navigation3D);
+        if (actionMap.pan.includes(key)) {
             view.cameraController.pan(dx, dy);
-        } else if (navigatioMap.rotate === key && this.canRotate) {
+        } else if (actionMap.rotate.includes(key) && this.canRotate) {
             view.cameraController.rotate(dx, dy);
+        } else if (actionMap.zoom.includes(key) && dy !== 0) {
+            view.cameraController.zoom(event.offsetX, event.offsetY, dy);
         }
 
         if (dx !== 0 && dy !== 0) this._lastDown = undefined;
