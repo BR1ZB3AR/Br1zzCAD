@@ -327,11 +327,15 @@ describe("PluginManager", () => {
             const { manager } = createManager();
             globalThis.alert = rs.fn();
 
+            // __APP_VERSION__ is a calendar version (YYYY.MM.DD.HHMM); a
+            // required version far in the future is what "not satisfied"
+            // means under that scheme (a 3-part semver like ">=99.0.0"
+            // would trivially satisfy, since 99 < any current year).
             const ok = validate(manager, {
                 name: "p",
                 version: "1.0.0",
                 main: "x.js",
-                engines: { chili3d: ">=99.0.0" },
+                engines: { chili3d: ">=9999.12.31.2359" },
             });
             expect(ok).toBe(false);
         });
