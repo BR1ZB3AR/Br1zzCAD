@@ -47,7 +47,11 @@ export class Config extends Observable {
         return Config.#instance;
     }
 
-    readonly SnapDistance: number = 10;
+    // Also the Three.js Line2/Line/Points raycaster pick threshold (packages/three
+    // src/threeView.ts) - with a coincident face (e.g. a sketch line lying flush on a
+    // solid's face), every pixel of the face is a valid hit but the thin edge only wins
+    // within this band, so it needs to be generous enough for normal mouse precision.
+    readonly SnapDistance: number = 16;
 
     get snapType() {
         return this.getPrivateValue(
