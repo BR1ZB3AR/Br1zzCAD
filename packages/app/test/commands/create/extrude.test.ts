@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IShape, PubSub, Result, ShapeTypes, XYZ } from "@chili3d/core";
+import { type IEdge, type IShape, type IWire, PubSub, Result, ShapeTypes, XYZ } from "@chili3d/core";
 import { afterAll, beforeAll, describe, expect, rs, test } from "@rstest/core";
 import { ExtrudeNode } from "../../../src/bodys/extrude";
 import { ExtrudeCommand } from "../../../src/commands/create/extrude";
@@ -221,8 +221,8 @@ describe("ExtrudeCommand", () => {
             const cmd = new ExtrudeCommand();
             wireCommand(cmd);
             const mockFace = createMockShape();
-            const wire = rs.fn(() => Result.ok(createMockWire()));
-            const face = rs.fn(() => Result.ok(mockFace));
+            const wire = rs.fn((_edges: IEdge[]) => Result.ok(createMockWire()));
+            const face = rs.fn((_wires: IWire[]) => Result.ok(mockFace));
             const restore = stubShapeFactory({ wire, face });
             try {
                 // A closed rectangle, exactly the shape a user gets from 4
