@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1139](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1139) — 2026-09-08
+
+- **Sketching**: Added a **Sketch** tab (left of Model). Its first button opens a rotatable 3D cube for picking the plane to sketch on — Top/Bottom, Front/Back, Right/Left, mapped to the XY/ZX/YZ planes — drag to spin it, click a face to set the workplane and jump straight into the sketch tools. Also added **Midpoint Line** (draws symmetric about the first point you pick), **Center Rectangle**, and **Aligned Rectangle** (a 3-point rectangle that can sit at any angle, not just axis-aligned) alongside the existing Line and (corner) Rectangle tools.
+
 ### [v2026.09.08.1040](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1040) — 2026-09-08
 
 - **Import**: STL import now checks a file's triangle count before attempting the real import, rejecting anything over 50,000 triangles with a clear message instead of hanging for a minute or crashing the WASM runtime outright — reproduced with a real 460k-triangle STL that ran into a "RuntimeError: null function" crash requiring a page reload. Import errors also now show the actual failure reason instead of always saying "Unsupported file type".
