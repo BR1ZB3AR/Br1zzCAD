@@ -442,4 +442,54 @@ describe("DimensionAnnotation", () => {
         expect(box!.max.x).toBe(10);
         expect(box!.max.y).toBe(4);
     });
+
+    test("point2 should default to undefined", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+        });
+
+        expect(anno.point2).toBeUndefined();
+    });
+
+    test("should accept and set point2 (for angle dimensions)", () => {
+        const point2 = new XYZ({ x: 0, y: 10, z: 0 });
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            dimensionType: "angle",
+            startPoint: XYZ.zero,
+            endPoint: new XYZ({ x: 10, y: 0, z: 0 }),
+            point2,
+            placement: new XYZ({ x: 5, y: 5, z: 0 }),
+        });
+
+        expect(anno.point2).toEqual(point2);
+
+        const newPoint2 = new XYZ({ x: 1, y: 2, z: 3 });
+        anno.point2 = newPoint2;
+        expect(anno.point2).toEqual(newPoint2);
+    });
+
+    test("boundingBox should include point2 when set", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            dimensionType: "angle",
+            startPoint: XYZ.zero,
+            endPoint: new XYZ({ x: 10, y: 0, z: 0 }),
+            point2: new XYZ({ x: 0, y: 20, z: 0 }),
+            placement: new XYZ({ x: 5, y: 5, z: 0 }),
+        });
+
+        const box = anno.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.max.y).toBe(20);
+    });
 });

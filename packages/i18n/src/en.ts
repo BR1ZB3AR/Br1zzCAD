@@ -76,6 +76,7 @@ export default {
         "command.create.cone": "Cone",
         "command.create.copyShape": "Copy Shape",
         "command.create.cylinder": "Cylinder",
+        "command.create.dimensionAngle": "Angle Dimension",
         "command.create.dimensionDiameter": "Diameter Dimension",
         "command.create.dimensionLinear": "Linear Dimension",
         "command.create.dimensionRadius": "Radius Dimension",

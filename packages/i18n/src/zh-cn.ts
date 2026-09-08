@@ -76,6 +76,7 @@ export default {
         "command.create.cone": "圆锥",
         "command.create.copyShape": "复制形状",
         "command.create.cylinder": "圆柱",
+        "command.create.dimensionAngle": "角度标注",
         "command.create.dimensionDiameter": "直径标注",
         "command.create.dimensionLinear": "线性标注",
         "command.create.dimensionRadius": "半径标注",

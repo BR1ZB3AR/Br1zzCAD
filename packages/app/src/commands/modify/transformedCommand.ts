@@ -5,6 +5,7 @@ import {
     AsyncController,
     BoundingBox,
     ComponentNode,
+    DimensionAnnotation,
     type EdgeMeshData,
     GeometryNode,
     type Matrix4,
@@ -84,17 +85,31 @@ export abstract class TransformedCommand extends MultistepCommand {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
             const transform = this.transfrom(this.stepDatas.at(-1)!.point!);
 
-            if (this.isClone) {
-                this.models?.forEach((x) => {
+            this.models?.forEach((x) => {
+                // A DimensionAnnotation renders straight from its own
+                // absolute startPoint/endPoint/placement, not from a
+                // `.transform` matrix (unlike GeometryNode/MeshNode/
+                // ComponentNode) - moving it has to carry those points
+                // through the same transform instead, or it's left behind
+                // (or, for a clone, left overlapping the original).
+                if (x instanceof DimensionAnnotation) {
+                    const target = this.isClone ? x.clone() : x;
+                    target.startPoint = transform.ofPoint(x.startPoint);
+                    target.endPoint = transform.ofPoint(x.endPoint);
+                    if (x.point2) target.point2 = transform.ofPoint(x.point2);
+                    target.placement = transform.ofPoint(x.placement);
+                    if (this.isClone) x.parent?.insertAfter(x, target);
+                    return;
+                }
+
+                if (this.isClone) {
                     const clone = x.clone();
                     clone.transform = x.transform.multiply(transform);
                     x.parent?.insertAfter(x, clone);
-                });
-            } else {
-                this.models?.forEach((x) => {
+                } else {
                     x.transform = x.transform.multiply(transform);
-                });
-            }
+                }
+            });
 
             this.document.visual.update();
         });

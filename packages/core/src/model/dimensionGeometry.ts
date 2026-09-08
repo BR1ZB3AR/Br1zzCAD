@@ -106,3 +106,77 @@ export function computeRadialDimensionGeometry(
         value,
     };
 }
+
+const ANGLE_ARC_SEGMENTS = 24;
+
+export interface AngleDimensionGeometry {
+    /** Points sampling the arc from the first edge's direction to the
+     * second's, in order - render as a connected polyline. */
+    arcPoints: XYZ[];
+    /** Outward radial direction at the arc's first end - for its arrowhead. */
+    startPerp: XYZ;
+    /** Tangent-along-the-arc direction at the first end, pointing inward
+     * (toward the second sample point) - the arrowhead's shaft direction. */
+    startDirection: XYZ;
+    /** Outward radial direction at the arc's second end - for its arrowhead. */
+    endPerp: XYZ;
+    /** Tangent-along-the-arc direction at the second end, pointing inward. */
+    endDirection: XYZ;
+    labelPosition: XYZ;
+    /** The measured angle, in degrees. */
+    value: number;
+}
+
+/**
+ * `vertex` is the shared point the two edges are measured from; `point1`/
+ * `point2` are any other point along each edge (only their direction from
+ * `vertex` matters). `placement`'s distance from `vertex` sets the arc's
+ * radius - same drag-to-reposition idea as the other dimension types, just
+ * driving a radius instead of an offset.
+ */
+export function computeAngleDimensionGeometry(
+    vertex: XYZ,
+    point1: XYZ,
+    point2: XYZ,
+    placement: XYZ,
+): AngleDimensionGeometry {
+    const dir1 = point1.sub(vertex).normalize() ?? XYZ.unitX;
+    const dir2raw = point2.sub(vertex).normalize() ?? XYZ.unitY;
+
+    const rawNormal = dir1.cross(dir2raw);
+    const normal = rawNormal.length() > 1e-9 ? rawNormal.normalize()! : anyPerpendicular(dir1);
+
+    const cos = Math.max(-1, Math.min(1, dir1.dot(dir2raw)));
+    const angle = Math.acos(cos);
+
+    const placementDistance = vertex.distanceTo(placement);
+    const radius = placementDistance > 1e-9 ? placementDistance : 10;
+
+    const arcPoints: XYZ[] = [];
+    for (let i = 0; i <= ANGLE_ARC_SEGMENTS; i++) {
+        const t = (angle * i) / ANGLE_ARC_SEGMENTS;
+        // `normal` is always a valid unit vector by construction above, so
+        // rotating the (also unit-length) `dir1` around it never fails.
+        arcPoints.push(vertex.add(dir1.rotate(normal, t)!.multiply(radius)));
+    }
+
+    const startPoint = arcPoints[0];
+    const endPoint = arcPoints[arcPoints.length - 1];
+    const startPerp = startPoint.sub(vertex).normalize() ?? dir1;
+    const endPerp = endPoint.sub(vertex).normalize() ?? dir2raw;
+    const startDirection = arcPoints[1].sub(startPoint).normalize() ?? dir1;
+    const endDirection = arcPoints[arcPoints.length - 2].sub(endPoint).normalize() ?? dir2raw;
+
+    const midT = angle / 2;
+    const labelPosition = vertex.add(dir1.rotate(normal, midT)!.multiply(radius));
+
+    return {
+        arcPoints,
+        startPerp,
+        startDirection,
+        endPerp,
+        endDirection,
+        labelPosition,
+        value: (angle * 180) / Math.PI,
+    };
+}

@@ -3,9 +3,11 @@
 
 import {
     type BoundingBox,
+    computeAngleDimensionGeometry,
     computeLinearDimensionGeometry,
     computeRadialDimensionGeometry,
     type DimensionAnnotation,
+    type DimensionType,
     getDimensionEditHandler,
     type IVisualObject,
     Matrix4,
@@ -32,8 +34,8 @@ const DRAG_THRESHOLD_SQ = 3 * 3;
 const material = new LineMaterial({ linewidth: 1.5, color: 0x2f8fef, side: DoubleSide });
 const highlightMaterial = new LineMaterial({ linewidth: 1.5, color: 0x00ffff, side: DoubleSide });
 
-function formatValue(value: number): string {
-    return `${value.toFixed(2)} mm`;
+function formatValue(value: number, dimensionType: DimensionType): string {
+    return dimensionType === "angle" ? `${value.toFixed(2)}°` : `${value.toFixed(2)} mm`;
 }
 
 export class ThreeDimensionAnnotation extends Object3D implements IVisualObject, IHighlightable {
@@ -116,6 +118,17 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
                 g: computeRadialDimensionGeometry(a.startPoint, a.endPoint, placement, a.dimensionType),
             };
         }
+        if (a.dimensionType === "angle") {
+            return {
+                kind: "angle" as const,
+                g: computeAngleDimensionGeometry(
+                    a.startPoint,
+                    a.endPoint,
+                    a.point2 ?? a.startPoint,
+                    placement,
+                ),
+            };
+        }
         return {
             kind: "linear" as const,
             g: computeLinearDimensionGeometry(a.startPoint, a.endPoint, placement),
@@ -139,6 +152,13 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
             pushSeg(dimensionLine[0], dimensionLine[1]);
             pushArrow(dimensionLine[0], direction, perp);
             pushArrow(dimensionLine[1], direction.reverse(), perp);
+        } else if (data.kind === "angle") {
+            const { arcPoints, startPerp, startDirection, endPerp, endDirection } = data.g;
+            for (let i = 0; i < arcPoints.length - 1; i++) {
+                pushSeg(arcPoints[i], arcPoints[i + 1]);
+            }
+            pushArrow(arcPoints[0], startDirection, startPerp);
+            pushArrow(arcPoints[arcPoints.length - 1], endDirection, endPerp);
         } else {
             const { line, direction, perp } = data.g;
             pushSeg(line[0], line[1]);
@@ -163,7 +183,7 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
     }
 
     private updateLabelText() {
-        this._valueEl.textContent = formatValue(this.displayValue());
+        this._valueEl.textContent = formatValue(this.displayValue(), this.annotation.dimensionType);
     }
 
     private buildLabelElement(valueEl: HTMLSpanElement): HTMLDivElement {

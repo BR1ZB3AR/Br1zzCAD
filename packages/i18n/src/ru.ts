@@ -72,6 +72,7 @@ export default {
         "command.create.cone": "Конус",
         "command.create.copyShape": "Копировать Фигуру",
         "command.create.cylinder": "Цилиндр",
+        "command.create.dimensionAngle": "Угловой размер",
         "command.create.dimensionDiameter": "Диаметральный размер",
         "command.create.dimensionLinear": "Линейный размер",
         "command.create.dimensionRadius": "Радиальный размер",

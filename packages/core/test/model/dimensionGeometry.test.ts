@@ -3,6 +3,7 @@
 
 import { XYZ } from "../../src/math";
 import {
+    computeAngleDimensionGeometry,
     computeLinearDimensionGeometry,
     computeRadialDimensionGeometry,
 } from "../../src/model/dimensionGeometry";
@@ -144,5 +145,98 @@ describe("computeRadialDimensionGeometry", () => {
         const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "radial");
 
         expect(geometry.labelPosition.x).toBeCloseTo(4, 6);
+    });
+});
+
+describe("computeAngleDimensionGeometry", () => {
+    test("should measure 90 degrees between perpendicular edges", () => {
+        const vertex = XYZ.zero;
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const point2 = new XYZ({ x: 0, y: 10, z: 0 });
+        const placement = new XYZ({ x: 3, y: 3, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, placement);
+
+        expect(geometry.value).toBeCloseTo(90, 6);
+    });
+
+    test("should measure 60 degrees between edges 60 degrees apart", () => {
+        const vertex = XYZ.zero;
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const angle = Math.PI / 3;
+        const point2 = new XYZ({ x: 10 * Math.cos(angle), y: 10 * Math.sin(angle), z: 0 });
+        const placement = new XYZ({ x: 5, y: 1, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, placement);
+
+        expect(geometry.value).toBeCloseTo(60, 6);
+    });
+
+    test("arc should start and end at radius from the vertex, along each edge's direction", () => {
+        const vertex = new XYZ({ x: 1, y: 2, z: 0 });
+        const point1 = vertex.add(new XYZ({ x: 10, y: 0, z: 0 }));
+        const point2 = vertex.add(new XYZ({ x: 0, y: 10, z: 0 }));
+        const placement = vertex.add(new XYZ({ x: 0, y: 5, z: 0 }));
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, placement);
+
+        const radius = vertex.distanceTo(placement);
+        const arcStart = geometry.arcPoints[0];
+        const arcEnd = geometry.arcPoints[geometry.arcPoints.length - 1];
+        expect(vertex.distanceTo(arcStart)).toBeCloseTo(radius, 6);
+        expect(vertex.distanceTo(arcEnd)).toBeCloseTo(radius, 6);
+        expect(arcStart.isEqualTo(vertex.add(new XYZ({ x: radius, y: 0, z: 0 })), 1e-6)).toBe(true);
+        expect(arcEnd.isEqualTo(vertex.add(new XYZ({ x: 0, y: radius, z: 0 })), 1e-6)).toBe(true);
+    });
+
+    test("labelPosition should sit on the arc at the angle bisector", () => {
+        const vertex = XYZ.zero;
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const point2 = new XYZ({ x: 0, y: 10, z: 0 });
+        const placement = new XYZ({ x: 0, y: 5, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, placement);
+
+        const radius = vertex.distanceTo(placement);
+        const expectedBisector = new XYZ({
+            x: (radius * Math.SQRT2) / 2,
+            y: (radius * Math.SQRT2) / 2,
+            z: 0,
+        });
+        expect(geometry.labelPosition.isEqualTo(expectedBisector, 1e-6)).toBe(true);
+    });
+
+    test("should fall back to a default radius when placement coincides with the vertex", () => {
+        const vertex = XYZ.zero;
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const point2 = new XYZ({ x: 0, y: 10, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, vertex);
+
+        expect(Number.isFinite(geometry.arcPoints[0].x)).toBe(true);
+        expect(vertex.distanceTo(geometry.arcPoints[0])).toBeGreaterThan(0);
+    });
+
+    test("should not crash when a point coincides with the vertex (degenerate direction)", () => {
+        const vertex = new XYZ({ x: 1, y: 1, z: 0 });
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const placement = new XYZ({ x: 5, y: 5, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, vertex, placement);
+
+        expect(Number.isFinite(geometry.value)).toBe(true);
+        expect(geometry.arcPoints.length).toBeGreaterThan(0);
+    });
+
+    test("outward radial directions at each arc end point away from the vertex", () => {
+        const vertex = XYZ.zero;
+        const point1 = new XYZ({ x: 10, y: 0, z: 0 });
+        const point2 = new XYZ({ x: 0, y: 10, z: 0 });
+        const placement = new XYZ({ x: 0, y: 5, z: 0 });
+
+        const geometry = computeAngleDimensionGeometry(vertex, point1, point2, placement);
+
+        expect(geometry.startPerp.isEqualTo(XYZ.unitX, 1e-6)).toBe(true);
+        expect(geometry.endPerp.isEqualTo(XYZ.unitY, 1e-6)).toBe(true);
     });
 });

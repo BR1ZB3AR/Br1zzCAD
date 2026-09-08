@@ -31,6 +31,19 @@ function createRadialAnnotation(doc: TestDocument = new TestDocument()): Dimensi
     });
 }
 
+function createAngleAnnotation(doc: TestDocument = new TestDocument()): DimensionAnnotation {
+    return new DimensionAnnotation({
+        document: doc,
+        annotationType: "dimension",
+        name: "Dimension",
+        dimensionType: "angle",
+        startPoint: XYZ.zero,
+        endPoint: new XYZ({ x: 10, y: 0, z: 0 }),
+        point2: new XYZ({ x: 0, y: 10, z: 0 }),
+        placement: new XYZ({ x: 5, y: 5, z: 0 }),
+    });
+}
+
 function labelText(annotation: ThreeDimensionAnnotation): string {
     return (annotation as any)._valueEl.textContent as string;
 }
@@ -64,6 +77,29 @@ describe("ThreeDimensionAnnotation", () => {
         const three = new ThreeDimensionAnnotation(context, createRadialAnnotation());
 
         expect(labelText(three)).toBe("5.00 mm");
+    });
+
+    test("label shows the angle in degrees, not mm, for an angle dimension", () => {
+        const context = createThreeMockVisualContext();
+        const three = new ThreeDimensionAnnotation(context, createAngleAnnotation());
+
+        expect(labelText(three)).toBe("90.00°");
+    });
+
+    test("angle dimension's mesh rebuilds when point2 changes", () => {
+        const doc = new TestDocument();
+        const annotation = createAngleAnnotation(doc);
+        const context = createThreeMockVisualContext();
+        const three = new ThreeDimensionAnnotation(context, annotation);
+
+        const meshBefore = three.wholeVisual()[0];
+        expect(labelText(three)).toBe("90.00°");
+
+        // Rotate the second edge out to 180 degrees from the first.
+        annotation.point2 = new XYZ({ x: -10, y: 0, z: 0 });
+
+        expect(labelText(three)).toBe("180.00°");
+        expect(three.wholeVisual()[0]).not.toBe(meshBefore);
     });
 
     test("label prefers an explicit override value over the computed distance", () => {

@@ -4,6 +4,7 @@
 import {
     BoundingBox,
     ComponentNode,
+    DimensionAnnotation,
     GeometryNode,
     Matrix4,
     MeshNode,
@@ -369,6 +370,124 @@ describe("TransformedCommand (via Move)", () => {
             } finally {
                 restore();
             }
+        });
+
+        describe("DimensionAnnotation", () => {
+            // DimensionAnnotation renders straight from its own absolute
+            // startPoint/endPoint/placement, not a `.transform` matrix, so
+            // Move has to carry those points through the translation itself
+            // - reproduced here because a plain trackingNode mock (which
+            // only has `.transform`) wouldn't catch a regression back to
+            // the old `x.transform = ...` path silently no-op'ing on it.
+            function makeAnnotation(doc: any, point2?: XYZ) {
+                return new DimensionAnnotation({
+                    document: doc,
+                    annotationType: "dimension",
+                    name: "Dimension",
+                    dimensionType: point2 ? "angle" : "linear",
+                    startPoint: new XYZ({ x: 0, y: 0, z: 0 }),
+                    endPoint: new XYZ({ x: 10, y: 0, z: 0 }),
+                    point2,
+                    placement: new XYZ({ x: 5, y: 5, z: 0 }),
+                });
+            }
+
+            test("should translate startPoint/endPoint/placement instead of touching .transform", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const cmd = new Move();
+                    const { doc } = wireCommand(cmd);
+                    const annotation = makeAnnotation(doc);
+                    (cmd as any).models = [annotation];
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 10, y: 20, z: 30 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.startPoint.isEqualTo(new XYZ({ x: 10, y: 20, z: 30 }), 1e-6)).toBe(
+                        true,
+                    );
+                    expect(annotation.endPoint.isEqualTo(new XYZ({ x: 20, y: 20, z: 30 }), 1e-6)).toBe(true);
+                    expect(annotation.placement.isEqualTo(new XYZ({ x: 15, y: 25, z: 30 }), 1e-6)).toBe(true);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should translate point2 too when it's set (angle dimensions)", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const cmd = new Move();
+                    const { doc } = wireCommand(cmd);
+                    const annotation = makeAnnotation(doc, new XYZ({ x: 0, y: 10, z: 0 }));
+                    (cmd as any).models = [annotation];
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 1, y: 1, z: 1 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.point2!.isEqualTo(new XYZ({ x: 1, y: 11, z: 1 }), 1e-6)).toBe(true);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should clone the annotation with translated points and leave the original untouched when isClone is true", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const cmd = new Move();
+                    cmd.isClone = true;
+                    const { doc } = wireCommand(cmd);
+                    const annotation = makeAnnotation(doc);
+                    const parent = makeParent({ id: "parent" });
+                    (annotation as any).parent = parent;
+                    (cmd as any).models = [annotation];
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 1, y: 0, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.startPoint).toEqual(new XYZ({ x: 0, y: 0, z: 0 }));
+                    expect(parent.insertedAfter).toHaveLength(1);
+                    expect(parent.insertedAfter[0].target).toBe(annotation);
+                    const clone = parent.insertedAfter[0].node as DimensionAnnotation;
+                    expect(clone.startPoint.isEqualTo(new XYZ({ x: 1, y: 0, z: 0 }), 1e-6)).toBe(true);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should handle a mixed selection of a DimensionAnnotation and a regular node together", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const cmd = new Move();
+                    const { doc } = wireCommand(cmd);
+                    const annotation = makeAnnotation(doc);
+                    const { node } = trackingNode();
+                    (cmd as any).models = [annotation, node];
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 2, y: 0, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.startPoint.isEqualTo(new XYZ({ x: 2, y: 0, z: 0 }), 1e-6)).toBe(true);
+                    const expected = Matrix4.fromTranslation(2, 0, 0);
+                    const assigned = node.assigned();
+                    for (let i = 0; i < 16; i++) {
+                        expect(assigned.array[i]).toBeCloseTo(expected.array[i], 6);
+                    }
+                } finally {
+                    restore();
+                }
+            });
         });
     });
 });

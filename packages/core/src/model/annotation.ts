@@ -21,19 +21,26 @@ interface AnnotationOptionsBase {
     visible?: boolean;
 }
 
-export type DimensionType = "linear" | "radial" | "diameter";
+export type DimensionType = "linear" | "radial" | "diameter" | "angle";
 
 export interface DimensionAnnotationOptions extends AnnotationOptionsBase {
     annotationType: "dimension";
-    /** Linear: the two measured points. Radial/diameter: the circle's center. */
+    /** Linear: the two measured points. Radial/diameter: the circle's center.
+     * Angle: the shared vertex the two edges are measured from. */
     startPoint: XYZ;
-    /** Linear: unused (kept equal to startPoint). Radial/diameter: a point on the circle. */
+    /** Linear: unused (kept equal to startPoint). Radial/diameter: a point on
+     * the circle. Angle: a point along the first edge (endPoint - startPoint
+     * gives that edge's direction). */
     endPoint: XYZ;
+    /** Angle only: a point along the second edge (point2 - startPoint gives
+     * that edge's direction). Unused by every other dimension type. */
+    point2?: XYZ;
     /** Where the user clicked to place the dimension line/label - for a linear
      * dimension this also sets which side (and how far) the extension lines
      * offset to; an aligned dimension parallel to startPoint->endPoint covers
      * horizontal/vertical too, since those are just the degenerate cases
-     * where the measured segment already runs along one axis. */
+     * where the measured segment already runs along one axis. For an angle
+     * dimension it sets the arc's radius (distance from the vertex). */
     placement: XYZ;
     dimensionType?: DimensionType;
     /** Overrides the displayed value instead of deriving it from the points
@@ -114,6 +121,14 @@ export class DimensionAnnotation extends Annotation {
     }
 
     @serialize()
+    get point2(): XYZ | undefined {
+        return this.getPrivateValue("point2");
+    }
+    set point2(value: XYZ | undefined) {
+        this.setProperty("point2", value);
+    }
+
+    @serialize()
     get placement(): XYZ {
         return this.getPrivateValue("placement");
     }
@@ -138,13 +153,16 @@ export class DimensionAnnotation extends Annotation {
         super(options);
         this.setPrivateValue("startPoint", options.startPoint);
         this.setPrivateValue("endPoint", options.endPoint);
+        if (options.point2 !== undefined) this.setPrivateValue("point2", options.point2);
         this.setPrivateValue("placement", options.placement);
         this.setPrivateValue("dimensionType", options.dimensionType ?? "linear");
         if (options.value !== undefined) this.setPrivateValue("value", options.value);
     }
 
     override boundingBox(): BoundingBox | undefined {
-        return BoundingBox.fromPoints([this.startPoint, this.endPoint, this.placement]);
+        const points = [this.startPoint, this.endPoint, this.placement];
+        if (this.point2) points.push(this.point2);
+        return BoundingBox.fromPoints(points);
     }
 }
 

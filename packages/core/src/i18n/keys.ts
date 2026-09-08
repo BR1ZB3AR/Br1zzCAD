@@ -71,6 +71,7 @@ export const I18N_KEYS = [
     "command.create.cone",
     "command.create.copyShape",
     "command.create.cylinder",
+    "command.create.dimensionAngle",
     "command.create.dimensionDiameter",
     "command.create.dimensionLinear",
     "command.create.dimensionRadius",
