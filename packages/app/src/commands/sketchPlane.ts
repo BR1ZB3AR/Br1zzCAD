@@ -11,6 +11,7 @@ import {
     Plane,
     SelectShapeStep,
     ShapeTypes,
+    VisualStates,
 } from "@chili3d/core";
 
 /** Size (mm) of each temporary reference plane shown for picking - matches
@@ -48,17 +49,29 @@ export class PickSketchPlane implements ICommand {
                     shape: shapeFactory.rect(centeredOn(plane, PLANE_SIZE), PLANE_SIZE, PLANE_SIZE),
                 }),
         );
-        // All three planes share the same origin, so a label placed there would
-        // overlap for all three - push each one out along its own normal
-        // instead, landing it just past its plane's edge.
-        const labels: IDisposable[] = CANDIDATES.map(({ label, plane }) =>
-            view.htmlText(label, plane.origin.add(plane.normal.multiply(PLANE_SIZE * 0.55)), {
-                hideDelete: true,
-                center: { x: 0.5, y: 0.5 },
-            }),
-        );
 
         document.visual.context.addNode(nodes);
+        for (const node of nodes) {
+            const visual = document.visual.context.getVisual(node);
+            if (visual) {
+                document.visual.highlighter.addState(visual, VisualStates.faceTransparent, ShapeTypes.face);
+            }
+        }
+
+        // All three planes share the same origin, so a label placed there
+        // would overlap for all three - offset each one within its own
+        // plane's surface (along that plane's own xvec/yvec, not its
+        // normal) so it lands inside that plane's square instead of
+        // drifting off toward the shared origin and the world axes there.
+        const labelOffset = PLANE_SIZE * 0.28;
+        const labels: IDisposable[] = CANDIDATES.map(({ label, plane }) =>
+            view.htmlText(
+                label,
+                plane.origin.add(plane.xvec.multiply(labelOffset)).add(plane.yvec.multiply(labelOffset)),
+                { hideDelete: true, center: { x: 0.5, y: 0.5 } },
+            ),
+        );
+
         document.visual.update();
 
         const controller = new AsyncController();

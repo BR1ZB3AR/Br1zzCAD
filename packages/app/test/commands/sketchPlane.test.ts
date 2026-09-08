@@ -1,8 +1,13 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IDisposable, type INode, Matrix4, Plane, SelectShapeStep } from "@chili3d/core";
-import { createMockApplication, createMockDocument, createMockView } from "@chili3d/core/test-utils";
+import { type IDisposable, type INode, Matrix4, Plane, SelectShapeStep, VisualStates } from "@chili3d/core";
+import {
+    createMockApplication,
+    createMockDocument,
+    createMockHighlighter,
+    createMockView,
+} from "@chili3d/core/test-utils";
 import { describe, expect, rs, test } from "@rstest/core";
 import { PickSketchPlane } from "../../src/commands/sketchPlane";
 import { ensureGlobalStubApp } from "./commandTestUtils";
@@ -13,6 +18,7 @@ interface Rig {
     addedNodes: INode[];
     removedNodes: INode[];
     labelDisposeSpies: ReturnType<typeof rs.fn>[];
+    highlightCalls: ReturnType<typeof createMockHighlighter>["addCalls"];
     /** Set this before invoking execute() to control which node the mock picker "clicks". */
     pickIndex: number | undefined;
 }
@@ -26,6 +32,16 @@ function buildRig(): Rig {
     const doc = createMockDocument();
     (doc.visual.context as any).addNode = (nodes: INode[]) => addedNodes.push(...nodes);
     (doc.visual.context as any).removeNode = (nodes: INode[]) => removedNodes.push(...nodes);
+    // Each temp node gets its own fake "visual object" so getVisual(node) can
+    // resolve it - a plain marker object per node is enough for addState's
+    // (untyped-in-tests) shape parameter.
+    const visualsByNode = new Map<INode, object>();
+    (doc.visual.context as any).getVisual = (node: INode) => {
+        if (!visualsByNode.has(node)) visualsByNode.set(node, { node });
+        return visualsByNode.get(node);
+    };
+    const { highlighter, addCalls } = createMockHighlighter();
+    (doc.visual as any).highlighter = highlighter;
     (doc.selection as any).clearSelection = rs.fn();
     (doc as any).picker = {
         pickShape: async () => {
@@ -53,7 +69,7 @@ function buildRig(): Rig {
     });
     (view as any).document = doc;
 
-    Object.assign(rig, { doc, view, addedNodes, removedNodes, labelDisposeSpies });
+    Object.assign(rig, { doc, view, addedNodes, removedNodes, labelDisposeSpies, highlightCalls: addCalls });
     return rig;
 }
 
@@ -95,6 +111,19 @@ describe("PickSketchPlane", () => {
         expect(rig.view.htmlText).toHaveBeenCalledTimes(3);
         const labels = (rig.view.htmlText as ReturnType<typeof rs.fn>).mock.calls.map((c) => c[0]);
         expect(labels.sort()).toEqual(["FRONT", "RIGHT", "TOP"]);
+    });
+
+    test("marks all three reference planes transparent as soon as they're shown", async () => {
+        const rig = buildRig();
+        const app = createMockApplication();
+        app.activeView = rig.view;
+
+        await new PickSketchPlane().execute(app);
+
+        expect(rig.highlightCalls).toHaveLength(3);
+        for (const call of rig.highlightCalls) {
+            expect(call.state).toBe(VisualStates.faceTransparent);
+        }
     });
 
     test("cleans up the temporary nodes and label overlays whether or not a plane was picked", async () => {
