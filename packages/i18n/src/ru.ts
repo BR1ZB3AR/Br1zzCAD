@@ -173,7 +173,6 @@ export default {
         "common.trust": "Доверять",
         "common.dontTrust": "Не доверять",
         "dialog.title.selectWorkingPlane": "Выберите рабочий план",
-        "dialog.title.pickSketchPlane": "Выберите плоскость эскиза",
         "dialog.title.checkShape": "Результат проверки фигуры",
         "dialog.checkShape.valid": "Успешно",
         "dialog.checkShape.invalid": "Не успешно",
@@ -291,6 +290,8 @@ export default {
         "prompt.select.path": "Пожалуйста выберите путь",
         "prompt.select.section": "Пожалуйста выберите секцию",
         "prompt.select.shape": "Пожалуйста выберите фигуру",
+        "prompt.select.sketchPlane":
+            "Нажмите Top, Front или Right, чтобы рисовать на этой плоскости, ESC для отмены",
         "prompt.select.solids": "Пожалуйста выберите массивы",
         "prompt.select.vertexes": "Пожалуйста выберите вершины",
         "prompt.select.wires": "Пожалуйста выберите ребра",
