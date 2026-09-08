@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { I18n, PubSub, command, type IApplication, type ICommand } from "@chili3d/core";
+import { command, I18n, type IApplication, type ICommand, PubSub } from "@chili3d/core";
 import { button, div, span, textarea } from "@chili3d/element";
 import { AI_SYSTEM_PROMPT, executeAiActions, parseAiActions } from "../../ai/aiActions";
 import { askJSON } from "../../ai/webllmEngine";
@@ -40,7 +40,8 @@ export class AiAssistantCommand implements ICommand {
                         padding: "6px 10px",
                         borderRadius: "8px",
                         whiteSpace: "pre-wrap",
-                        background: role === "user" ? "var(--primary-color)" : "var(--hover-background-color)",
+                        background:
+                            role === "user" ? "var(--primary-color)" : "var(--hover-background-color)",
                         color: role === "user" ? "var(--title-checked)" : "var(--foreground-color)",
                         opacity: role === "status" ? "0.7" : "1",
                         fontStyle: role === "status" ? "italic" : "normal",

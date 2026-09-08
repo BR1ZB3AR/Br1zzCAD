@@ -77,7 +77,13 @@ export function executeAiActions(document: IDocument, actions: AiAction[]): Exec
                 } else if (action.type === "addCylinder") {
                     const { radius = 10, height = 10 } = action;
                     document.modelManager.addNode(
-                        new CylinderNode({ document, normal: plane.normal, center: origin, radius, dz: height }),
+                        new CylinderNode({
+                            document,
+                            normal: plane.normal,
+                            center: origin,
+                            radius,
+                            dz: height,
+                        }),
                     );
                     created.push(`Cylinder r=${radius}mm h=${height}mm`);
                 } else if (action.type === "addSphere") {

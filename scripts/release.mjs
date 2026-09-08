@@ -63,7 +63,9 @@ function updateVersions(version) {
     packages.forEach((p) => {
         updatePackage(getPkgRoot(p), version, false);
     });
-    console.log(`Updated all packages to version ${version} (display ${displayVersion(version)}, TZ ${VERSION_TZ})`);
+    console.log(
+        `Updated all packages to version ${version} (display ${displayVersion(version)}, TZ ${VERSION_TZ})`,
+    );
 }
 
 /**
@@ -110,9 +112,7 @@ async function main() {
     const bare = (args[0] ? args[0] : calendarVersionNow()).replace(/^v/, "");
 
     if (!/^\d{4}\.\d{2}\.\d{2}\.\d{4}$/.test(bare)) {
-        console.error(
-            `Invalid calendar version '${bare}'. Expected YYYY.MM.DD.HHMM (TZ ${VERSION_TZ}).`,
-        );
+        console.error(`Invalid calendar version '${bare}'. Expected YYYY.MM.DD.HHMM (TZ ${VERSION_TZ}).`);
         process.exit(1);
     }
 

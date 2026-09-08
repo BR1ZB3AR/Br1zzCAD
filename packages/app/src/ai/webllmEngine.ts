@@ -20,7 +20,11 @@ export function getWebLLMEngine(onProgress?: (report: InitProgressReport) => voi
     return enginePromise;
 }
 
-export async function askJSON(systemPrompt: string, userPrompt: string, onProgress?: (report: InitProgressReport) => void): Promise<string> {
+export async function askJSON(
+    systemPrompt: string,
+    userPrompt: string,
+    onProgress?: (report: InitProgressReport) => void,
+): Promise<string> {
     const engine = await getWebLLMEngine(onProgress);
     const reply = await engine.chat.completions.create({
         messages: [
