@@ -21,6 +21,7 @@ export class PickSketchPlane implements ICommand {
 
         const cube = new PlanePickerCube((plane) => {
             view.workplane = PLANES[plane];
+            view.workplaneVisible = true;
             // Picking a face is a definitive choice - close immediately
             // instead of waiting for a separate Confirm click.
             cube.closest("dialog")?.remove();

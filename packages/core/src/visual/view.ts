@@ -42,6 +42,8 @@ export interface IView extends IPropertyChanged, IDisposable {
     mode: ViewMode;
     name: string;
     workplane: Plane;
+    /** Whether a grid tracking `workplane`'s origin/orientation is drawn in the viewport. */
+    workplaneVisible: boolean;
     update(): void;
     up(): XYZ;
     toImage(): string;

@@ -38,8 +38,10 @@ import {
 import { div, span, svg } from "@chili3d/element";
 import {
     DirectionalLight,
+    GridHelper,
     type Intersection,
     Line,
+    type LineBasicMaterial,
     LineSegments,
     Mesh,
     Object3D,
@@ -47,6 +49,7 @@ import {
     PerspectiveCamera,
     Raycaster,
     type Scene,
+    Matrix4 as ThreeMatrix4,
     Vector2,
     Vector3,
     WebGLRenderer,
@@ -66,6 +69,9 @@ import type { ThreeVisualContext } from "./threeVisualContext";
 import { ThreeComponentObject, ThreeMeshObject, ThreeVisualObject } from "./threeVisualObject";
 import { ViewGizmo } from "./viewGizmo";
 
+const WORKPLANE_GRID_SIZE = 400;
+const WORKPLANE_GRID_DIVISIONS = 20;
+
 export class ThreeView extends Observable implements IView {
     private _dom?: HTMLElement;
     private _needsUpdate: boolean = false;
@@ -73,6 +79,7 @@ export class ThreeView extends Observable implements IView {
     private _isolatedNodes?: INode[];
 
     private readonly _scene: Scene;
+    private readonly _workplaneGrid: GridHelper;
     private readonly _renderer: WebGLRenderer;
     private readonly _cssRenderer: CSS2DRenderer;
     private readonly _gizmo: IViewGizmo;
@@ -122,11 +129,12 @@ export class ThreeView extends Observable implements IView {
         this.setPrivateValue("mode", "solidAndWireframe");
         this._scene = content.scene;
         this._workplane = workplane;
+        this._workplaneGrid = this.initWorkplaneGrid();
         this._resizeObserver = new ResizeObserver(this._resizerObserverCallback);
         this.cameraController = new CameraController(this);
         this._renderer = this.initRenderer();
         this._cssRenderer = this.initCssRenderer();
-        this._scene.add(this.dynamicLight);
+        this._scene.add(this.dynamicLight, this._workplaneGrid);
         this._gizmo = this.initGizmo();
         this.camera.layers.enableAll();
         this.document.application.views.push(this);
@@ -137,6 +145,8 @@ export class ThreeView extends Observable implements IView {
         super.disposeInternal();
         this._gizmo.dispose();
         this._resizeObserver.disconnect();
+        this._scene.remove(this._workplaneGrid);
+        this._workplaneGrid.dispose();
     }
 
     close(): void {
@@ -252,7 +262,52 @@ export class ThreeView extends Observable implements IView {
     }
 
     set workplane(value: Plane) {
-        this.setProperty("workplane", value);
+        this.setProperty("workplane", value, () => {
+            if (this._workplaneGrid.visible) {
+                this.updateWorkplaneGridTransform();
+                this.update();
+            }
+        });
+    }
+
+    get workplaneVisible(): boolean {
+        return this._workplaneGrid.visible;
+    }
+
+    set workplaneVisible(value: boolean) {
+        this._workplaneGrid.visible = value;
+        if (value) {
+            this.updateWorkplaneGridTransform();
+        }
+        this.update();
+    }
+
+    private initWorkplaneGrid(): GridHelper {
+        // GridHelper lies in its local XZ plane (Y is its "up"/normal) - the
+        // basis matrix set in updateWorkplaneGridTransform maps that onto
+        // whatever plane (xvec, normal, yvec) the workplane currently is.
+        const grid = new GridHelper(WORKPLANE_GRID_SIZE, WORKPLANE_GRID_DIVISIONS, 0x888888, 0xbbbbbb);
+        grid.visible = false;
+        const material = grid.material as LineBasicMaterial;
+        material.transparent = true;
+        material.opacity = 0.35;
+        return grid;
+    }
+
+    private updateWorkplaneGridTransform() {
+        const plane = this._workplane;
+        // GridHelper's own local axes satisfy X x Z = -Y, but the plane's
+        // (xvec, yvec, normal) satisfy xvec x yvec = +normal - negating the
+        // Z-column (yvec) reconciles the handedness so this stays a proper
+        // rotation. Skipping it would make setFromRotationMatrix silently
+        // extract a bogus rotation from an (undetectable) reflection matrix.
+        const basis = new ThreeMatrix4().makeBasis(
+            ThreeHelper.fromXYZ(plane.xvec),
+            ThreeHelper.fromXYZ(plane.normal),
+            ThreeHelper.fromXYZ(plane.yvec).negate(),
+        );
+        this._workplaneGrid.quaternion.setFromRotationMatrix(basis);
+        this._workplaneGrid.position.copy(ThreeHelper.fromXYZ(plane.origin));
     }
 
     update() {

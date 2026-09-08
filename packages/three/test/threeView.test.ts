@@ -18,9 +18,11 @@ import {
     XYZ,
 } from "@chili3d/core";
 import { TestDocument } from "@chili3d/core/test-utils";
+import { rs } from "@rstest/core";
 import {
     BufferGeometry,
     DirectionalLight,
+    type GridHelper,
     Group,
     Layers,
     type Mesh,
@@ -29,6 +31,7 @@ import {
     PerspectiveCamera,
     Raycaster,
     Scene,
+    Vector3,
 } from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { Constants } from "../src/constants";
@@ -171,6 +174,87 @@ describe("ThreeView — properties", () => {
         view.workplane = newPlane;
         expect(view.workplane).toBe(newPlane);
         expect(fired).toContain("workplane");
+    });
+
+    describe("workplaneVisible", () => {
+        function gridOf(view: TestView) {
+            return (view as any)._workplaneGrid as GridHelper;
+        }
+
+        test("defaults to hidden", () => {
+            const { view } = createTestView();
+            expect(view.workplaneVisible).toBe(false);
+            expect(gridOf(view).visible).toBe(false);
+        });
+
+        test("setting it true shows the grid and positions it on the workplane origin", () => {
+            const plane = new Plane({
+                origin: new XYZ({ x: 1, y: 2, z: 3 }),
+                normal: XYZ.unitZ,
+                xvec: XYZ.unitX,
+            });
+            const { view } = createTestView({ workplane: plane });
+
+            view.workplaneVisible = true;
+
+            expect(view.workplaneVisible).toBe(true);
+            expect(gridOf(view).visible).toBe(true);
+            expect(gridOf(view).position.x).toBeCloseTo(1);
+            expect(gridOf(view).position.y).toBeCloseTo(2);
+            expect(gridOf(view).position.z).toBeCloseTo(3);
+        });
+
+        test("setting it false hides the grid again", () => {
+            const { view } = createTestView();
+            view.workplaneVisible = true;
+            view.workplaneVisible = false;
+            expect(view.workplaneVisible).toBe(false);
+            expect(gridOf(view).visible).toBe(false);
+        });
+
+        test("changing the workplane while visible re-syncs the grid transform", () => {
+            const { view } = createTestView({ workplane: Plane.XY });
+            view.workplaneVisible = true;
+
+            view.workplane = Plane.YZ;
+
+            // Plane.YZ's normal is unitX - the grid's local "up" (its quaternion
+            // applied to +Y) should now point along X, not Z.
+            const grid = gridOf(view);
+            const up = new Vector3(0, 1, 0).applyQuaternion(grid.quaternion);
+            expect(up.x).toBeCloseTo(1);
+            expect(up.y).toBeCloseTo(0);
+            expect(up.z).toBeCloseTo(0);
+        });
+
+        test("changing the workplane while hidden does not touch the grid", () => {
+            const { view } = createTestView({ workplane: Plane.XY });
+            const grid = gridOf(view);
+            const positionBefore = grid.position.clone();
+
+            view.workplane = new Plane({
+                origin: new XYZ({ x: 99, y: 99, z: 99 }),
+                normal: XYZ.unitX,
+                xvec: XYZ.unitY,
+            });
+
+            expect(grid.position.equals(positionBefore)).toBe(true);
+            expect(grid.visible).toBe(false);
+        });
+
+        test("dispose removes and disposes the grid", () => {
+            const { view } = createTestView();
+            const grid = gridOf(view);
+            const disposeSpy = rs.fn();
+            grid.dispose = disposeSpy;
+            const scene = (view as any)._scene;
+            expect(scene.children).toContain(grid);
+
+            view.dispose();
+
+            expect(scene.children).not.toContain(grid);
+            expect(disposeSpy).toHaveBeenCalledTimes(1);
+        });
     });
 
     test("dom returns undefined before setDom", () => {
