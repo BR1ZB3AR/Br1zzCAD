@@ -204,6 +204,11 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1003](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1003) — 2026-09-08
+
+- **UI**: Pinned **Import** to the always-visible quick-access toolbar (next to Save/Undo/Redo), so it's no longer buried near the end of a long, horizontally-scrolling ribbon.
+- **Cleanup**: Removed the WeChat ribbon entry — it linked to the upstream Chili3D author's personal WeChat group, not relevant to this fork.
+
 ### [v2026.09.08.0939](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.0939) — 2026-09-08
 
 - **Import**: Added support for opening **OBJ** and **3MF** files. OCCT (the CAD kernel) has no reader for either format in this build, so both are parsed directly in TypeScript (3MF's zip container via `jszip`) and built into a faceted shape — the same tier of geometry STL import already produces. Best suited to small-to-medium meshes; very large files (20,000+ triangles) aren't supported yet, since each triangle currently costs its own kernel call. STL and STEP/STP import were already supported.
