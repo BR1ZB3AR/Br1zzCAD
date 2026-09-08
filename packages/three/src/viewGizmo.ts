@@ -9,101 +9,87 @@ import type { ThreeView } from "./threeView";
 const MOUSE_LEFT = 1;
 
 const options = {
-    size: 220,
-    cubeScale: 52,
-    lineWidth: 1.5,
+    size: 240,
+    cubeScale: 70,
+    lineWidth: 1.25,
     fontSize: "12px",
     fontFamily: "arial",
-    faceColor: "#8a8a8a",
-    faceColorHover: "#b8b8b8",
-    edgeColor: "#2b2b2b",
+    faceColor: "#e4e4e4",
+    hoverColor: "#4a9eff",
+    edgeColor: "#333333",
     labelColor: "#151515",
+    hoverLabelColor: "#ffffff",
 };
 
-/** A face of the nav cube: the direction it points (in world space, Z-up)
- * and the four corners (unit cube, world space) that make up its quad. */
-export interface CubeFace {
+/** A chamfer inset (0-1): how far each face shrinks toward its center to
+ * make room for the edge/corner facets. 0 = sharp cube, closer to 1 = more
+ * chamfered/rounded-looking. */
+const CHAMFER = 0.62;
+
+export type CubePartKind = "face" | "edge" | "corner";
+
+/** One clickable facet of the nav cube: a face, an edge bevel (between two
+ * adjacent faces), or a corner bevel (between three). `direction` is the
+ * world-space (Z-up) direction the camera snaps to when it's clicked. */
+export interface CubePart {
+    kind: CubePartKind;
     label: string;
     direction: Vector3;
     corners: Vector3[];
 }
 
-interface ProjectedFace {
-    face: CubeFace;
+interface ProjectedPart {
+    part: CubePart;
     points: Vector3[];
     depth: number;
 }
 
-function face(label: string, direction: [number, number, number], corners: [number, number, number][]) {
-    return {
-        label,
-        direction: new Vector3(...direction),
-        corners: corners.map((c) => new Vector3(...c)),
-    };
+function v(x: number, y: number, z: number): Vector3 {
+    return new Vector3(x, y, z);
 }
 
-export const FACES: CubeFace[] = [
-    face(
-        "TOP",
-        [0, 0, 1],
-        [
-            [-1, -1, 1],
-            [1, -1, 1],
-            [1, 1, 1],
-            [-1, 1, 1],
-        ],
-    ),
-    face(
-        "BOTTOM",
-        [0, 0, -1],
-        [
-            [-1, -1, -1],
-            [-1, 1, -1],
-            [1, 1, -1],
-            [1, -1, -1],
-        ],
-    ),
-    face(
-        "FRONT",
-        [0, -1, 0],
-        [
-            [-1, -1, -1],
-            [1, -1, -1],
-            [1, -1, 1],
-            [-1, -1, 1],
-        ],
-    ),
-    face(
-        "BACK",
-        [0, 1, 0],
-        [
-            [1, 1, -1],
-            [-1, 1, -1],
-            [-1, 1, 1],
-            [1, 1, 1],
-        ],
-    ),
-    face(
-        "RIGHT",
-        [1, 0, 0],
-        [
-            [1, -1, -1],
-            [1, 1, -1],
-            [1, 1, 1],
-            [1, -1, 1],
-        ],
-    ),
-    face(
-        "LEFT",
-        [-1, 0, 0],
-        [
-            [-1, 1, -1],
-            [-1, -1, -1],
-            [-1, -1, 1],
-            [-1, 1, 1],
-        ],
-    ),
+function part(kind: CubePartKind, label: string, direction: Vector3, corners: Vector3[]): CubePart {
+    return { kind, label, direction: direction.normalize(), corners };
+}
+
+const S = CHAMFER;
+
+export const FACES: CubePart[] = [
+    part("face", "TOP", v(0, 0, 1), [v(-S, -S, 1), v(S, -S, 1), v(S, S, 1), v(-S, S, 1)]),
+    part("face", "BOTTOM", v(0, 0, -1), [v(-S, -S, -1), v(-S, S, -1), v(S, S, -1), v(S, -S, -1)]),
+    part("face", "FRONT", v(0, -1, 0), [v(-S, -1, -S), v(S, -1, -S), v(S, -1, S), v(-S, -1, S)]),
+    part("face", "BACK", v(0, 1, 0), [v(S, 1, -S), v(-S, 1, -S), v(-S, 1, S), v(S, 1, S)]),
+    part("face", "RIGHT", v(1, 0, 0), [v(1, -S, -S), v(1, S, -S), v(1, S, S), v(1, -S, S)]),
+    part("face", "LEFT", v(-1, 0, 0), [v(-1, S, -S), v(-1, -S, -S), v(-1, -S, S), v(-1, S, S)]),
 ];
+
+export const EDGES: CubePart[] = [
+    part("edge", "", v(0, -1, 1), [v(-S, -S, 1), v(S, -S, 1), v(S, -1, S), v(-S, -1, S)]),
+    part("edge", "", v(0, 1, 1), [v(S, S, 1), v(-S, S, 1), v(-S, 1, S), v(S, 1, S)]),
+    part("edge", "", v(1, 0, 1), [v(S, -S, 1), v(S, S, 1), v(1, S, S), v(1, -S, S)]),
+    part("edge", "", v(-1, 0, 1), [v(-S, S, 1), v(-S, -S, 1), v(-1, -S, S), v(-1, S, S)]),
+    part("edge", "", v(0, -1, -1), [v(S, -S, -1), v(-S, -S, -1), v(-S, -1, -S), v(S, -1, -S)]),
+    part("edge", "", v(0, 1, -1), [v(-S, S, -1), v(S, S, -1), v(S, 1, -S), v(-S, 1, -S)]),
+    part("edge", "", v(1, 0, -1), [v(S, S, -1), v(S, -S, -1), v(1, -S, -S), v(1, S, -S)]),
+    part("edge", "", v(-1, 0, -1), [v(-S, -S, -1), v(-S, S, -1), v(-1, S, -S), v(-1, -S, -S)]),
+    part("edge", "", v(1, -1, 0), [v(S, -1, -S), v(S, -1, S), v(1, -S, S), v(1, -S, -S)]),
+    part("edge", "", v(-1, -1, 0), [v(-S, -1, S), v(-S, -1, -S), v(-1, -S, -S), v(-1, -S, S)]),
+    part("edge", "", v(1, 1, 0), [v(S, 1, S), v(S, 1, -S), v(1, S, -S), v(1, S, S)]),
+    part("edge", "", v(-1, 1, 0), [v(-S, 1, -S), v(-S, 1, S), v(-1, S, S), v(-1, S, -S)]),
+];
+
+export const CORNERS: CubePart[] = [
+    part("corner", "", v(1, 1, 1), [v(S, S, 1), v(S, 1, S), v(1, S, S)]),
+    part("corner", "", v(1, 1, -1), [v(S, S, -1), v(1, S, -S), v(S, 1, -S)]),
+    part("corner", "", v(1, -1, 1), [v(S, -S, 1), v(S, -1, S), v(1, -S, S)]),
+    part("corner", "", v(1, -1, -1), [v(S, -S, -1), v(1, -S, -S), v(S, -1, -S)]),
+    part("corner", "", v(-1, 1, 1), [v(-S, S, 1), v(-1, S, S), v(-S, 1, S)]),
+    part("corner", "", v(-1, 1, -1), [v(-S, S, -1), v(-S, 1, -S), v(-1, S, -S)]),
+    part("corner", "", v(-1, -1, 1), [v(-S, -S, 1), v(-1, -S, S), v(-S, -1, S)]),
+    part("corner", "", v(-1, -1, -1), [v(-S, -S, -1), v(-S, -1, -S), v(-1, -S, -S)]),
+];
+
+const ALL_PARTS: CubePart[] = [...FACES, ...EDGES, ...CORNERS];
 
 export class ViewGizmo extends HTMLElement implements IViewGizmo {
     private readonly _center: Vector3;
@@ -111,8 +97,8 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
     private readonly _context: CanvasRenderingContext2D;
     readonly cameraController: CameraController;
     private _canClick: boolean = true;
-    private _hoverFace?: CubeFace;
-    private _visibleFaces: ProjectedFace[] = [];
+    private _hoverPart?: CubePart;
+    private _visibleParts: ProjectedPart[] = [];
     private _mouse?: Vector3;
 
     constructor(readonly view: ThreeView) {
@@ -193,7 +179,7 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
     private readonly _onPointerOut = (e: PointerEvent) => {
         e.stopPropagation();
         this._mouse = undefined;
-        this._hoverFace = undefined;
+        this._hoverPart = undefined;
     };
 
     private readonly _onClick = (e: MouseEvent) => {
@@ -202,14 +188,17 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
             this._canClick = true;
             return;
         }
-        if (this._hoverFace) {
-            const direction = this._hoverFace.direction;
+        if (this._hoverPart) {
+            const direction = this._hoverPart.direction;
             const distance = this.cameraController.camera.position.distanceTo(this.cameraController.target);
             const position = direction.clone().multiplyScalar(distance).add(this.cameraController.target);
             this.cameraController.camera.position.copy(position);
+            // A direction that's purely +-Z is parallel to the default up
+            // vector, which degenerates lookAt - swap to a +-Y up for those.
             let up = new XYZ({ x: 0, y: 0, z: 1 });
-            if (direction.z === 1) up = new XYZ({ x: 0, y: 1, z: 0 });
-            else if (direction.z === -1) up = new XYZ({ x: 0, y: -1, z: 0 });
+            if (direction.x === 0 && direction.y === 0) {
+                up = direction.z > 0 ? new XYZ({ x: 0, y: 1, z: 0 }) : new XYZ({ x: 0, y: -1, z: 0 });
+            }
             this.cameraController.lookAt(
                 this.cameraController.camera.position,
                 this.cameraController.target,
@@ -226,35 +215,35 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
     update() {
         this.clear();
         const invRotMat = new Matrix4().makeRotationFromEuler(this.cameraController.camera.rotation).invert();
-        this._visibleFaces = this._project(invRotMat);
-        this._hoverFace = this._hitTest(this._visibleFaces);
-        this._draw(this._visibleFaces);
+        this._visibleParts = this._project(invRotMat);
+        this._hoverPart = this._hitTest(this._visibleParts);
+        this._draw(this._visibleParts);
     }
 
-    private _project(invRotMat: Matrix4): ProjectedFace[] {
-        const projected: ProjectedFace[] = [];
-        for (const f of FACES) {
-            const normal = f.direction.clone().applyMatrix4(invRotMat);
+    private _project(invRotMat: Matrix4): ProjectedPart[] {
+        const projected: ProjectedPart[] = [];
+        for (const p of ALL_PARTS) {
+            const normal = p.direction.clone().applyMatrix4(invRotMat);
             if (normal.z < -0.01) continue;
 
             let depth = 0;
-            const points = f.corners.map((corner) => {
+            const points = p.corners.map((corner) => {
                 const rotated = corner.clone().applyMatrix4(invRotMat);
                 depth += rotated.z;
                 return this.getBubblePosition(rotated);
             });
-            projected.push({ face: f, points, depth: depth / f.corners.length });
+            projected.push({ part: p, points, depth: depth / p.corners.length });
         }
         // Painter's algorithm: farthest (smallest depth) first, so nearer
-        // faces draw on top and correctly occlude it.
+        // parts draw on top and correctly occlude it.
         projected.sort((a, b) => a.depth - b.depth);
         return projected;
     }
 
-    private _hitTest(faces: ProjectedFace[]): CubeFace | undefined {
+    private _hitTest(parts: ProjectedPart[]): CubePart | undefined {
         if (!this._mouse || !this._canClick) return undefined;
-        for (let i = faces.length - 1; i >= 0; i--) {
-            if (this.pointInPolygon(this._mouse, faces[i].points)) return faces[i].face;
+        for (let i = parts.length - 1; i >= 0; i--) {
+            if (this.pointInPolygon(this._mouse, parts[i].points)) return parts[i].part;
         }
         return undefined;
     }
@@ -272,36 +261,36 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
         return inside;
     }
 
-    private _draw(faces: ProjectedFace[]) {
-        for (const projected of faces) {
-            const isHovered = projected.face === this._hoverFace;
-            this.drawFace(projected.points, isHovered);
-            this.drawLabel(projected);
+    private _draw(parts: ProjectedPart[]) {
+        for (const projected of parts) {
+            const isHovered = projected.part === this._hoverPart;
+            this.drawPart(projected.points, isHovered);
+            if (projected.part.label) this.drawLabel(projected, isHovered);
         }
     }
 
-    private drawFace(points: Vector3[], isHovered: boolean) {
+    private drawPart(points: Vector3[], isHovered: boolean) {
         this._context.beginPath();
         this._context.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length; i++) {
             this._context.lineTo(points[i].x, points[i].y);
         }
         this._context.closePath();
-        this._context.fillStyle = isHovered ? options.faceColorHover : options.faceColor;
+        this._context.fillStyle = isHovered ? options.hoverColor : options.faceColor;
         this._context.fill();
         this._context.lineWidth = options.lineWidth;
         this._context.strokeStyle = options.edgeColor;
         this._context.stroke();
     }
 
-    private drawLabel(projected: ProjectedFace) {
+    private drawLabel(projected: ProjectedPart, isHovered: boolean) {
         const cx = projected.points.reduce((sum, p) => sum + p.x, 0) / projected.points.length;
         const cy = projected.points.reduce((sum, p) => sum + p.y, 0) / projected.points.length;
         this._context.font = [options.fontSize, options.fontFamily].join(" ");
-        this._context.fillStyle = options.labelColor;
+        this._context.fillStyle = isHovered ? options.hoverLabelColor : options.labelColor;
         this._context.textBaseline = "middle";
         this._context.textAlign = "center";
-        this._context.fillText(projected.face.label, cx, cy);
+        this._context.fillText(projected.part.label, cx, cy);
     }
 
     private getBubblePosition(vector: Vector3) {
