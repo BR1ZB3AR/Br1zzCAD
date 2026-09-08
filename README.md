@@ -199,6 +199,18 @@ We welcome contributions to this fork! Please feel free to submit pull requests 
 
 Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
+## Changelog
+
+Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
+
+### [v2026.09.07.1919](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.07.1919) — 2026-09-07
+
+- **Navigation**: Added a **FreeCAD** 3D navigation preset matching upstream FreeCAD's default "CAD" style (Middle+Left / Middle+Right chord or Shift+Right to rotate, Middle or Ctrl+Right to pan, Ctrl+Shift+Right to zoom-drag). Fixed the **TinkerCAD** preset, which had the wrong bindings — it's now Middle to pan, Right to rotate, matching FreeCAD's own bundled TinkerCAD style.
+- **Extrude**: Now accepts multiple selected edges/wires (not just one pre-built face), joining them into a face automatically — so a profile sketched as several separate Line segments can be extruded directly without a manual conversion step. Shows a clear error toast if the picked edges don't form a closed loop, instead of silently sweeping the wrong shape.
+- **Sketching**: The Line tool now detects when a connected chain of segments closes back on its own starting point and automatically converts it into a face — closing a sketch loop makes it immediately selectable and extrudable.
+- **Selection**: Widened the on-screen pick tolerance for edges and lines, so a thin sketch line sitting flush on a larger face (e.g. on top of a box) is much easier to click without grabbing the face underneath by mistake.
+- **Deployment**: The app now auto-builds and deploys to GitHub Pages on every push to `main` — live at [br1zb3ar.github.io/Br1zzCAD](https://br1zb3ar.github.io/Br1zzCAD/).
+
 ## Upstream
 
 This project began as a fork of [xiangechen/chili3d](https://github.com/xiangechen/chili3d). For the original project — its official deployment, changelog, discussions, and commercial licensing inquiries — see:
