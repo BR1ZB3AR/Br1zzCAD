@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.0005](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.0005) — 2026-09-09
+
+- **Sketching**: Added an **Angle Dimension** tool to the Dimension dropdown — pick two straight edges and a placement point to get an arc dimension labeled in degrees (e.g. a Rectangle corner reads "90.00°"). Added a **Move** tool to the Sketch tab so a finished sketch, dimensions included, can be repositioned as a unit — previously a selected dimension silently didn't move along with its geometry, since it's drawn from its own absolute points rather than a per-node transform like everything else.
+
 ### [v2026.09.08.2240](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.2240) — 2026-09-08
 
 - **Sketching**: Linear Dimension now picks the edge directly (Line, or one side of a Rectangle) instead of clicking two separate points — fixes a case where the dimension's label couldn't be double-clicked to edit because the second point-click didn't reliably resolve back to the shape it landed on. Dimensioning a Rectangle's side is now editable too, not just a Line. The label can also be dragged to pull the dimension line closer to or further from what it measures.
