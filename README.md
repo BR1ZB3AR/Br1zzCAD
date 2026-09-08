@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1651](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1651) — 2026-09-08
+
+- **Sketching**: "Sketch Plane" no longer opens a dialog — it now shows three translucent Top/Front/Right reference planes directly at the origin in the viewport, and you click one there to set the workplane, same as picking a face on a real part.
+
 ### [v2026.09.08.1607](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1607) — 2026-09-08
 
 - **Viewport**: The nav cube now has chamfered edges and corners (26 clickable facets total, up from 6), matching the standard SolidWorks/Fusion-style ViewCube — click an edge bevel for a diagonal two-face view, a corner bevel for an isometric-style three-face view, not just the 6 flat faces. The hovered facet highlights in blue.
