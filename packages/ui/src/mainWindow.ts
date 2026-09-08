@@ -20,7 +20,18 @@ import { Home } from "./home";
 import { Permanent } from "./permanent";
 import { Toast } from "./toast";
 
-const quickCommands: CommandKeys[] = ["doc.save", "doc.saveToFile", "edit.undo", "edit.redo", "ai.assistant"];
+// file.import lives here (not just in the ribbon's Import/Export group) since
+// that group sits near the far right of a long, horizontally-scrolling
+// ribbon and is easy to miss or scroll past - opening a file is too common a
+// first action to bury behind a scroll.
+const quickCommands: CommandKeys[] = [
+    "doc.save",
+    "doc.saveToFile",
+    "file.import",
+    "edit.undo",
+    "edit.redo",
+    "ai.assistant",
+];
 
 export class MainWindow extends HTMLElement implements IWindow {
     readonly ribbon: Ribbon;
