@@ -54,7 +54,8 @@ Br1zzCAD is an open-source browser-based 3D CAD (Computer-Aided Design) applicat
 
 - Create, open, and save documents
 - Full undo/redo stack with transaction history
-- Import/export of industry-standard formats (STEP, IGES, BREP, STL)
+- Import: STEP, STP, IGES, BREP, STL, OBJ, 3MF
+- Export: STEP, IGES, BREP, STL, PLY, OBJ
 
 ### User Interface
 
@@ -202,6 +203,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 ## Changelog
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
+
+### [v2026.09.08.0938](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.0938) — 2026-09-08
+
+- **Import**: Added support for opening **OBJ** and **3MF** files. OCCT (the CAD kernel) has no reader for either format in this build, so both are parsed directly in TypeScript (3MF's zip container via `jszip`) and built into a faceted shape — the same tier of geometry STL import already produces. Best suited to small-to-medium meshes; very large files (20,000+ triangles) aren't supported yet, since each triangle currently costs its own kernel call. STL and STEP/STP import were already supported.
 
 ### [v2026.09.07.1919](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.07.1919) — 2026-09-07
 
