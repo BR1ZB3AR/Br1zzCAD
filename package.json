@@ -1,8 +1,8 @@
 {
     "name": "br1zzcad",
-    "version": "2026.09.08.1813",
+    "version": "2026.09.08.1902",
     "description": "Br1zzCAD - a browser-based 3D CAD app, forked from Chili3D (https://github.com/xiangechen/chili3d) by 仙阁",
-    "documentVersion": "2026.09.08.1813",
+    "documentVersion": "2026.09.08.1902",
     "author": "BR1ZB3AR, forked from Chili3D by 仙阁",
     "type": "module",
     "scripts": {

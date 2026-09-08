@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1902](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1902) — 2026-09-08
+
+- **Sketching**: Every sketch shape now shows a small node marker at each endpoint/corner (and at the center for Circle/Ellipse). Closed profiles (Rectangle, Circle, Ellipse, Polygon) now render at 10% fill opacity instead of fully invisible, so they read as a faint tint rather than disappearing entirely; open shapes (Line, Arc, Bezier) are unaffected.
+
 ### [v2026.09.08.1813](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1813) — 2026-09-08
 
 - **Sketching**: Added **3 Point Circle**, **Circumscribed Polygon**, and **Elliptical Arc** to the Sketch tab's tool splits. Conic and true interpolating Spline tools aren't included — OCCT support for those isn't exposed by this build's WASM bindings, and adding it needs a C++/WASM rebuild this environment can't do.

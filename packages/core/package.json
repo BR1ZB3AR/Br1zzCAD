@@ -1,6 +1,6 @@
 {
     "name": "@chili3d/core",
-    "version": "2026.09.08.1813",
+    "version": "2026.09.08.1902",
     "description": "",
     "main": "src/index.ts",
     "devDependencies": {}
