@@ -15,7 +15,18 @@ import {
 } from "@chili3d/core";
 import { buildFacetedShape } from "./meshShapeBuilder";
 import { parseObj } from "./objImporter";
+import { estimateStlTriangleCount } from "./stlTriangleCount";
 import { parse3mf } from "./threeMfImporter";
+
+/**
+ * Above this triangle count, STL import via the native OCCT/WASM path
+ * degrades sharply rather than scaling linearly: ~10k triangles imports in a
+ * couple seconds, ~50k takes roughly ten, and ~100k+ can run for a minute or
+ * more before either finishing or crashing the WASM runtime outright (an
+ * unrecoverable "RuntimeError: null function" that requires reloading the
+ * page). Reject early with a clear message instead of hanging or crashing.
+ */
+const MAX_STL_TRIANGLES = 50000;
 
 export class DefaultDataExchange implements IDataExchange {
     importFormats(): string[] {
@@ -58,8 +69,18 @@ export class DefaultDataExchange implements IDataExchange {
     }
 
     private handleImportResult(document: IDocument, name: string, nodeResult: Result<INode> | undefined) {
-        if (!nodeResult?.isOk) {
+        if (!nodeResult) {
+            // Extension wasn't recognized at all - handleSingleFileImport never
+            // called an importer, so there's no specific failure reason to show.
             alert(I18n.translate("error.import.unsupportedFileType:{0}", name));
+            return;
+        }
+        if (!nodeResult.isOk) {
+            // Extension was recognized, but the file itself failed to import
+            // (e.g. invalid content, or too large - see importStl's triangle
+            // count check) - show the actual reason instead of implying the
+            // format itself isn't supported.
+            alert(I18n.translate("error.default:{0}", nodeResult.error));
             return;
         }
 
@@ -102,6 +123,14 @@ export class DefaultDataExchange implements IDataExchange {
 
     private async importStl(document: IDocument, file: File) {
         const content = new Uint8Array(await file.arrayBuffer());
+        const triangleCount = estimateStlTriangleCount(content);
+        if (triangleCount !== undefined && triangleCount > MAX_STL_TRIANGLES) {
+            return Result.err(
+                `This STL has ~${triangleCount.toLocaleString()} triangles, which exceeds the ` +
+                    `${MAX_STL_TRIANGLES.toLocaleString()} supported for import - larger meshes can take ` +
+                    "minutes or crash. Try simplifying/decimating the mesh first.",
+            );
+        }
         return shapeConverter.convertFromSTL(document, content);
     }
 

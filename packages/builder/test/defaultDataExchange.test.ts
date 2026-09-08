@@ -221,6 +221,39 @@ describe("DefaultDataExchange", () => {
             expect(node.name).toBe(file);
         });
 
+        test("should reject an STL whose triangle count exceeds the safe import limit", async () => {
+            const alertSpy = rs.fn();
+            rs.stubGlobal("alert", alertSpy);
+            const { converter, doc, addNodeSpy } = setup();
+            // Binary STL header declaring far more triangles than the cap -
+            // the buffer itself doesn't need real triangle data, since the
+            // count is read straight from the header before any real parsing.
+            const header = new Uint8Array(84);
+            new DataView(header.buffer).setUint32(80, 1_000_000, true);
+            const oversized = new Uint8Array(84 + 1_000_000 * 50);
+            oversized.set(header);
+
+            await exchange.import(doc, [new File([oversized], "huge.stl")]);
+
+            expect(converter.convertFromSTL).not.toHaveBeenCalled();
+            expect(alertSpy).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).not.toHaveBeenCalled();
+        });
+
+        test("should still import an STL at or under the safe triangle limit", async () => {
+            const { converter, node, doc, addNodeSpy } = setup();
+            // A properly-sized binary STL declaring 100 triangles (well
+            // under the cap) - the triangle bytes themselves are zeroed,
+            // since only the declared count needs to be valid for this check.
+            const small = new Uint8Array(84 + 100 * 50);
+            new DataView(small.buffer).setUint32(80, 100, true);
+
+            await exchange.import(doc, [new File([small], "small.stl")]);
+
+            expect(converter.convertFromSTL).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).toHaveBeenCalledWith(node);
+        });
+
         test("should lowercase the file name before routing", async () => {
             const { converter, node, doc, addNodeSpy } = setup();
 
