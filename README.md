@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1307](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1307) — 2026-09-08
+
+- **Viewport**: The navigation widget in the top-right corner is now an actual 3D cube (TOP/BOTTOM/FRONT/BACK/LEFT/RIGHT labeled faces) instead of a flat X/Y/Z axis-bubble diagram — click a face to snap the camera to that view, drag to orbit, same as before.
+
 ### [v2026.09.08.1205](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1205) — 2026-09-08
 
 - **Sketching**: Picking a plane on the Sketch Plane cube now shows it as a grid in the viewport, positioned and oriented to match, instead of leaving you looking at bare origin axes with no sense of where you're about to sketch. The grid follows any later workplane change too (Set/Align/Section working-plane commands).
