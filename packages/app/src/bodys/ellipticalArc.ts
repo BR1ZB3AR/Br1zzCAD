@@ -2,32 +2,32 @@
 // See LICENSE file in the project root for full license information.
 
 import {
-    FacebaseNode,
     type I18nKeys,
     type IDocument,
     type IShape,
+    ParameterShapeNode,
     property,
-    type Result,
+    Result,
     serializable,
     serialize,
     type XYZ,
 } from "@chili3d/core";
-import { sketchProfileMaterialId } from "./sketchMaterial";
 
-export interface EllipseOptions {
+export interface EllipticalArcOptions {
     document: IDocument;
     normal: XYZ;
     center: XYZ;
     xvec: XYZ;
     majorRadius: number;
     minorRadius: number;
-    isFace?: boolean;
+    startParameter: number;
+    endParameter: number;
 }
 
 @serializable()
-export class EllipseNode extends FacebaseNode {
+export class EllipticalArcNode extends ParameterShapeNode {
     override display(): I18nKeys {
-        return "body.ellipse";
+        return "body.ellipticalArc";
     }
 
     @serialize()
@@ -47,6 +47,7 @@ export class EllipseNode extends FacebaseNode {
     set majorRadius(radius: number) {
         this.setPropertyEmitShapeChanged("majorRadius", radius);
     }
+
     @serialize()
     @property("ellipse.minorRadius")
     get minorRadius() {
@@ -66,26 +67,40 @@ export class EllipseNode extends FacebaseNode {
         return this.getPrivateValue("xvec");
     }
 
-    constructor(options: EllipseOptions) {
-        super({ document: options.document, materialId: sketchProfileMaterialId(options.document) });
+    @serialize()
+    get startParameter(): number {
+        return this.getPrivateValue("startParameter");
+    }
+
+    @serialize()
+    get endParameter(): number {
+        return this.getPrivateValue("endParameter");
+    }
+
+    constructor(options: EllipticalArcOptions) {
+        super({ document: options.document });
         this.setPrivateValue("normal", options.normal);
         this.setPrivateValue("center", options.center);
         this.setPrivateValue("xvec", options.xvec);
         this.setPrivateValue("majorRadius", options.majorRadius);
         this.setPrivateValue("minorRadius", options.minorRadius);
-        this.setPrivateValue("isFace", options?.isFace === true);
+        this.setPrivateValue("startParameter", options.startParameter);
+        this.setPrivateValue("endParameter", options.endParameter);
     }
 
     generateShape(): Result<IShape, string> {
-        const circle = shapeFactory.ellipse(
+        const full = shapeFactory.ellipse(
             this.normal,
             this.center,
             this.xvec,
             this.majorRadius,
             this.minorRadius,
         );
-        if (!circle.isOk || !this.isFace) return circle;
-        const wire = shapeFactory.wire([circle.value]);
-        return wire.isOk ? wire.value.toFace() : circle;
+        if (!full.isOk) return Result.err(full.error);
+
+        const start = Math.min(this.startParameter, this.endParameter);
+        const end = Math.max(this.startParameter, this.endParameter);
+        const trimmed = full.value.curve.trim(start, end);
+        return Result.ok(shapeFactory.edge(trimmed));
     }
 }

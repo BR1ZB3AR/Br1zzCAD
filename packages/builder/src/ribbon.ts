@@ -22,6 +22,19 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                         type: "split",
                         items: ["create.rect", "create.centerRect", "create.alignedRect"],
                     },
+                    {
+                        type: "split",
+                        items: ["create.circle", "create.circle3Point", "create.ellipse"],
+                    },
+                    {
+                        type: "split",
+                        items: ["create.arc3point", "create.arcTTR", "create.arc", "create.ellipticalArc"],
+                    },
+                    {
+                        type: "split",
+                        items: ["create.regularPolygon", "create.circumscribedPolygon"],
+                    },
+                    "create.bezier",
                 ],
             },
         ],

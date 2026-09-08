@@ -12,6 +12,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface CircleOptions {
     document: IDocument;
@@ -50,7 +51,7 @@ export class CircleNode extends FacebaseNode {
     }
 
     constructor(options: CircleOptions) {
-        super({ document: options.document });
+        super({ document: options.document, materialId: sketchProfileMaterialId(options.document) });
         this.setPrivateValue("normal", options.normal);
         this.setPrivateValue("center", options.center);
         this.setPrivateValue("radius", options.radius);

@@ -13,6 +13,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface RectOptions {
     document: IDocument;
@@ -54,7 +55,7 @@ export class RectNode extends FacebaseNode {
     }
 
     constructor(options: RectOptions) {
-        super({ document: options.document });
+        super({ document: options.document, materialId: sketchProfileMaterialId(options.document) });
         this.setPrivateValue("plane", options.plane);
         this.setPrivateValue("dx", options.dx);
         this.setPrivateValue("dy", options.dy);

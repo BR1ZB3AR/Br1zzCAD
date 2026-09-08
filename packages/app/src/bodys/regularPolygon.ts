@@ -12,6 +12,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface RegularPolygonOptions {
     document: IDocument;
@@ -66,7 +67,7 @@ export class RegularPolygonNode extends FacebaseNode {
     }
 
     constructor(options: RegularPolygonOptions) {
-        super({ document: options.document });
+        super({ document: options.document, materialId: sketchProfileMaterialId(options.document) });
         this.setPrivateValue("normal", options.normal);
         this.setPrivateValue("xvec", options.xvec);
         this.setPrivateValue("center", options.center);
