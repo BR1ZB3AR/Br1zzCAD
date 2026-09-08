@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.2048](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.2048) — 2026-09-08
+
+- **Sketching**: Added a **Dimension** tool group (Linear, Radius, Diameter) to the Sketch tab. Pick two points (or a circle) plus a placement point to get a SolidWorks-style dimension — extension lines, arrows, and a value label. Double-click the label to edit the value in place; editing a Line's length or a Circle's radius/diameter writes the new value straight back to that shape. Scoped down from full FreeCAD-style constraint dimensioning: no 2D solver, no cross-shape constraints — an edit only drives the single shape it measures.
+
 ### [v2026.09.08.1902](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1902) — 2026-09-08
 
 - **Sketching**: Every sketch shape now shows a small node marker at each endpoint/corner (and at the center for Circle/Ellipse). Closed profiles (Rectangle, Circle, Ellipse, Polygon) now render at 10% fill opacity instead of fully invisible, so they read as a faint tint rather than disappearing entirely; open shapes (Line, Arc, Bezier) are unaffected.
