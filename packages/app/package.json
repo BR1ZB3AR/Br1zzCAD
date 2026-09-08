@@ -1,6 +1,6 @@
 {
   "name": "@chili3d/app",
-  "version": "2026.09.08.0939",
+  "version": "2026.09.08.1004",
   "description": "",
   "main": "src/index.ts",
   "devDependencies": {
