@@ -5,26 +5,34 @@ import type { XYZ } from "@chili3d/core";
 import { PerspectiveCamera, Vector3 } from "three";
 import type { CameraController } from "../src/cameraController";
 import type { ThreeView } from "../src/threeView";
-import type { Axis, ViewGizmo } from "../src/viewGizmo";
+import type { CubeFace, ViewGizmo } from "../src/viewGizmo";
 
 let ViewGizmoCtor: typeof ViewGizmo;
+let FACES: CubeFace[];
 
 beforeAll(async () => {
     // Importing the real module registers the "view-gizmo" custom element tag, but the test
     // stub (test/viewGizmo.ts, wired via the "./viewGizmo" alias used by threeView) may have
     // claimed that tag already, depending on test-file evaluation order. Skip duplicate
     // registrations so the import cannot throw in either order.
+    //
+    // FACES is pulled from this same dynamic import (not a static top-level import) - a real
+    // (non type-only) static import of anything from "../src/viewGizmo" would load the module
+    // twice (once statically, once here), running its customElements.define(...) call twice.
     const originalDefine = customElements.define.bind(customElements);
     customElements.define = (name, ctor, options) => {
         if (!customElements.get(name)) {
             originalDefine(name, ctor, options);
         }
     };
+    let module: typeof import("../src/viewGizmo");
     try {
-        ViewGizmoCtor = (await import("../src/viewGizmo")).ViewGizmo;
+        module = await import("../src/viewGizmo");
     } finally {
         customElements.define = originalDefine;
     }
+    ViewGizmoCtor = module.ViewGizmo;
+    FACES = module.FACES;
     // Happy-DOM rejects `new` on unregistered custom element classes, so make sure the real
     // class is registered under some tag even when the stub owns "view-gizmo".
     if (customElements.get("view-gizmo") !== ViewGizmoCtor) {
@@ -37,24 +45,23 @@ beforeAll(async () => {
  * with a call-counting fake for the duration of these tests.
  */
 interface Fake2dContext {
-    calls: { clearRect: number; fillText: number; arc: number; stroke: number };
+    calls: { clearRect: number; fillText: number; fill: number; stroke: number };
 }
 
 let fakeContext: Fake2dContext;
 let originalGetContext: typeof HTMLCanvasElement.prototype.getContext;
 
 function createFake2dContext(): Fake2dContext {
-    const calls = { clearRect: 0, fillText: 0, arc: 0, stroke: 0 };
+    const calls = { clearRect: 0, fillText: 0, fill: 0, stroke: 0 };
     return {
         calls,
         clearRect: () => {
             calls.clearRect++;
         },
         beginPath: () => {},
-        arc: () => {
-            calls.arc++;
+        fill: () => {
+            calls.fill++;
         },
-        fill: () => {},
         closePath: () => {},
         moveTo: () => {},
         lineTo: () => {},
@@ -112,8 +119,14 @@ function canvasOf(gizmo: ViewGizmo): HTMLCanvasElement {
     return (gizmo as any)._canvas;
 }
 
-function axesOf(gizmo: ViewGizmo): Axis[] {
-    return (gizmo as any)._axes;
+function visibleLabelsOf(gizmo: ViewGizmo): string[] {
+    return (gizmo as any)._visibleFaces.map((f: { face: { label: string } }) => f.face.label);
+}
+
+function faceByLabel(label: string) {
+    const face = FACES.find((f) => f.label === label);
+    if (!face) throw new Error(`no such face: ${label}`);
+    return face;
 }
 
 function pointerEvent(props: Record<string, unknown>): PointerEvent {
@@ -121,14 +134,14 @@ function pointerEvent(props: Record<string, unknown>): PointerEvent {
 }
 
 describe("ViewGizmo — construction and dom", () => {
-    test("constructor creates a 200x200 canvas child and absolute positioning", () => {
+    test("constructor creates a 220x220 canvas child and absolute positioning", () => {
         const { gizmo, cc } = createGizmo();
 
         const canvas = canvasOf(gizmo);
         expect(gizmo.children.length).toBe(1);
         expect(gizmo.children[0]).toBe(canvas);
-        expect(canvas.width).toBe(200);
-        expect(canvas.height).toBe(200);
+        expect(canvas.width).toBe(220);
+        expect(canvas.height).toBe(220);
         expect(gizmo.style.position).toBe("absolute");
         expect(gizmo.cameraController).toBe(cc as unknown as CameraController);
     });
@@ -157,30 +170,43 @@ describe("ViewGizmo — construction and dom", () => {
     });
 });
 
-describe("ViewGizmo — pointer interaction", () => {
-    test("pointerenter sets the background, pointerout resets it and clears the mouse", () => {
-        const { gizmo } = createGizmo();
-        document.body.appendChild(gizmo);
-        try {
-            canvasOf(gizmo).dispatchEvent(new PointerEvent("pointerenter"));
-            expect(gizmo.style.backgroundColor).toBe("rgba(66, 66, 66, .9)");
-
-            (gizmo as any)._mouse = new Vector3(1, 2, 0);
-            canvasOf(gizmo).dispatchEvent(new PointerEvent("pointerout"));
-            expect(gizmo.style.backgroundColor).toBe("transparent");
-            expect((gizmo as any)._mouse).toBeUndefined();
-        } finally {
-            gizmo.remove();
-        }
+describe("ViewGizmo — cube faces", () => {
+    test("has exactly six faces, one per world direction", () => {
+        expect(FACES).toHaveLength(6);
+        const labels = FACES.map((f) => f.label).sort();
+        expect(labels).toEqual(["BACK", "BOTTOM", "FRONT", "LEFT", "RIGHT", "TOP"]);
     });
 
+    test("each face has a unit direction and four corners", () => {
+        for (const face of FACES) {
+            expect(face.direction.length()).toBeCloseTo(1);
+            expect(face.corners).toHaveLength(4);
+        }
+    });
+});
+
+describe("ViewGizmo — pointer interaction", () => {
     test("detached gizmo no longer reacts to canvas events", () => {
         const { gizmo } = createGizmo();
         document.body.appendChild(gizmo);
         gizmo.remove();
 
-        canvasOf(gizmo).dispatchEvent(new PointerEvent("pointerenter"));
-        expect(gizmo.style.backgroundColor).toBe("");
+        canvasOf(gizmo).dispatchEvent(new PointerEvent("pointermove", { clientX: 5, clientY: 5 }));
+        expect((gizmo as any)._mouse).toBeUndefined();
+    });
+
+    test("pointerout clears the mouse position and hovered face", () => {
+        const { gizmo } = createGizmo();
+        document.body.appendChild(gizmo);
+        try {
+            (gizmo as any)._mouse = new Vector3(1, 2, 0);
+            (gizmo as any)._hoverFace = faceByLabel("TOP");
+            canvasOf(gizmo).dispatchEvent(new PointerEvent("pointerout"));
+            expect((gizmo as any)._mouse).toBeUndefined();
+            expect((gizmo as any)._hoverFace).toBeUndefined();
+        } finally {
+            gizmo.remove();
+        }
     });
 
     test("left-button drag rotates the camera by 4x the movement", () => {
@@ -240,7 +266,7 @@ describe("ViewGizmo — click to align camera", () => {
     test("click right after a drag only re-arms clicking", () => {
         const { gizmo, cc } = createGizmo();
         (gizmo as any)._canClick = false;
-        (gizmo as any)._selectedAxis = axesOf(gizmo)[0];
+        (gizmo as any)._hoverFace = faceByLabel("TOP");
 
         (gizmo as any)._onClick(pointerEvent({}));
 
@@ -248,9 +274,9 @@ describe("ViewGizmo — click to align camera", () => {
         expect(cc.lookAt).not.toHaveBeenCalled();
     });
 
-    test("click without a selected axis does nothing", () => {
+    test("click without a hovered face does nothing", () => {
         const { gizmo, cc } = createGizmo();
-        (gizmo as any)._selectedAxis = undefined;
+        (gizmo as any)._hoverFace = undefined;
 
         (gizmo as any)._onClick(pointerEvent({}));
 
@@ -259,16 +285,15 @@ describe("ViewGizmo — click to align camera", () => {
     });
 
     test.each([
-        ["x", [100, 0, 0], [0, 0, 1]],
-        ["-x", [-100, 0, 0], [0, 0, 1]],
-        ["y", [0, 100, 0], [0, 0, 1]],
-        ["z", [0, 0, 100], [0, 1, 0]],
-        ["-z", [0, 0, -100], [0, -1, 0]],
-    ])("click on axis %s positions the camera along that axis", (axisName, expectedPos, expectedUp) => {
+        ["RIGHT", [100, 0, 0], [0, 0, 1]],
+        ["LEFT", [-100, 0, 0], [0, 0, 1]],
+        ["FRONT", [0, -100, 0], [0, 0, 1]],
+        ["BACK", [0, 100, 0], [0, 0, 1]],
+        ["TOP", [0, 0, 100], [0, 1, 0]],
+        ["BOTTOM", [0, 0, -100], [0, -1, 0]],
+    ])("click on face %s positions the camera along that face's direction", (label, expectedPos, expectedUp) => {
         const { gizmo, cc, update } = createGizmo();
-        const axis = axesOf(gizmo).find((x) => x.axis === axisName);
-        expect(axis).toBeDefined();
-        (gizmo as any)._selectedAxis = axis;
+        (gizmo as any)._hoverFace = faceByLabel(label);
 
         (gizmo as any)._onClick(pointerEvent({}));
 
@@ -285,59 +310,67 @@ describe("ViewGizmo — click to align camera", () => {
 });
 
 describe("ViewGizmo — update rendering", () => {
-    test("update clears the canvas and draws all axes with labels", () => {
+    test("update clears the canvas and draws every visible face with its label", () => {
         const { gizmo } = createGizmo();
 
         gizmo.update();
 
         expect(fakeContext.calls.clearRect).toBe(1);
-        // 6 axis bubbles, but only the 3 primary axes (x, y, z) draw a line and a label
-        expect(fakeContext.calls.arc).toBe(6);
-        expect(fakeContext.calls.stroke).toBe(3);
-        expect(fakeContext.calls.fillText).toBe(3);
+        const visibleCount = (gizmo as any)._visibleFaces.length;
+        expect(visibleCount).toBeGreaterThan(0);
+        expect(fakeContext.calls.fill).toBe(visibleCount);
+        expect(fakeContext.calls.stroke).toBe(visibleCount);
+        expect(fakeContext.calls.fillText).toBe(visibleCount);
     });
 
-    test("update projects the x axis bubble to the right edge", () => {
+    test("TOP faces the default (identity-rotation) camera and is visible", () => {
         const { gizmo } = createGizmo();
 
         gizmo.update();
 
-        const xAxis = axesOf(gizmo).find((x) => x.axis === "x")!;
-        // center (100, 100) + direction (1, 0, 0) * (100 - bubbleSize/2 - padding)
-        expect(xAxis.position.x).toBeCloseTo(100 + (100 - 18 / 2 - 16));
-        expect(xAxis.position.y).toBeCloseTo(100);
+        expect(visibleLabelsOf(gizmo)).toContain("TOP");
     });
 
-    test("update selects the axis closest to the mouse within its size", () => {
+    test("rotating the camera 180 degrees about Y swaps TOP for BOTTOM", () => {
+        const { gizmo, cc } = createGizmo();
+        gizmo.update();
+        expect(visibleLabelsOf(gizmo)).toContain("TOP");
+        expect(visibleLabelsOf(gizmo)).not.toContain("BOTTOM");
+
+        cc.camera.rotation.y = Math.PI;
+        gizmo.update();
+
+        expect(visibleLabelsOf(gizmo)).not.toContain("TOP");
+        expect(visibleLabelsOf(gizmo)).toContain("BOTTOM");
+    });
+
+    test("update hovers the face under the mouse (TOP projects to the widget's center)", () => {
         const { gizmo } = createGizmo();
 
+        (gizmo as any)._mouse = new Vector3(110, 110, 0);
         gizmo.update();
-        const xAxis = axesOf(gizmo).find((x) => x.axis === "x")!;
-        (gizmo as any)._mouse = xAxis.position.clone();
 
-        gizmo.update();
-        expect((gizmo as any)._selectedAxis?.axis).toBe("x");
+        expect((gizmo as any)._hoverFace?.label).toBe("TOP");
     });
 
-    test("update selects nothing when the mouse is far from every axis", () => {
+    test("update hovers nothing when the mouse is far from every face", () => {
         const { gizmo } = createGizmo();
 
         (gizmo as any)._mouse = new Vector3(0, 0, 0);
         gizmo.update();
-        expect((gizmo as any)._selectedAxis).toBeUndefined();
+
+        expect((gizmo as any)._hoverFace).toBeUndefined();
     });
 
-    test("selected axis is clickable right after update", () => {
+    test("a hovered face from update is clickable", () => {
         const { gizmo, cc } = createGizmo();
 
+        (gizmo as any)._mouse = new Vector3(110, 110, 0);
         gizmo.update();
-        const yAxis = axesOf(gizmo).find((x) => x.axis === "y")!;
-        (gizmo as any)._mouse = yAxis.position.clone();
-        gizmo.update();
-        expect((gizmo as any)._selectedAxis?.axis).toBe("y");
+        expect((gizmo as any)._hoverFace?.label).toBe("TOP");
 
         (gizmo as any)._onClick(pointerEvent({}));
         expect(cc.lookAt).toHaveBeenCalledTimes(1);
-        expect(cc.camera.position.y).toBeCloseTo(100);
+        expect(cc.camera.position.z).toBeCloseTo(100);
     });
 });
