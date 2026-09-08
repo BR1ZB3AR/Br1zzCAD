@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.2240](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.2240) — 2026-09-08
+
+- **Sketching**: Linear Dimension now picks the edge directly (Line, or one side of a Rectangle) instead of clicking two separate points — fixes a case where the dimension's label couldn't be double-clicked to edit because the second point-click didn't reliably resolve back to the shape it landed on. Dimensioning a Rectangle's side is now editable too, not just a Line. The label can also be dragged to pull the dimension line closer to or further from what it measures.
+
 ### [v2026.09.08.2048](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.2048) — 2026-09-08
 
 - **Sketching**: Added a **Dimension** tool group (Linear, Radius, Diameter) to the Sketch tab. Pick two points (or a circle) plus a placement point to get a SolidWorks-style dimension — extension lines, arrows, and a value label. Double-click the label to edit the value in place; editing a Line's length or a Circle's radius/diameter writes the new value straight back to that shape. Scoped down from full FreeCAD-style constraint dimensioning: no 2D solver, no cross-shape constraints — an edit only drives the single shape it measures.
