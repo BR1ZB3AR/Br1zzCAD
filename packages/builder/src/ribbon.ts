@@ -5,6 +5,28 @@ import type { RibbonTabProfile } from "@chili3d/core";
 
 export const DefaultRibbon: RibbonTabProfile[] = [
     {
+        tabName: "ribbon.tab.draw",
+        groups: [
+            {
+                groupName: "ribbon.group.workingPlane",
+                items: ["sketch.pickPlane"],
+            },
+            {
+                groupName: "ribbon.group.draw",
+                items: [
+                    {
+                        type: "split",
+                        items: ["create.line", "create.lineMidpoint"],
+                    },
+                    {
+                        type: "split",
+                        items: ["create.rect", "create.centerRect", "create.alignedRect"],
+                    },
+                ],
+            },
+        ],
+    },
+    {
         tabName: "ribbon.tab.model",
         groups: [
             {

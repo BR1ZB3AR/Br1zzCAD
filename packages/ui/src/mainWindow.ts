@@ -48,6 +48,13 @@ export class MainWindow extends HTMLElement implements IWindow {
         this.tabIndex = 0;
         this.ensureDom(dom);
         this.ribbon = new Ribbon(quickCommands, tabs.map(RibbonTab.fromProfile));
+        // Keep Model as the tab shown on load regardless of where it sits in
+        // the tab order (Sketch is placed before it so it reads left-to-right
+        // as "Sketch, then Model", but shouldn't change the startup view).
+        const modelTab = this.ribbon.tabs.find((t) => t.tabName === "ribbon.tab.model");
+        if (modelTab) {
+            this.ribbon.activeTab = modelTab;
+        }
     }
 
     protected ensureDom(dom?: HTMLElement) {

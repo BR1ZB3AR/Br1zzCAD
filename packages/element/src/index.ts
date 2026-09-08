@@ -6,5 +6,6 @@ export * from "./converters";
 export * from "./elements";
 export * from "./expander";
 export * from "./htmlProps";
+export * from "./planePickerCube";
 export * from "./radioGroup";
 export * from "./utils";

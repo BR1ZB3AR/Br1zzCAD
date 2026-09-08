@@ -27,16 +27,31 @@ describe("DefaultRibbon", () => {
         }
     });
 
-    test("first tab should be model tab", () => {
-        expect(DefaultRibbon[0].tabName).toBe("ribbon.tab.model");
+    test("first tab should be the sketch tab", () => {
+        expect(DefaultRibbon[0].tabName).toBe("ribbon.tab.draw");
     });
 
-    test("second tab should be manager tab", () => {
-        expect(DefaultRibbon[1].tabName).toBe("ribbon.tab.manager");
+    test("second tab should be model tab", () => {
+        expect(DefaultRibbon[1].tabName).toBe("ribbon.tab.model");
+    });
+
+    test("third tab should be manager tab", () => {
+        expect(DefaultRibbon[2].tabName).toBe("ribbon.tab.manager");
+    });
+
+    test("sketch tab should contain a plane-picker and sketch tool commands", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const allItems = sketchTab.groups.flatMap((g) => flattenItems(g.items));
+        expect(allItems).toContain("sketch.pickPlane");
+        expect(allItems).toContain("create.line");
+        expect(allItems).toContain("create.lineMidpoint");
+        expect(allItems).toContain("create.rect");
+        expect(allItems).toContain("create.centerRect");
+        expect(allItems).toContain("create.alignedRect");
     });
 
     test("model tab should contain draw, modify, converter, boolean groups", () => {
-        const modelTab = DefaultRibbon[0];
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
         const groupNames = modelTab.groups.map((g) => g.groupName);
         expect(groupNames).toContain("ribbon.group.draw");
         expect(groupNames).toContain("ribbon.group.modify");
@@ -50,7 +65,8 @@ describe("DefaultRibbon", () => {
     });
 
     test("draw group should contain create commands", () => {
-        const drawGroup = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.draw");
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const drawGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.draw");
         expect(drawGroup).toBeDefined();
         const allItems = flattenItems(drawGroup!.items);
         expect(allItems).toContain("create.extrude");
@@ -58,7 +74,8 @@ describe("DefaultRibbon", () => {
     });
 
     test("modify group should contain modify commands", () => {
-        const modifyGroup = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.modify");
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const modifyGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.modify");
         expect(modifyGroup).toBeDefined();
         const allItems = flattenItems(modifyGroup!.items);
         expect(allItems).toContain("modify.move");
@@ -67,7 +84,8 @@ describe("DefaultRibbon", () => {
     });
 
     test("boolean group should contain boolean commands", () => {
-        const booleanGroup = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.boolean");
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const booleanGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.boolean");
         expect(booleanGroup).toBeDefined();
         const allItems = flattenItems(booleanGroup!.items);
         expect(allItems).toContain("boolean.common");
@@ -76,7 +94,8 @@ describe("DefaultRibbon", () => {
     });
 
     test("split-type items should have type and items properties", () => {
-        const drawGroup = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.draw");
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const drawGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.draw");
         const splitItems = drawGroup!.items.filter(
             (item) => typeof item === "object" && "type" in item && item.type === "split",
         );
@@ -89,7 +108,8 @@ describe("DefaultRibbon", () => {
     });
 
     test("groups should support collapsedItems", () => {
-        const drawGroup = DefaultRibbon[0].groups.find((g) => g.groupName === "ribbon.group.draw");
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const drawGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.draw");
         expect(drawGroup!.collapsedItems).toBeDefined();
         expect(Array.isArray(drawGroup!.collapsedItems)).toBe(true);
     });

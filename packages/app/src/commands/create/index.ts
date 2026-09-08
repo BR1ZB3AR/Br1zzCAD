@@ -1,12 +1,14 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
+export * from "./alignedRect";
 export * from "./arc";
 export * from "./arc2point";
 export * from "./arc3point";
 export * from "./arcTTR";
 export * from "./bezier";
 export * from "./box";
+export * from "./centerRect";
 export * from "./circle";
 export * from "./cone";
 export * from "./converter";
@@ -18,6 +20,7 @@ export * from "./extrude";
 export * from "./group";
 export * from "./helix";
 export * from "./line";
+export * from "./lineMidpoint";
 export * from "./loft";
 export * from "./offset";
 export * from "./pipe";
