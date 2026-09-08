@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1607](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1607) — 2026-09-08
+
+- **Viewport**: The nav cube now has chamfered edges and corners (26 clickable facets total, up from 6), matching the standard SolidWorks/Fusion-style ViewCube — click an edge bevel for a diagonal two-face view, a corner bevel for an isometric-style three-face view, not just the 6 flat faces. The hovered facet highlights in blue.
+
 ### [v2026.09.08.1307](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1307) — 2026-09-08
 
 - **Viewport**: The navigation widget in the top-right corner is now an actual 3D cube (TOP/BOTTOM/FRONT/BACK/LEFT/RIGHT labeled faces) instead of a flat X/Y/Z axis-bubble diagram — click a face to snap the camera to that view, drag to orbit, same as before.
