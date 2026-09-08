@@ -13,10 +13,13 @@ import {
     ShapeNode,
     type VisualNode,
 } from "@chili3d/core";
+import { buildFacetedShape } from "./meshShapeBuilder";
+import { parseObj } from "./objImporter";
+import { parse3mf } from "./threeMfImporter";
 
 export class DefaultDataExchange implements IDataExchange {
     importFormats(): string[] {
-        return [".step", ".stp", ".iges", ".igs", ".brep", ".stl"];
+        return [".step", ".stp", ".iges", ".igs", ".brep", ".stl", ".obj", ".3mf"];
     }
 
     exportFormats(): string[] {
@@ -41,6 +44,10 @@ export class DefaultDataExchange implements IDataExchange {
             importResult = await this.importStep(document, file);
         } else if (this.extensionIs(fileName, ".iges", ".igs")) {
             importResult = await this.importIges(document, file);
+        } else if (this.extensionIs(fileName, ".obj")) {
+            importResult = await this.importObj(document, file);
+        } else if (this.extensionIs(fileName, ".3mf")) {
+            importResult = await this.import3mf(document, file);
         }
 
         this.handleImportResult(document, fileName, importResult);
@@ -68,6 +75,29 @@ export class DefaultDataExchange implements IDataExchange {
             return Result.err(shape.error);
         }
         return Result.ok(new EditableShapeNode({ document, name: file.name, shape: shape.value }));
+    }
+
+    // OCCT has no built-in reader wired into this build for OBJ or 3MF, so
+    // these two parse the file themselves and build a faceted shape (see
+    // meshShapeBuilder.ts) rather than going through shapeConverter.
+    private async importObj(document: IDocument, file: File) {
+        try {
+            const shape = buildFacetedShape(parseObj(await file.text()));
+            if (!shape.isOk) return Result.err(shape.error);
+            return Result.ok(new EditableShapeNode({ document, name: file.name, shape: shape.value }));
+        } catch (e) {
+            return Result.err(e instanceof Error ? e.message : String(e));
+        }
+    }
+
+    private async import3mf(document: IDocument, file: File) {
+        try {
+            const shape = buildFacetedShape(await parse3mf(file));
+            if (!shape.isOk) return Result.err(shape.error);
+            return Result.ok(new EditableShapeNode({ document, name: file.name, shape: shape.value }));
+        } catch (e) {
+            return Result.err(e instanceof Error ? e.message : String(e));
+        }
     }
 
     private async importStl(document: IDocument, file: File) {

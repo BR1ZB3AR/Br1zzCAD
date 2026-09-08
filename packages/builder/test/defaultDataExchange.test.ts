@@ -32,6 +32,8 @@ describe("DefaultDataExchange", () => {
             expect(formats).toContain(".igs");
             expect(formats).toContain(".brep");
             expect(formats).toContain(".stl");
+            expect(formats).toContain(".obj");
+            expect(formats).toContain(".3mf");
         });
 
         test("should return an array of strings", () => {
@@ -234,7 +236,7 @@ describe("DefaultDataExchange", () => {
             rs.stubGlobal("alert", alertSpy);
             const { converter, doc, addNodeSpy } = setup();
 
-            await exchange.import(doc, [new File(["data"], "model.obj")]);
+            await exchange.import(doc, [new File(["data"], "model.xyz")]);
 
             expect(alertSpy).toHaveBeenCalledTimes(1);
             expect(converter.convertFromBrep).not.toHaveBeenCalled();
@@ -255,6 +257,111 @@ describe("DefaultDataExchange", () => {
             expect(converter.convertFromBrep).toHaveBeenCalledTimes(1);
             expect(converter.convertFromSTEP).toHaveBeenCalledTimes(1);
             expect(addNodeSpy).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    // OBJ and 3MF don't go through shapeConverter (OCCT has no reader for
+    // either in this build) - they're parsed in TS and built into a faceted
+    // shape via shapeFactory instead (see meshShapeBuilder.ts).
+    describe("import routing - mesh formats (OBJ / 3MF)", () => {
+        afterEach(() => {
+            rs.unstubAllGlobals();
+        });
+
+        function stubMeshShapeFactory() {
+            const triFace = { id: "tri-face", dispose: rs.fn() };
+            const factory = {
+                polygon: rs.fn(() => Result.ok({ id: "wire", dispose: rs.fn() })),
+                face: rs.fn(() => Result.ok(triFace)),
+                shell: rs.fn(() => Result.ok({ id: "shell-shape" })),
+                combine: rs.fn(),
+            };
+            rs.stubGlobal("shapeFactory", factory);
+            return factory;
+        }
+
+        test("should route .obj through parseObj + buildFacetedShape", async () => {
+            const factory = stubMeshShapeFactory();
+            const addNodeSpy = rs.fn();
+            const doc = createMockDocument({ modelManager: { addNode: addNodeSpy } });
+            doc.visual.update = rs.fn();
+            const objText = ["v 0 0 0", "v 1 0 0", "v 0 1 0", "f 1 2 3"].join("\n");
+
+            await exchange.import(doc, [new File([objText], "model.obj")]);
+
+            expect(factory.polygon).toHaveBeenCalledTimes(1);
+            expect(factory.shell).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).toHaveBeenCalledTimes(1);
+            const addedNode = addNodeSpy.mock.calls[0][0] as INode;
+            expect(addedNode.name).toBe("model.obj");
+        });
+
+        test("should route .3mf through parse3mf + buildFacetedShape", async () => {
+            const factory = stubMeshShapeFactory();
+            const addNodeSpy = rs.fn();
+            const doc = createMockDocument({ modelManager: { addNode: addNodeSpy } });
+            doc.visual.update = rs.fn();
+            const { default: JSZip } = await import("jszip");
+            const zip = new JSZip();
+            zip.file(
+                "3D/3dmodel.model",
+                `<?xml version="1.0"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+  <resources>
+    <object id="1" type="model">
+      <mesh>
+        <vertices>
+          <vertex x="0" y="0" z="0" />
+          <vertex x="1" y="0" z="0" />
+          <vertex x="0" y="1" z="0" />
+        </vertices>
+        <triangles><triangle v1="0" v2="1" v3="2" /></triangles>
+      </mesh>
+    </object>
+  </resources>
+  <build><item objectid="1" /></build>
+</model>`,
+            );
+            const blob = await zip.generateAsync({ type: "blob" });
+            const file = new File([blob], "model.3mf");
+
+            await exchange.import(doc, [file]);
+
+            expect(factory.polygon).toHaveBeenCalledTimes(1);
+            expect(factory.shell).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).toHaveBeenCalledTimes(1);
+            const addedNode = addNodeSpy.mock.calls[0][0] as INode;
+            expect(addedNode.name).toBe("model.3mf");
+        });
+
+        test("should alert (not throw) when the OBJ mesh has no faces", async () => {
+            stubMeshShapeFactory();
+            const alertSpy = rs.fn();
+            rs.stubGlobal("alert", alertSpy);
+            const addNodeSpy = rs.fn();
+            const doc = createMockDocument({ modelManager: { addNode: addNodeSpy } });
+
+            await exchange.import(doc, [new File(["v 0 0 0"], "empty.obj")]);
+
+            expect(alertSpy).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).not.toHaveBeenCalled();
+        });
+
+        test("should alert (not throw) for a 3MF package missing 3D/3dmodel.model", async () => {
+            stubMeshShapeFactory();
+            const alertSpy = rs.fn();
+            rs.stubGlobal("alert", alertSpy);
+            const addNodeSpy = rs.fn();
+            const doc = createMockDocument({ modelManager: { addNode: addNodeSpy } });
+            const { default: JSZip } = await import("jszip");
+            const zip = new JSZip();
+            zip.file("readme.txt", "not a model");
+            const blob = await zip.generateAsync({ type: "blob" });
+
+            await exchange.import(doc, [new File([blob], "bad.3mf")]);
+
+            expect(alertSpy).toHaveBeenCalledTimes(1);
+            expect(addNodeSpy).not.toHaveBeenCalled();
         });
     });
 
