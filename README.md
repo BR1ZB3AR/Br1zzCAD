@@ -204,7 +204,7 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
-### [v2026.09.08.1003](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1003) — 2026-09-08
+### [v2026.09.08.1004](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1004) — 2026-09-08
 
 - **UI**: Pinned **Import** to the always-visible quick-access toolbar (next to Save/Undo/Redo), so it's no longer buried near the end of a long, horizontally-scrolling ribbon.
 - **Cleanup**: Removed the WeChat ribbon entry — it linked to the upstream Chili3D author's personal WeChat group, not relevant to this fork.
