@@ -16,7 +16,7 @@ import {
     ViewModeI18nKeys,
     ViewModes,
 } from "@chili3d/core";
-import { collection, div, input, label, span, svg } from "@chili3d/element";
+import { collection, div, input, label, setSVGIcon, span, svg } from "@chili3d/element";
 import { Flyout } from "./flyout";
 import style from "./viewport.module.css";
 
@@ -96,6 +96,7 @@ export class Viewport extends HTMLElement {
     private createActionControls() {
         return div(
             { className: style.border },
+            this.createOriginToggle(),
             svg({
                 icon: "icon-fitcontent",
                 title: new Localize("viewport.fitContent"),
@@ -122,6 +123,20 @@ export class Viewport extends HTMLElement {
                 },
             }),
         );
+    }
+
+    private createOriginToggle() {
+        const visual = this.view.document.visual;
+        const iconEl = svg({
+            icon: visual.showOrigin ? "icon-eye" : "icon-eye-slash",
+            title: new Localize("viewport.toggleOrigin"),
+            onclick: (e) => {
+                e.stopPropagation();
+                visual.showOrigin = !visual.showOrigin;
+                setSVGIcon(iconEl, visual.showOrigin ? "icon-eye" : "icon-eye-slash");
+            },
+        });
+        return iconEl;
     }
 
     private createActs() {

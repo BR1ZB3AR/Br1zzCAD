@@ -348,6 +348,7 @@ export default {
         "viewport.fitContent": "По содержимому",
         "viewport.orthographic": "Ортогональный",
         "viewport.perspective": "Перспектива",
+        "viewport.toggleOrigin": "Показать/скрыть оси начала координат",
         "viewport.zoomIn": "Увеличить",
         "viewport.zoomOut": "Уменьшить",
         "viewport.mode.solid": "Поверхность",

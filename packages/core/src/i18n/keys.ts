@@ -355,6 +355,7 @@ export const I18N_KEYS = [
     "viewport.fitContent",
     "viewport.orthographic",
     "viewport.perspective",
+    "viewport.toggleOrigin",
     "viewport.zoomIn",
     "viewport.zoomOut",
     "viewport.mode.solid",

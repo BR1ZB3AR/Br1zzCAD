@@ -3,7 +3,8 @@
 
 import type { IEventHandler, IView } from "@chili3d/core";
 import { TestDocument } from "@chili3d/core/test-utils";
-import { Scene } from "three";
+import { rs } from "@rstest/core";
+import { AxesHelper, Scene } from "three";
 import { ThreeMeshExporter } from "../src/meshExporter";
 import { ThreeHighlighter } from "../src/threeHighlighter";
 import { ThreeVisual } from "../src/threeVisual";
@@ -72,5 +73,36 @@ describe("ThreeVisual", () => {
 
         visual.dispose();
         expect(scene.children.length).toBe(0);
+    });
+
+    describe("showOrigin", () => {
+        test("defaults to true", () => {
+            const { visual } = createTestVisual();
+            expect(visual.showOrigin).toBe(true);
+        });
+
+        test("setter toggles the AxesHelper's own visible flag in the scene", () => {
+            const { visual } = createTestVisual();
+            const axesHelper = visual.scene.children.find((c): c is AxesHelper => c instanceof AxesHelper);
+            expect(axesHelper).toBeDefined();
+
+            visual.showOrigin = false;
+            expect(axesHelper?.visible).toBe(false);
+            expect(visual.showOrigin).toBe(false);
+
+            visual.showOrigin = true;
+            expect(axesHelper?.visible).toBe(true);
+            expect(visual.showOrigin).toBe(true);
+        });
+
+        test("setter triggers a view update", () => {
+            const { visual } = createTestVisual();
+            const updateSpy = rs.fn();
+            visual.update = updateSpy;
+
+            visual.showOrigin = false;
+
+            expect(updateSpy).toHaveBeenCalledTimes(1);
+        });
     });
 });

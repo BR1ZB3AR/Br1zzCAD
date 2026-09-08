@@ -360,6 +360,7 @@ export default {
         "viewport.fitContent": "适应内容",
         "viewport.orthographic": "正交视图",
         "viewport.perspective": "透视视图",
+        "viewport.toggleOrigin": "切换原点坐标轴",
         "viewport.zoomIn": "放大",
         "viewport.zoomOut": "缩小",
         "viewport.mode.solid": "实体",

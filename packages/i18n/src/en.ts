@@ -361,6 +361,7 @@ export default {
         "viewport.fitContent": "Fit Content",
         "viewport.orthographic": "Orthographic",
         "viewport.perspective": "Perspective",
+        "viewport.toggleOrigin": "Toggle Origin Axes",
         "viewport.zoomIn": "Zoom In",
         "viewport.zoomOut": "Zoom Out",
         "viewport.mode.solid": "Solid",

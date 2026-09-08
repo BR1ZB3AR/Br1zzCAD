@@ -20,4 +20,6 @@ export interface IVisual extends IDisposable {
     defaultEventHandler: IEventHandler;
     eventHandler: IEventHandler;
     createView(name: string, workplane: Plane): IView;
+    /** Whether the world origin's Blue Z / Green Y / Red X axis indicator is shown. */
+    showOrigin: boolean;
 }

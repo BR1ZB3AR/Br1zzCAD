@@ -23,6 +23,7 @@ export class ThreeVisual implements IVisual {
     readonly scene: Scene;
     readonly highlighter: ThreeHighlighter;
     readonly meshExporter: IMeshExporter;
+    private readonly axisHelper: AxesHelper;
 
     viewHandler: IEventHandler;
     eventHandler: IEventHandler;
@@ -32,6 +33,7 @@ export class ThreeVisual implements IVisual {
         readonly document: IDocument,
         defaultEventHandler: IEventHandler,
     ) {
+        this.axisHelper = new AxesHelper(250);
         this.scene = this.initScene();
         this.defaultEventHandler = defaultEventHandler;
         this.viewHandler = new ThreeViewHandler();
@@ -41,11 +43,19 @@ export class ThreeVisual implements IVisual {
         this.eventHandler = this.defaultEventHandler;
     }
 
+    get showOrigin(): boolean {
+        return this.axisHelper.visible;
+    }
+
+    set showOrigin(value: boolean) {
+        this.axisHelper.visible = value;
+        this.update();
+    }
+
     initScene() {
         const scene = new Scene();
         const envLight = new AmbientLight(0x888888, 4);
-        const axisHelper = new AxesHelper(250);
-        scene.add(envLight, axisHelper);
+        scene.add(envLight, this.axisHelper);
         return scene;
     }
 
