@@ -204,6 +204,11 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1813](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1813) — 2026-09-08
+
+- **Sketching**: Added **3 Point Circle**, **Circumscribed Polygon**, and **Elliptical Arc** to the Sketch tab's tool splits. Conic and true interpolating Spline tools aren't included — OCCT support for those isn't exposed by this build's WASM bindings, and adding it needs a C++/WASM rebuild this environment can't do.
+- **Sketching**: 2D sketch profiles (Rectangle, Circle, Ellipse, Polygon, and their variants) now render as a transparent outline instead of a solid gray fill, closer to how a sketch looks before it's extruded.
+
 ### [v2026.09.08.1722](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1722) — 2026-09-08
 
 - **Sketching**: The three reference planes shown by "Sketch Plane" are now translucent instead of solid gray, and their Top/Front/Right labels sit inside each plane's own visible area instead of dangling off to the side near the origin axes.
