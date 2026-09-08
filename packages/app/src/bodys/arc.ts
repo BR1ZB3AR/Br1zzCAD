@@ -5,6 +5,7 @@ import {
     type I18nKeys,
     type IDocument,
     type IShape,
+    type IShapeMeshData,
     ParameterShapeNode,
     property,
     type Result,
@@ -12,6 +13,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { withProfileVertices } from "./profileVertices";
 
 export interface ArcOptions {
     document: IDocument;
@@ -66,5 +68,10 @@ export class ArcNode extends ParameterShapeNode {
 
     generateShape(): Result<IShape, string> {
         return shapeFactory.arc(this.normal, this.center, this.start, this.angle);
+    }
+
+    protected override createMesh(): IShapeMeshData {
+        const mesh = super.createMesh();
+        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
     }
 }

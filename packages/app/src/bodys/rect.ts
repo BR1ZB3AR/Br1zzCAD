@@ -6,6 +6,7 @@ import {
     type I18nKeys,
     type IDocument,
     type IShape,
+    type IShapeMeshData,
     type Plane,
     property,
     type Result,
@@ -13,6 +14,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { withProfileVertices } from "./profileVertices";
 import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface RectOptions {
@@ -66,6 +68,11 @@ export class RectNode extends FacebaseNode {
         const wire = shapeFactory.polygon(points);
         if (!wire.isOk || !this.isFace) return wire;
         return wire.value.toFace();
+    }
+
+    protected override createMesh(): IShapeMeshData {
+        const mesh = super.createMesh();
+        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
     }
 
     static points(plane: Plane, dx: number, dy: number): XYZ[] {

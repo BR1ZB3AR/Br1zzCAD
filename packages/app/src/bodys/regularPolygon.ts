@@ -6,12 +6,14 @@ import {
     type I18nKeys,
     type IDocument,
     type IShape,
+    type IShapeMeshData,
     property,
     type Result,
     serializable,
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { withProfileVertices } from "./profileVertices";
 import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface RegularPolygonOptions {
@@ -86,6 +88,11 @@ export class RegularPolygonNode extends FacebaseNode {
         const wire = shapeFactory.polygon(points);
         if (!wire.isOk || !this.isFace) return wire;
         return wire.value.toFace();
+    }
+
+    protected override createMesh(): IShapeMeshData {
+        const mesh = super.createMesh();
+        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
     }
 
     static calculateVertices(center: XYZ, radius: number, sides: number, normal: XYZ, xvec: XYZ): XYZ[] {

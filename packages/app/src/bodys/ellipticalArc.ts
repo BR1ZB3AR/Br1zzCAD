@@ -5,6 +5,7 @@ import {
     type I18nKeys,
     type IDocument,
     type IShape,
+    type IShapeMeshData,
     ParameterShapeNode,
     property,
     Result,
@@ -12,6 +13,7 @@ import {
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { withProfileVertices } from "./profileVertices";
 
 export interface EllipticalArcOptions {
     document: IDocument;
@@ -102,5 +104,10 @@ export class EllipticalArcNode extends ParameterShapeNode {
         const end = Math.max(this.startParameter, this.endParameter);
         const trimmed = full.value.curve.trim(start, end);
         return Result.ok(shapeFactory.edge(trimmed));
+    }
+
+    protected override createMesh(): IShapeMeshData {
+        const mesh = super.createMesh();
+        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
     }
 }

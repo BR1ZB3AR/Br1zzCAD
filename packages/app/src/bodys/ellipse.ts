@@ -6,12 +6,14 @@ import {
     type I18nKeys,
     type IDocument,
     type IShape,
+    type IShapeMeshData,
     property,
     type Result,
     serializable,
     serialize,
     type XYZ,
 } from "@chili3d/core";
+import { withProfileVertices } from "./profileVertices";
 import { sketchProfileMaterialId } from "./sketchMaterial";
 
 export interface EllipseOptions {
@@ -87,5 +89,10 @@ export class EllipseNode extends FacebaseNode {
         if (!circle.isOk || !this.isFace) return circle;
         const wire = shapeFactory.wire([circle.value]);
         return wire.isOk ? wire.value.toFace() : circle;
+    }
+
+    protected override createMesh(): IShapeMeshData {
+        const mesh = super.createMesh();
+        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value, [this.center]) : mesh;
     }
 }
