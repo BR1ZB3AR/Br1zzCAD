@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.08.1205](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1205) — 2026-09-08
+
+- **Sketching**: Picking a plane on the Sketch Plane cube now shows it as a grid in the viewport, positioned and oriented to match, instead of leaving you looking at bare origin axes with no sense of where you're about to sketch. The grid follows any later workplane change too (Set/Align/Section working-plane commands).
+
 ### [v2026.09.08.1139](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.08.1139) — 2026-09-08
 
 - **Sketching**: Added a **Sketch** tab (left of Model). Its first button opens a rotatable 3D cube for picking the plane to sketch on — Top/Bottom, Front/Back, Right/Left, mapped to the XY/ZX/YZ planes — drag to spin it, click a face to set the workplane and jump straight into the sketch tools. Also added **Midpoint Line** (draws symmetric about the first point you pick), **Center Rectangle**, and **Aligned Rectangle** (a 3-point rectangle that can sit at any angle, not just axis-aligned) alongside the existing Line and (corner) Rectangle tools.
