@@ -21,12 +21,25 @@ interface AnnotationOptionsBase {
     visible?: boolean;
 }
 
+export type DimensionType = "linear" | "radial" | "diameter";
+
 export interface DimensionAnnotationOptions extends AnnotationOptionsBase {
     annotationType: "dimension";
+    /** Linear: the two measured points. Radial/diameter: the circle's center. */
     startPoint: XYZ;
+    /** Linear: unused (kept equal to startPoint). Radial/diameter: a point on the circle. */
     endPoint: XYZ;
+    /** Where the user clicked to place the dimension line/label - for a linear
+     * dimension this also sets which side (and how far) the extension lines
+     * offset to; an aligned dimension parallel to startPoint->endPoint covers
+     * horizontal/vertical too, since those are just the degenerate cases
+     * where the measured segment already runs along one axis. */
+    placement: XYZ;
+    dimensionType?: DimensionType;
+    /** Overrides the displayed value instead of deriving it from the points
+     * (a "reference" dimension) - rarely needed, but keeps the annotation
+     * useful even when the exact geometric distance isn't what should show. */
     value?: number;
-    dimensionType?: "linear" | "angular" | "radial";
 }
 
 export interface TextAnnotationOptions extends AnnotationOptionsBase {
@@ -77,6 +90,61 @@ export abstract class Annotation extends VisualNode {
     }
     override boundingBox(): BoundingBox | undefined {
         return undefined;
+    }
+}
+
+@serializable()
+export class DimensionAnnotation extends Annotation {
+    declare readonly annotationType: "dimension";
+
+    @serialize()
+    get startPoint(): XYZ {
+        return this.getPrivateValue("startPoint");
+    }
+    set startPoint(value: XYZ) {
+        this.setProperty("startPoint", value);
+    }
+
+    @serialize()
+    get endPoint(): XYZ {
+        return this.getPrivateValue("endPoint");
+    }
+    set endPoint(value: XYZ) {
+        this.setProperty("endPoint", value);
+    }
+
+    @serialize()
+    get placement(): XYZ {
+        return this.getPrivateValue("placement");
+    }
+    set placement(value: XYZ) {
+        this.setProperty("placement", value);
+    }
+
+    @serialize()
+    get dimensionType(): DimensionType {
+        return this.getPrivateValue("dimensionType", "linear");
+    }
+
+    @serialize()
+    get value(): number | undefined {
+        return this.getPrivateValue("value");
+    }
+    set value(value: number | undefined) {
+        this.setProperty("value", value);
+    }
+
+    constructor(options: DimensionAnnotationOptions) {
+        super(options);
+        this.setPrivateValue("startPoint", options.startPoint);
+        this.setPrivateValue("endPoint", options.endPoint);
+        this.setPrivateValue("placement", options.placement);
+        this.setPrivateValue("dimensionType", options.dimensionType ?? "linear");
+        if (options.value !== undefined) this.setPrivateValue("value", options.value);
+    }
+
+    override boundingBox(): BoundingBox | undefined {
+        return BoundingBox.fromPoints([this.startPoint, this.endPoint, this.placement]);
     }
 }
 

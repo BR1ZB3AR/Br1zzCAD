@@ -5,6 +5,7 @@ import { BoundingBox, XYZ } from "../src/math";
 import {
     type AnnotationOptions,
     AnnotationTypes,
+    DimensionAnnotation,
     RefInfiniteLineAnnotation,
     RefSegmentAnnotation,
     TextAnnotation,
@@ -319,5 +320,126 @@ describe("RefSegmentAnnotation", () => {
         expect(box).not.toBeNull();
         expect(box!.min.x).toBe(1);
         expect(box!.max.x).toBe(5);
+    });
+});
+
+describe("DimensionAnnotation", () => {
+    const doc = new TestDocument() as any;
+
+    test("should create with correct values", () => {
+        const startPoint = new XYZ({ x: 0, y: 0, z: 0 });
+        const endPoint = new XYZ({ x: 10, y: 0, z: 0 });
+        const placement = new XYZ({ x: 5, y: 3, z: 0 });
+
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint,
+            endPoint,
+            placement,
+        });
+
+        expect(anno.annotationType).toBe("dimension");
+        expect(anno.name).toBe("test-dimension");
+        expect(anno.startPoint).toEqual(startPoint);
+        expect(anno.endPoint).toEqual(endPoint);
+        expect(anno.placement).toEqual(placement);
+    });
+
+    test("should default dimensionType to linear", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+        });
+
+        expect(anno.dimensionType).toBe("linear");
+    });
+
+    test("should accept an explicit dimensionType", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            dimensionType: "radial",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+        });
+
+        expect(anno.dimensionType).toBe("radial");
+    });
+
+    test("value should default to undefined", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+        });
+
+        expect(anno.value).toBeUndefined();
+    });
+
+    test("should accept an explicit override value", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+            value: 42,
+        });
+
+        expect(anno.value).toBe(42);
+    });
+
+    test("should set and get startPoint/endPoint/placement/value", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: XYZ.zero,
+            endPoint: XYZ.unitX,
+            placement: XYZ.unitY,
+        });
+
+        const newStart = new XYZ({ x: 1, y: 2, z: 3 });
+        const newEnd = new XYZ({ x: 10, y: 20, z: 30 });
+        const newPlacement = new XYZ({ x: -1, y: -2, z: -3 });
+        anno.startPoint = newStart;
+        anno.endPoint = newEnd;
+        anno.placement = newPlacement;
+        anno.value = 7.5;
+
+        expect(anno.startPoint).toEqual(newStart);
+        expect(anno.endPoint).toEqual(newEnd);
+        expect(anno.placement).toEqual(newPlacement);
+        expect(anno.value).toBe(7.5);
+    });
+
+    test("boundingBox should compute from start, end, and placement points", () => {
+        const anno = new DimensionAnnotation({
+            document: doc,
+            annotationType: "dimension",
+            name: "test-dimension",
+            startPoint: new XYZ({ x: 0, y: 0, z: 0 }),
+            endPoint: new XYZ({ x: 10, y: 0, z: 0 }),
+            placement: new XYZ({ x: 5, y: 4, z: 0 }),
+        });
+
+        const box = anno.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.min.x).toBe(0);
+        expect(box!.min.y).toBe(0);
+        expect(box!.max.x).toBe(10);
+        expect(box!.max.y).toBe(4);
     });
 });

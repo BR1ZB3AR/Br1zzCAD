@@ -6,6 +6,7 @@ import {
     type CollectionChangedArgs,
     ComponentNode,
     DeepObserver,
+    DimensionAnnotation,
     type EdgeMeshData,
     GeometryNode,
     GroupNode,
@@ -49,6 +50,7 @@ import {
     Vector3,
 } from "three";
 import { ThreeRefSegmentAnnotation } from "./threeAnnotation";
+import { ThreeDimensionAnnotation } from "./threeDimensionAnnotation";
 import { ThreeGeometry } from "./threeGeometry";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
@@ -240,7 +242,8 @@ export class ThreeVisualContext implements IVisualContext {
             obj instanceof ThreeGeometry ||
             obj instanceof ThreeMeshObject ||
             obj instanceof ThreeComponentObject ||
-            obj instanceof ThreeRefSegmentAnnotation
+            obj instanceof ThreeRefSegmentAnnotation ||
+            obj instanceof ThreeDimensionAnnotation
         ) {
             visuals.push(obj);
         }
@@ -374,6 +377,8 @@ export class ThreeVisualContext implements IVisualContext {
             visualObject = new ThreeComponentObject(node, this);
         } else if (node instanceof RefSegmentAnnotation) {
             visualObject = new ThreeRefSegmentAnnotation(this, node);
+        } else if (node instanceof DimensionAnnotation) {
+            visualObject = new ThreeDimensionAnnotation(this, node);
         }
 
         if (visualObject) {

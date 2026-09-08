@@ -3,6 +3,8 @@
 
 export * from "./annotation";
 export * from "./component";
+export * from "./dimensionEditHandler";
+export * from "./dimensionGeometry";
 export * from "./facebaseNode";
 export * from "./folderNode";
 export * from "./geometryNode";

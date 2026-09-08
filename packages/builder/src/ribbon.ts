@@ -37,6 +37,19 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                     "create.bezier",
                 ],
             },
+            {
+                groupName: "ribbon.group.annotation",
+                items: [
+                    {
+                        type: "split",
+                        items: [
+                            "create.dimensionLinear",
+                            "create.dimensionRadius",
+                            "create.dimensionDiameter",
+                        ],
+                    },
+                ],
+            },
         ],
     },
     {
