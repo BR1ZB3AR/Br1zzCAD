@@ -1,56 +1,56 @@
 {
-  "name": "br1zzcad",
-  "version": "2026.09.08.2048",
-  "description": "Br1zzCAD - a browser-based 3D CAD app, forked from Chili3D (https://github.com/xiangechen/chili3d) by 仙阁",
-  "documentVersion": "2026.09.08.2048",
-  "author": "BR1ZB3AR, forked from Chili3D by 仙阁",
-  "type": "module",
-  "scripts": {
-    "build": "rspack build && node scripts/build-plugins.mjs",
-    "build:wasm": "cd cpp && cmake --preset release && cmake --build --preset release",
-    "build:types": "node scripts/generate_types.mjs",
-    "check": "biome check --write",
-    "dev": "rspack dev",
-    "format": "biome check --write . && npx clang-format --style=Webkit --sort-includes -i ./cpp/src/**",
-    "preview": "rspack preview",
-    "release": "node scripts/release.mjs",
-    "setup:wasm": "node scripts/setup_wasm_deps.mjs",
-    "test": "rstest",
-    "testc": "rstest --coverage"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
-  },
-  "lint-staged": {
-    "*.{ts,js,css,json,mjs}": [
-      "npx biome check --write"
+    "name": "br1zzcad",
+    "version": "2026.09.08.2048",
+    "description": "Br1zzCAD - a browser-based 3D CAD app, forked from Chili3D (https://github.com/xiangechen/chili3d) by 仙阁",
+    "documentVersion": "2026.09.08.2048",
+    "author": "BR1ZB3AR, forked from Chili3D by 仙阁",
+    "type": "module",
+    "scripts": {
+        "build": "rspack build && node scripts/build-plugins.mjs",
+        "build:wasm": "cd cpp && cmake --preset release && cmake --build --preset release",
+        "build:types": "node scripts/generate_types.mjs",
+        "check": "biome check --write",
+        "dev": "rspack dev",
+        "format": "biome check --write . && npx clang-format --style=Webkit --sort-includes -i ./cpp/src/**",
+        "preview": "rspack preview",
+        "release": "node scripts/release.mjs",
+        "setup:wasm": "node scripts/setup_wasm_deps.mjs",
+        "test": "rstest",
+        "testc": "rstest --coverage"
+    },
+    "simple-git-hooks": {
+        "pre-commit": "npx lint-staged"
+    },
+    "lint-staged": {
+        "*.{ts,js,css,json,mjs}": [
+            "npx biome check --write"
+        ],
+        "*.{c,h,cxx,hxx,cpp,hpp}": [
+            "npx clang-format --style=Webkit --sort-includes -i"
+        ]
+    },
+    "workspaces": [
+        "packages/*",
+        "plugins/*"
     ],
-    "*.{c,h,cxx,hxx,cpp,hpp}": [
-      "npx clang-format --style=Webkit --sort-includes -i"
-    ]
-  },
-  "workspaces": [
-    "packages/*",
-    "plugins/*"
-  ],
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
-    "@rspack/cli": "^2.0.3",
-    "@rspack/core": "^2.0.3",
-    "@rspack/dev-server": "^2.0.0",
-    "@rstest/core": "^0.10.0",
-    "@rstest/coverage-istanbul": "^0.10.0",
-    "clang-format": "^1.8.0",
-    "happy-dom": "^20.9.0",
-    "lint-staged": "^17.0.5",
-    "simple-git-hooks": "2.13.1",
-    "ts-checker-rspack-plugin": "^1.3.0",
-    "typescript": "^6.0.3",
-    "typescript-plugin-css-modules": "^5.2.0"
-  },
-  "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.84",
-    "@types/jszip": "^3.4.0",
-    "jszip": "^3.10.1"
-  }
+    "devDependencies": {
+        "@biomejs/biome": "^2.4.15",
+        "@rspack/cli": "^2.0.3",
+        "@rspack/core": "^2.0.3",
+        "@rspack/dev-server": "^2.0.0",
+        "@rstest/core": "^0.10.0",
+        "@rstest/coverage-istanbul": "^0.10.0",
+        "clang-format": "^1.8.0",
+        "happy-dom": "^20.9.0",
+        "lint-staged": "^17.0.5",
+        "simple-git-hooks": "2.13.1",
+        "ts-checker-rspack-plugin": "^1.3.0",
+        "typescript": "^6.0.3",
+        "typescript-plugin-css-modules": "^5.2.0"
+    },
+    "dependencies": {
+        "@mlc-ai/web-llm": "^0.2.84",
+        "@types/jszip": "^3.4.0",
+        "jszip": "^3.10.1"
+    }
 }

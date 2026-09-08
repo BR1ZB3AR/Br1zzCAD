@@ -9,6 +9,8 @@ import {
     getDimensionEditHandler,
     type IVisualObject,
     Matrix4,
+    Transaction,
+    ViewUtils,
     type XYZ,
 } from "@chili3d/core";
 import { DoubleSide, type Mesh, Object3D, type Points } from "three";
@@ -23,6 +25,9 @@ import type { ThreeVisualContext } from "./threeVisualContext";
 
 const ARROW_LENGTH = 3;
 const ARROW_WIDTH = 1.1;
+/** Screen pixels the pointer must move past before a press-on-the-label is
+ * treated as a drag rather than the first half of a double-click. */
+const DRAG_THRESHOLD_SQ = 3 * 3;
 
 const material = new LineMaterial({ linewidth: 1.5, color: 0x2f8fef, side: DoubleSide });
 const highlightMaterial = new LineMaterial({ linewidth: 1.5, color: 0x00ffff, side: DoubleSide });
@@ -38,6 +43,12 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
     private readonly _labelEl: HTMLDivElement;
     private readonly _label: CSS2DObject;
     private readonly _valueEl: HTMLSpanElement;
+    private _isEditing = false;
+    /** Live placement override while the label is being dragged - kept
+     * separate from `annotation.placement` so every pointermove doesn't
+     * spam a separate undo entry; the real property is only written once,
+     * on release. */
+    private _dragPlacement: XYZ | undefined;
 
     constructor(
         private readonly context: ThreeVisualContext,
@@ -84,25 +95,30 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
     }
 
     private readonly handlePropertyChanged = () => {
+        this.refresh();
+    };
+
+    private refresh() {
         this.remove(this._mesh);
         this._mesh.geometry?.dispose();
         this._mesh = this.buildLines();
         this.add(this._mesh);
         this.updateLabelText();
         this.positionLabel();
-    };
+    }
 
     private geometryData() {
         const a = this.annotation;
+        const placement = this._dragPlacement ?? a.placement;
         if (a.dimensionType === "radial" || a.dimensionType === "diameter") {
             return {
                 kind: "radial" as const,
-                g: computeRadialDimensionGeometry(a.startPoint, a.endPoint, a.placement, a.dimensionType),
+                g: computeRadialDimensionGeometry(a.startPoint, a.endPoint, placement, a.dimensionType),
             };
         }
         return {
             kind: "linear" as const,
-            g: computeLinearDimensionGeometry(a.startPoint, a.endPoint, a.placement),
+            g: computeLinearDimensionGeometry(a.startPoint, a.endPoint, placement),
         };
     }
 
@@ -166,20 +182,93 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
         el.style.fontFamily = "arial";
         el.style.whiteSpace = "nowrap";
         el.style.pointerEvents = "auto";
-        el.style.cursor = "default";
+        el.style.cursor = "move";
         el.style.userSelect = "none";
         el.append(valueEl);
         el.addEventListener("dblclick", (e) => {
             e.stopPropagation();
             this.beginEdit();
         });
+        el.addEventListener("pointerdown", (e) => {
+            if (this._isEditing) return;
+            this.beginDrag(e);
+        });
         return el;
+    }
+
+    /** Click-and-drag the label to reposition the whole dimension - moves
+     * `annotation.placement`, which drives which side (and how far) the
+     * extension lines offset to. Live preview happens via `_dragPlacement`
+     * so it doesn't touch the real property (and undo history) until
+     * release; a plain click/double-click - not enough movement to count
+     * as a drag - leaves `placement` untouched entirely. */
+    private beginDrag(e: PointerEvent) {
+        const view = this.context.visual.document.application.activeView;
+        if (!view?.dom) return;
+
+        e.stopPropagation();
+        const target = e.currentTarget as HTMLElement;
+        target.setPointerCapture(e.pointerId);
+
+        const rect = view.dom.getBoundingClientRect();
+        const toViewPoint = (ev: PointerEvent) => ({ mx: ev.clientX - rect.left, my: ev.clientY - rect.top });
+
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const { mx: startMx, my: startMy } = toViewPoint(e);
+        const dragPlane = ViewUtils.ensurePlane(
+            view,
+            ViewUtils.raycastClosestPlane(
+                view,
+                this.annotation.startPoint,
+                view.screenToWorld(startMx, startMy),
+            ),
+        );
+        let dragging = false;
+
+        const onMove = (ev: PointerEvent) => {
+            if (!dragging) {
+                const dx = ev.clientX - startClientX;
+                const dy = ev.clientY - startClientY;
+                if (dx * dx + dy * dy < DRAG_THRESHOLD_SQ) return;
+                dragging = true;
+            }
+            const { mx, my } = toViewPoint(ev);
+            const point = dragPlane.intersectRay(view.rayAt(mx, my));
+            if (!point) return;
+            this._dragPlacement = point;
+            this.refresh();
+            this.context.visual.update();
+        };
+
+        const endDrag = (ev: PointerEvent) => {
+            target.releasePointerCapture(ev.pointerId);
+            target.removeEventListener("pointermove", onMove);
+            target.removeEventListener("pointerup", endDrag);
+            target.removeEventListener("pointercancel", endDrag);
+
+            const finalPlacement = this._dragPlacement;
+            this._dragPlacement = undefined;
+            if (dragging && finalPlacement) {
+                Transaction.execute(this.context.visual.document, "move dimension", () => {
+                    this.annotation.placement = finalPlacement;
+                });
+            } else {
+                this.refresh();
+                this.context.visual.update();
+            }
+        };
+
+        target.addEventListener("pointermove", onMove);
+        target.addEventListener("pointerup", endDrag);
+        target.addEventListener("pointercancel", endDrag);
     }
 
     private beginEdit() {
         const handler = getDimensionEditHandler(this.annotation);
         if (!handler) return;
 
+        this._isEditing = true;
         this._labelEl.textContent = "";
         const input = document.createElement("input");
         input.type = "text";
@@ -202,6 +291,7 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
         confirmBtn.textContent = "✓";
         confirmBtn.style.marginLeft = "4px";
         confirmBtn.style.cursor = "pointer";
+        confirmBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
         confirmBtn.onclick = (e) => {
             e.stopPropagation();
             commit();
@@ -211,6 +301,7 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
         cancelBtn.textContent = "✕";
         cancelBtn.style.marginLeft = "2px";
         cancelBtn.style.cursor = "pointer";
+        cancelBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
         cancelBtn.onclick = (e) => {
             e.stopPropagation();
             cancel();
@@ -237,6 +328,7 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
     }
 
     private endEdit() {
+        this._isEditing = false;
         this._labelEl.textContent = "";
         this._labelEl.append(this._valueEl);
         this.updateLabelText();

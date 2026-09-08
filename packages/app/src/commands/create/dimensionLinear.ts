@@ -6,23 +6,29 @@ import {
     DimensionAnnotation,
     type DimensionEditHandler,
     Dimensions,
+    type IEdge,
     type IStep,
     MultistepCommand,
     type PointSnapData,
     PointStep,
-    Precision,
+    SelectShapeStep,
+    ShapeTypes,
     setDimensionEditHandler,
     Transaction,
+    type VisualNode,
     type XYZ,
 } from "@chili3d/core";
-import { LineNode } from "../../bodys";
+import { LineNode, RectNode } from "../../bodys";
+import { lineNodeEditHandler, rectNodeEditHandler, straightEdgeFilter } from "./dimensionUtils";
 
 /**
- * Creates an editable linear dimension between two picked points. When both
- * points land on the same LineNode's endpoints, double-clicking the
- * dimension's label later can edit that line's length; any other pair of
- * points still gets a dimension, just a read-only one - measuring across
- * unrelated shapes has no single property to write an edited value back to.
+ * Creates an editable linear dimension by picking a straight edge directly
+ * (a Line, or one side of a Rectangle/Polygon), then a placement point - no
+ * separate node-to-node point-clicking, which is fragile against the same
+ * pixel not resolving to the same vertex snap twice. When the picked edge
+ * belongs to a LineNode or a RectNode, double-clicking the dimension's label
+ * later can edit that line's length or that rectangle's dx/dy; an edge from
+ * anywhere else still gets measured, just read-only.
  */
 @command({
     key: "create.dimensionLinear",
@@ -30,9 +36,11 @@ import { LineNode } from "../../bodys";
 })
 export class LinearDimension extends MultistepCommand {
     protected override executeMainTask(): void {
-        const start = this.stepDatas[0].point!;
-        const end = this.stepDatas[1].point!;
-        const placement = this.stepDatas[2].point!;
+        const edgeData = this.stepDatas[0].shapes[0];
+        const edge = this.transformdFirstShape(this.stepDatas[0]) as IEdge;
+        const start = edge.curve.startPoint();
+        const end = edge.curve.endPoint();
+        const placement = this.stepDatas[1].point!;
 
         Transaction.execute(this.document, "create dimension", () => {
             const annotation = new DimensionAnnotation({
@@ -46,7 +54,7 @@ export class LinearDimension extends MultistepCommand {
             });
             this.document.modelManager.addNode(annotation);
 
-            const handler = this.buildEditHandler(annotation, start, end);
+            const handler = this.buildEditHandler(annotation, edgeData.owner.node, start, end);
             if (handler) setDimensionEditHandler(annotation, handler);
 
             this.document.visual.update();
@@ -56,73 +64,25 @@ export class LinearDimension extends MultistepCommand {
 
     private buildEditHandler(
         annotation: DimensionAnnotation,
+        owner: VisualNode,
         start: XYZ,
         end: XYZ,
     ): DimensionEditHandler | undefined {
-        const ownerA = this.stepDatas[0].shapes[0]?.owner.node;
-        const ownerB = this.stepDatas[1].shapes[0]?.owner.node;
-        if (!ownerA || ownerA !== ownerB || !(ownerA instanceof LineNode)) return undefined;
-
-        const line = ownerA;
-        const startIsLineStart = start.distanceTo(line.start) < Precision.Distance;
-        const startIsLineEnd = start.distanceTo(line.end) < Precision.Distance;
-        const endIsLineStart = end.distanceTo(line.start) < Precision.Distance;
-        const endIsLineEnd = end.distanceTo(line.end) < Precision.Distance;
-        if (!((startIsLineStart && endIsLineEnd) || (startIsLineEnd && endIsLineStart))) return undefined;
-
-        const movingIsEnd = startIsLineStart;
-        return (newLength: number) => {
-            if (newLength <= Precision.Distance) return false;
-            const pinned = movingIsEnd ? line.start : line.end;
-            const moving = movingIsEnd ? line.end : line.start;
-            const direction = moving.sub(pinned).normalize();
-            if (!direction) return false;
-            const newPoint = pinned.add(direction.multiply(newLength));
-            if (movingIsEnd) line.end = newPoint;
-            else line.start = newPoint;
-
-            // Keep the annotation's own points in sync so the rendered
-            // extension/dimension lines track the line they measure.
-            if (movingIsEnd) annotation.endPoint = newPoint;
-            else annotation.startPoint = newPoint;
-            return true;
-        };
+        if (owner instanceof LineNode) return lineNodeEditHandler(annotation, owner, start, end);
+        if (owner instanceof RectNode) return rectNodeEditHandler(annotation, owner, start, end);
+        return undefined;
     }
 
     getSteps(): IStep[] {
         return [
-            new PointStep("prompt.pickFistPoint"),
-            new PointStep("prompt.pickNextPoint", this.getSecondPointData),
+            new SelectShapeStep(ShapeTypes.edge, "prompt.select.edges", {
+                shapeFilter: straightEdgeFilter,
+            }),
             new PointStep("prompt.pickNextPoint", this.getPlacementData),
         ];
     }
 
-    private readonly getSecondPointData = (): PointSnapData => {
-        return {
-            refPoint: () => this.stepDatas[0].point!,
-            dimension: Dimensions.D1D2D3,
-            validator: (point: XYZ) => this.stepDatas[0].point!.distanceTo(point) > Precision.Distance,
-            preview: this.segmentPreview,
-        };
-    };
-
     private readonly getPlacementData = (): PointSnapData => {
-        return {
-            dimension: Dimensions.D1D2D3,
-            preview: this.placementPreview,
-        };
-    };
-
-    private readonly segmentPreview = (point: XYZ | undefined) => {
-        if (!point) return [this.meshPoint(this.stepDatas[0].point!)];
-        return [this.meshPoint(this.stepDatas[0].point!), this.meshLine(this.stepDatas[0].point!, point)];
-    };
-
-    private readonly placementPreview = (point: XYZ | undefined) => {
-        const start = this.stepDatas[0].point!;
-        const end = this.stepDatas[1].point!;
-        const lines = [this.meshLine(start, end)];
-        if (point) lines.push(this.meshLine(end, point));
-        return lines;
+        return { dimension: Dimensions.D1D2D3 };
     };
 }
