@@ -189,6 +189,14 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
             return;
         }
         if (this._hoverPart) {
+            // A face click is a named axis view (Top/Front/Back/...) - the
+            // conventional expectation (matching most CAD tools) is that
+            // these look truly flat, not perspective-distorted. Edge/corner
+            // clicks stay whatever projection is already active, since
+            // those are inherently angled views either way.
+            if (this._hoverPart.kind === "face") {
+                this.cameraController.cameraType = "orthographic";
+            }
             const direction = this._hoverPart.direction;
             const distance = this.cameraController.camera.position.distanceTo(this.cameraController.target);
             const position = direction.clone().multiplyScalar(distance).add(this.cameraController.target);

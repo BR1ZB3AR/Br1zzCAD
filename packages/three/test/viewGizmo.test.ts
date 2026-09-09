@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import type { XYZ } from "@chili3d/core";
+import type { CameraType, XYZ } from "@chili3d/core";
 import { PerspectiveCamera, Vector3 } from "three";
 import type { CameraController } from "../src/cameraController";
 import type { ThreeView } from "../src/threeView";
@@ -99,6 +99,7 @@ afterEach(() => {
 interface MockController {
     camera: PerspectiveCamera;
     target: Vector3;
+    cameraType: CameraType;
     rotate: ReturnType<typeof rs.fn>;
     setRotateCenterToSelected: ReturnType<typeof rs.fn>;
     lookAt: ReturnType<typeof rs.fn>;
@@ -108,6 +109,7 @@ function createGizmo(): { gizmo: ViewGizmo; cc: MockController; update: ReturnTy
     const cc: MockController = {
         camera: new PerspectiveCamera(),
         target: new Vector3(0, 0, 0),
+        cameraType: "perspective",
         rotate: rs.fn(),
         setRotateCenterToSelected: rs.fn(),
         lookAt: rs.fn(),
@@ -390,6 +392,40 @@ describe("ViewGizmo — click to align camera", () => {
         expect(cc.camera.position.x).toBeCloseTo(k);
         expect(cc.camera.position.y).toBeCloseTo(-k);
         expect(cc.camera.position.z).toBeCloseTo(k);
+    });
+
+    test("clicking a face switches the camera to orthographic - a named view should look flat", () => {
+        const { gizmo, cc } = createGizmo();
+        (gizmo as any)._hoverPart = faceByLabel("BACK");
+        expect(cc.cameraType).toBe("perspective");
+
+        (gizmo as any)._onClick(pointerEvent({}));
+
+        expect(cc.cameraType).toBe("orthographic");
+    });
+
+    test("clicking an edge bevel leaves the current projection mode alone", () => {
+        const { gizmo, cc } = createGizmo();
+        const frontRight = EDGES.find(
+            (e) => e.direction.x > 0.5 && e.direction.y < -0.5 && Math.abs(e.direction.z) < 0.1,
+        )!;
+        (gizmo as any)._hoverPart = frontRight;
+
+        (gizmo as any)._onClick(pointerEvent({}));
+
+        expect(cc.cameraType).toBe("perspective");
+    });
+
+    test("clicking a corner bevel leaves the current projection mode alone", () => {
+        const { gizmo, cc } = createGizmo();
+        const topFrontRight = CORNERS.find(
+            (c) => c.direction.x > 0 && c.direction.y < 0 && c.direction.z > 0,
+        )!;
+        (gizmo as any)._hoverPart = topFrontRight;
+
+        (gizmo as any)._onClick(pointerEvent({}));
+
+        expect(cc.cameraType).toBe("perspective");
     });
 });
 
