@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1158](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1158) — 2026-09-09
+
+- **Sketching**: Diameter dimensions now draw a proper diameter callout — one line spanning across the circle through its center with an arrowhead at each end and an Ø-prefixed label, instead of a radius-style line from the center to one edge. Auto Dimension on a circular edge now produces this diameter dimension by default (the conventional circle callout); Radius Dimension remains its own explicit tool for the center-to-edge case.
+
 ### [v2026.09.09.1148](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1148) — 2026-09-09
 
 - **Sketching**: The Sketch tab's Modify group now also has **Rotate**, **Mirror**, **Array**, **Trim** and **Extend**, plus a new **Boolean** group with **Intersect**, **Cut** and **Join** — the same tools already available in the Model tab, now usable on 2D sketch geometry without switching tabs. Shell stays Model-only, since it only applies to a 3D solid.
