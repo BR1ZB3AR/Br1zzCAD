@@ -50,6 +50,29 @@ describe("DefaultRibbon", () => {
         expect(allItems).toContain("create.alignedRect");
     });
 
+    test("sketch tab's modify group should include rotate/mirror/array/trim/extend but not shell", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const modifyGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.modify")!;
+        const allItems = flattenItems(modifyGroup.items);
+        expect(allItems).toContain("modify.move");
+        expect(allItems).toContain("modify.rotate");
+        expect(allItems).toContain("modify.mirror");
+        expect(allItems).toContain("modify.array");
+        expect(allItems).toContain("modify.trim");
+        expect(allItems).toContain("modify.extend");
+        expect(allItems).not.toContain("modify.shell");
+    });
+
+    test("sketch tab should have a boolean group with intersect/cut/join", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const booleanGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.boolean");
+        expect(booleanGroup).toBeDefined();
+        const allItems = flattenItems(booleanGroup!.items);
+        expect(allItems).toContain("boolean.common");
+        expect(allItems).toContain("boolean.cut");
+        expect(allItems).toContain("boolean.join");
+    });
+
     test("model tab should contain draw, modify, converter, boolean groups", () => {
         const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
         const groupNames = modelTab.groups.map((g) => g.groupName);

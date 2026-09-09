@@ -54,7 +54,15 @@ export const DefaultRibbon: RibbonTabProfile[] = [
             },
             {
                 groupName: "ribbon.group.modify",
-                items: ["modify.move"],
+                items: [
+                    "modify.move",
+                    ["modify.rotate", "modify.mirror", "modify.array"],
+                    ["modify.trim", "modify.extend"],
+                ],
+            },
+            {
+                groupName: "ribbon.group.boolean",
+                items: [["boolean.common", "boolean.cut", "boolean.join"]],
             },
         ],
     },
