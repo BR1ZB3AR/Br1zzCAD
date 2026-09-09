@@ -35,7 +35,9 @@ const material = new LineMaterial({ linewidth: 1.5, color: 0x2f8fef, side: Doubl
 const highlightMaterial = new LineMaterial({ linewidth: 1.5, color: 0x00ffff, side: DoubleSide });
 
 function formatValue(value: number, dimensionType: DimensionType): string {
-    return dimensionType === "angle" ? `${value.toFixed(2)}°` : `${value.toFixed(2)} mm`;
+    if (dimensionType === "angle") return `${value.toFixed(2)}°`;
+    if (dimensionType === "diameter") return `Ø${value.toFixed(2)} mm`;
+    return `${value.toFixed(2)} mm`;
 }
 
 export class ThreeDimensionAnnotation extends Object3D implements IVisualObject, IHighlightable {
@@ -160,8 +162,9 @@ export class ThreeDimensionAnnotation extends Object3D implements IVisualObject,
             pushArrow(arcPoints[0], startDirection, startPerp);
             pushArrow(arcPoints[arcPoints.length - 1], endDirection, endPerp);
         } else {
-            const { line, direction, perp } = data.g;
+            const { line, direction, perp, isDiameter } = data.g;
             pushSeg(line[0], line[1]);
+            if (isDiameter) pushArrow(line[0], direction, perp);
             pushArrow(line[1], direction.reverse(), perp);
         }
 

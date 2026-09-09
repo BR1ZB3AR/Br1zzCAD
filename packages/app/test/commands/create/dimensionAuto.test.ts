@@ -77,7 +77,7 @@ describe("AutoDimension", () => {
             expect((cmd as any).repeatOperation).toBe(true);
         });
 
-        test("should create a radial dimension for a circular edge", () => {
+        test("should create a diameter dimension for a circular edge", () => {
             const center = new XYZ({ x: 0, y: 0, z: 0 });
             const placement = new XYZ({ x: 0, y: 10, z: 0 });
             const cmd = new AutoDimension();
@@ -90,7 +90,7 @@ describe("AutoDimension", () => {
             (cmd as any).executeMainTask();
 
             const annotation = addedNodes[0] as DimensionAnnotation;
-            expect(annotation.dimensionType).toBe("radial");
+            expect(annotation.dimensionType).toBe("diameter");
             expect(annotation.startPoint).toEqual(center);
             expect(annotation.endPoint.isEqualTo(new XYZ({ x: 5, y: 0, z: 0 }), 1e-6)).toBe(true);
         });
@@ -134,7 +134,9 @@ describe("AutoDimension", () => {
             const handler = getDimensionEditHandler(annotation);
             expect(handler).toBeDefined();
 
-            expect(handler!(8)).toBe(true);
+            // The edit handler now writes back a diameter, so entering 16
+            // (matching the created dimension's own type) sets radius 8.
+            expect(handler!(16)).toBe(true);
             expect(circleNode.radius).toBe(8);
         });
 

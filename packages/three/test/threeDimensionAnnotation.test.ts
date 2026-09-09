@@ -31,6 +31,18 @@ function createRadialAnnotation(doc: TestDocument = new TestDocument()): Dimensi
     });
 }
 
+function createDiameterAnnotation(doc: TestDocument = new TestDocument()): DimensionAnnotation {
+    return new DimensionAnnotation({
+        document: doc,
+        annotationType: "dimension",
+        name: "Dimension",
+        dimensionType: "diameter",
+        startPoint: XYZ.zero,
+        endPoint: new XYZ({ x: 5, y: 0, z: 0 }),
+        placement: new XYZ({ x: 0, y: 5, z: 0 }),
+    });
+}
+
 function createAngleAnnotation(doc: TestDocument = new TestDocument()): DimensionAnnotation {
     return new DimensionAnnotation({
         document: doc,
@@ -77,6 +89,41 @@ describe("ThreeDimensionAnnotation", () => {
         const three = new ThreeDimensionAnnotation(context, createRadialAnnotation());
 
         expect(labelText(three)).toBe("5.00 mm");
+    });
+
+    test("label shows the Ø-prefixed diameter for a diameter dimension", () => {
+        const context = createThreeMockVisualContext();
+        const three = new ThreeDimensionAnnotation(context, createDiameterAnnotation());
+
+        expect(labelText(three)).toBe("Ø10.00 mm");
+    });
+
+    test("a diameter dimension draws an extra arrowhead (both ends) compared to a radial one", () => {
+        const context = createThreeMockVisualContext();
+        const radial = new ThreeDimensionAnnotation(context, createRadialAnnotation());
+        const diameter = new ThreeDimensionAnnotation(context, createDiameterAnnotation());
+
+        const radialMesh = radial.wholeVisual()[0] as LineSegments2;
+        const diameterMesh = diameter.wholeVisual()[0] as LineSegments2;
+
+        // Radial: main line + 1 arrowhead (2 segments) = 3 segments.
+        // Diameter: main line + 2 arrowheads (2 segments each) = 5 segments.
+        expect(radialMesh.geometry.instanceCount).toBe(3);
+        expect(diameterMesh.geometry.instanceCount).toBe(5);
+    });
+
+    test("a diameter dimension's line spans both edges through the center, not just center-to-edge", () => {
+        const context = createThreeMockVisualContext();
+        const three = new ThreeDimensionAnnotation(context, createDiameterAnnotation());
+
+        // createDiameterAnnotation: center at origin, radius 5, placement
+        // along +Y - the full line should run from (0,-5,0) to (0,5,0).
+        const positions = (three.wholeVisual()[0] as LineSegments2).geometry.attributes["instanceStart"]
+            .array;
+        const ys: number[] = [];
+        for (let i = 1; i < positions.length; i += 3) ys.push(positions[i]);
+        expect(Math.min(...ys)).toBeCloseTo(-5, 6);
+        expect(Math.max(...ys)).toBeCloseTo(5, 6);
     });
 
     test("label shows the angle in degrees, not mm, for an angle dimension", () => {

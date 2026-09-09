@@ -21,12 +21,11 @@ import { circleFromEdge, circleNodeEditHandler, linearEdgeEditHandler } from "./
 
 /**
  * The default Dimension tool: pick any edge, then a placement point, and it
- * picks the dimension type for you - a circular edge gets a Radius
- * dimension, anything else gets a Linear one measuring the straight-line
- * distance between its endpoints. Covers the two most common cases without
- * asking which tool to use first; Diameter and Angle stay as their own
- * explicit tools in the dropdown; since they either need a choice this
- * can't infer (radius vs diameter) or a second edge (angle).
+ * picks the dimension type for you - a circular edge gets a Diameter
+ * dimension (the conventional default circle callout), anything else gets
+ * a Linear one measuring the straight-line distance between its endpoints.
+ * Covers the two most common cases without asking which tool to use first;
+ * Radius and Angle stay as their own explicit tools in the dropdown.
  */
 @command({
     key: "create.dimensionAuto",
@@ -41,7 +40,7 @@ export class AutoDimension extends MultistepCommand {
 
         Transaction.execute(this.document, "create dimension", () => {
             const annotation = circle
-                ? this.createRadial(circle, placement)
+                ? this.createDiameter(circle, placement)
                 : this.createLinear(edge, placement);
             this.document.modelManager.addNode(annotation);
             setDimensionMeasuredNodes(annotation, [edgeData.owner.node]);
@@ -52,7 +51,7 @@ export class AutoDimension extends MultistepCommand {
                       edgeData.owner.node,
                       annotation.startPoint,
                       annotation.endPoint,
-                      "radial",
+                      "diameter",
                   )
                 : linearEdgeEditHandler(
                       annotation,
@@ -79,7 +78,7 @@ export class AutoDimension extends MultistepCommand {
         });
     }
 
-    private createRadial(
+    private createDiameter(
         circle: NonNullable<ReturnType<typeof circleFromEdge>>,
         placement: XYZ,
     ): DimensionAnnotation {
@@ -89,7 +88,7 @@ export class AutoDimension extends MultistepCommand {
             document: this.document,
             name: "Dimension",
             annotationType: "dimension",
-            dimensionType: "radial",
+            dimensionType: "diameter",
             startPoint: center,
             endPoint: onCircle,
             placement,

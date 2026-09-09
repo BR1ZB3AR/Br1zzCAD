@@ -146,6 +146,60 @@ describe("computeRadialDimensionGeometry", () => {
 
         expect(geometry.labelPosition.x).toBeCloseTo(4, 6);
     });
+
+    test("isDiameter should be false for a radial dimension", () => {
+        const center = XYZ.zero;
+        const onCircle = new XYZ({ x: 5, y: 0, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, onCircle, "radial");
+
+        expect(geometry.isDiameter).toBe(false);
+    });
+
+    test("isDiameter should be true for a diameter dimension", () => {
+        const center = XYZ.zero;
+        const onCircle = new XYZ({ x: 5, y: 0, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, onCircle, "diameter");
+
+        expect(geometry.isDiameter).toBe(true);
+    });
+
+    test("diameter line should span both edges through the center, not just center-to-edge", () => {
+        const center = new XYZ({ x: 0, y: 0, z: 0 });
+        const onCircle = new XYZ({ x: 5, y: 0, z: 0 });
+        const placement = new XYZ({ x: 0, y: 8, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "diameter");
+
+        // direction follows placement (unitY here), radius is 5 either way.
+        expect(geometry.line[0].y).toBeCloseTo(-5, 6);
+        expect(geometry.line[1].y).toBeCloseTo(5, 6);
+        expect(geometry.line[0].x).toBeCloseTo(0, 6);
+        expect(geometry.line[1].x).toBeCloseTo(0, 6);
+    });
+
+    test("diameter line should stay exactly at the radius even when placement is farther away", () => {
+        const center = new XYZ({ x: 0, y: 0, z: 0 });
+        const onCircle = new XYZ({ x: 5, y: 0, z: 0 });
+        const placement = new XYZ({ x: 0, y: 20, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "diameter");
+
+        expect(geometry.line[1].y).toBeCloseTo(5, 6);
+        expect(geometry.line[0].y).toBeCloseTo(-5, 6);
+    });
+
+    test("diameter labelPosition should be the circle's center", () => {
+        const center = new XYZ({ x: 3, y: 4, z: 0 });
+        const onCircle = new XYZ({ x: 8, y: 4, z: 0 });
+        const placement = new XYZ({ x: 8, y: 4, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "diameter");
+
+        expect(geometry.labelPosition.x).toBeCloseTo(3, 6);
+        expect(geometry.labelPosition.y).toBeCloseTo(4, 6);
+    });
 });
 
 describe("computeAngleDimensionGeometry", () => {

@@ -59,15 +59,20 @@ export function computeLinearDimensionGeometry(
 }
 
 export interface RadialDimensionGeometry {
-    /** From the circle's center out past its edge, toward wherever the
-     * dimension was placed. */
+    /** Radial: from the circle's center out past its edge, toward wherever
+     * the dimension was placed. Diameter: the full line spanning across the
+     * circle through its center, from edge to edge. */
     line: [XYZ, XYZ];
-    /** Unit vector along `line`, center->outward - for drawing an arrowhead. */
+    /** Unit vector along `line`, from `line[0]` toward `line[1]` - for
+     * drawing an arrowhead. */
     direction: XYZ;
     /** Some vector perpendicular to `direction` - for drawing an arrowhead. */
     perp: XYZ;
     labelPosition: XYZ;
     value: number;
+    /** Diameter dimensions draw an arrowhead at both ends of `line`; radial
+     * dimensions draw one, at the edge (`line[1]`). */
+    isDiameter: boolean;
 }
 
 /** Any unit vector perpendicular to `v` - exact orientation doesn't matter,
@@ -95,15 +100,23 @@ export function computeRadialDimensionGeometry(
     const direction =
         placementDistance > 1e-9 ? toPlacement.normalize()! : (onCircle.sub(center).normalize() ?? XYZ.unitX);
 
-    const lineEnd = center.add(direction.multiply(Math.max(radius, placementDistance)));
-    const value = type === "diameter" ? radius * 2 : radius;
+    const isDiameter = type === "diameter";
+    // Diameter: a single line spanning both edges through the center, with
+    // an arrowhead at each end - the conventional look for a circle's
+    // diameter callout. Radial: center to edge only, one arrowhead, and
+    // (unlike diameter) draggable past the edge for label clearance.
+    const line: [XYZ, XYZ] = isDiameter
+        ? [center.sub(direction.multiply(radius)), center.add(direction.multiply(radius))]
+        : [center, center.add(direction.multiply(Math.max(radius, placementDistance)))];
+    const value = isDiameter ? radius * 2 : radius;
 
     return {
-        line: [center, lineEnd],
+        line,
         direction,
         perp: anyPerpendicular(direction),
-        labelPosition: XYZ.center(center, lineEnd),
+        labelPosition: XYZ.center(line[0], line[1]),
         value,
+        isDiameter,
     };
 }
 
