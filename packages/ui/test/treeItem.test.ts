@@ -12,6 +12,7 @@ rs.mock("../src/project/tree/treeItem.module.css", () => ({
     name: "ti-name",
     icon: "ti-icon",
     "parent-hidden": "ti-parent-hidden",
+    editing: "ti-editing",
 }));
 
 rs.mock("../src/project/tree/treeModel.module.css", () => ({
@@ -24,6 +25,7 @@ import "./_helpers/mockCoreBinding";
 // Mock element helpers
 import "./_helpers/mockElement";
 
+import { PubSub, SketchGroupNode } from "@chili3d/core";
 import { TreeModel } from "../src/project/tree/treeModel";
 
 type PropertyHandler = (property: string, model: unknown) => void;
@@ -182,6 +184,162 @@ describe("TreeModel (TreeItem)", () => {
             node.visible = false;
             node.emit("visible");
             expect(item.visibleIcon.getAttribute("icon")).toBe("icon-eye");
+        });
+    });
+
+    describe("context menu", () => {
+        function fireContextMenu(item: TreeModel, x = 10, y = 20) {
+            item.dispatchEvent(
+                new MouseEvent("contextmenu", { clientX: x, clientY: y, bubbles: true, cancelable: true }),
+            );
+        }
+
+        function menuItems(): HTMLElement[] {
+            // openContextMenu appends exactly one dropdown container to <body>.
+            const menu = document.body.lastElementChild as HTMLElement;
+            return Array.from(menu.children) as HTMLElement[];
+        }
+
+        test("should select the node and open a 3-item menu on right-click", () => {
+            const item = createItem();
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [];
+            (doc.selection as any).setSelectedNodes = rs.fn(() => 0);
+
+            fireContextMenu(item);
+
+            expect(doc.selection.setSelectedNodes as any).toHaveBeenCalledWith([node], false);
+            expect(menuItems().length).toBe(3);
+        });
+
+        test("should not re-select the node when it is already part of the selection", () => {
+            const item = createItem();
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+            (doc.selection as any).setSelectedNodes = rs.fn(() => 0);
+
+            fireContextMenu(item);
+
+            expect(doc.selection.setSelectedNodes).not.toHaveBeenCalled();
+        });
+
+        test("first item should publish sketch.edit for a SketchGroupNode", () => {
+            class TestSketchGroupNode extends (SketchGroupNode as unknown as new (...a: any[]) => any) {
+                name = "Sketch 1";
+                visible = true;
+                parentVisible: boolean | undefined = true;
+                private handlers = new Set<PropertyHandler>();
+                onPropertyChanged(handler: PropertyHandler) {
+                    this.handlers.add(handler);
+                }
+                removePropertyChanged(handler: PropertyHandler) {
+                    this.handlers.delete(handler);
+                }
+            }
+            const sketchDoc = makeDoc();
+            (sketchDoc.selection as any).getSelectedNodes = () => [];
+            (sketchDoc.selection as any).setSelectedNodes = () => 0;
+            const sketchNode = new TestSketchGroupNode();
+            const item = new TreeModel(sketchDoc, sketchNode as unknown as INode);
+            document.body.appendChild(item);
+
+            const pub = rs.fn();
+            const originalPub = PubSub.default.pub;
+            PubSub.default.pub = pub as any;
+            try {
+                fireContextMenu(item);
+                const [editItem] = menuItems();
+                (editItem as unknown as { _onclick: (e: MouseEvent) => void })._onclick(fakeEvent);
+            } finally {
+                PubSub.default.pub = originalPub;
+            }
+
+            expect(pub).toHaveBeenCalledWith("executeCommand", "sketch.edit");
+        });
+
+        test("last item should publish modify.deleteNode for any node", () => {
+            const item = createItem();
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+
+            const pub = rs.fn();
+            const originalPub = PubSub.default.pub;
+            PubSub.default.pub = pub as any;
+            try {
+                fireContextMenu(item);
+                const items = menuItems();
+                (items[items.length - 1] as unknown as { _onclick: (e: MouseEvent) => void })._onclick(
+                    fakeEvent,
+                );
+            } finally {
+                PubSub.default.pub = originalPub;
+            }
+
+            expect(pub).toHaveBeenCalledWith("executeCommand", "modify.deleteNode");
+        });
+
+        test("rename item should commit a new, non-empty, trimmed name on blur", () => {
+            const item = createItem();
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+
+            fireContextMenu(item);
+            const items = menuItems();
+            (items[1] as unknown as { _onclick: (e: MouseEvent) => void })._onclick(fakeEvent);
+
+            expect(item.name.contentEditable).toBe("true");
+            item.name.textContent = "  Renamed  ";
+            item.name.dispatchEvent(new Event("blur"));
+
+            expect(node.name).toBe("Renamed");
+            expect(item.name.contentEditable).toBe("false");
+        });
+
+        test("rename should revert without changing the node when committed empty", () => {
+            const item = createItem({ name: "Original" });
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+
+            fireContextMenu(item);
+            const items = menuItems();
+            (items[1] as unknown as { _onclick: (e: MouseEvent) => void })._onclick(fakeEvent);
+
+            item.name.textContent = "   ";
+            item.name.dispatchEvent(new Event("blur"));
+
+            expect(node.name).toBe("Original");
+            expect(item.name.textContent).toBe("Original");
+        });
+
+        test("Escape should cancel the rename and restore the original name", () => {
+            const item = createItem({ name: "Original" });
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+
+            fireContextMenu(item);
+            const items = menuItems();
+            (items[1] as unknown as { _onclick: (e: MouseEvent) => void })._onclick(fakeEvent);
+
+            item.name.textContent = "Should not stick";
+            item.name.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+            item.name.dispatchEvent(new Event("blur"));
+
+            expect(node.name).toBe("Original");
+            expect(item.name.textContent).toBe("Original");
+        });
+
+        test("rename should restore draggable=true after commit", () => {
+            const item = createItem();
+            document.body.appendChild(item);
+            (doc.selection as any).getSelectedNodes = () => [node];
+
+            fireContextMenu(item);
+            const items = menuItems();
+            (items[1] as unknown as { _onclick: (e: MouseEvent) => void })._onclick(fakeEvent);
+            expect(item.draggable).toBe(false);
+
+            item.name.dispatchEvent(new Event("blur"));
+            expect(item.draggable).toBe(true);
         });
     });
 });

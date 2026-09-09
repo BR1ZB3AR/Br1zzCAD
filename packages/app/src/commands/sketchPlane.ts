@@ -5,13 +5,13 @@ import {
     AsyncController,
     command,
     EditableShapeNode,
-    GroupNode,
     type IApplication,
     type ICommand,
     type IDisposable,
     Plane,
     SelectShapeStep,
     ShapeTypes,
+    SketchGroupNode,
     VisualStates,
 } from "@chili3d/core";
 
@@ -99,7 +99,11 @@ export class PickSketchPlane implements ICommand {
             // `currentNode ?? rootNode` - making a new named group the
             // current node is what makes it collect this sketch's geometry
             // instead of scattering it at the document root.
-            const sketchGroup = new GroupNode({ document, name: `Sketch ${sketchIndex++}` });
+            const sketchGroup = new SketchGroupNode({
+                document,
+                name: `Sketch ${sketchIndex++}`,
+                plane: picked.plane,
+            });
             document.modelManager.addNode(sketchGroup);
             document.modelManager.currentNode = sketchGroup;
         } finally {

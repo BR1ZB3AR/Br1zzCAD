@@ -12,10 +12,19 @@ import { rs } from "@rstest/core";
 
 rs.mock("@chili3d/core", () => {
     const actual = rs.hoisted(() => require("@chili3d/core"));
-    const { BindingMock, TransactionMock } = rs.hoisted(() => require("./coreMocks"));
+    const { BindingMock, TransactionMock, LocalizeMock } = rs.hoisted(() => require("./coreMocks"));
+    // `actual` (a synchronous `require` of a TS entrypoint outside the bundler's
+    // normal transform pipeline) does not reliably yield real runtime exports here
+    // - only the explicit overrides below are dependable. Anything the module
+    // under test needs beyond Binding/Transaction gets its own lightweight stand-in
+    // (mirrors the marker-class pattern in `mockCoreTree.ts`), not a real class.
+    class SketchGroupNode {}
     return {
         ...actual,
         Binding: BindingMock,
         Transaction: TransactionMock,
+        Localize: LocalizeMock,
+        SketchGroupNode,
+        PubSub: { default: { pub: () => {}, sub: () => {}, remove: () => {} } },
     };
 });

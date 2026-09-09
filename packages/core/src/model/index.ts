@@ -12,4 +12,5 @@ export * from "./groupNode";
 export * from "./meshNode";
 export * from "./node";
 export * from "./shapeNode";
+export * from "./sketchGroupNode";
 export * from "./visualNode";

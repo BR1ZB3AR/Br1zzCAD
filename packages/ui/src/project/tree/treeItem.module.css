@@ -9,6 +9,17 @@
     overflow: hidden;
 }
 
+.editing {
+    user-select: text;
+    -moz-user-select: text;
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    cursor: text;
+    outline: 1px solid var(--primary-color);
+    border-radius: 2px;
+    background-color: var(--panel-background-color);
+}
+
 .icon {
     flex-shrink: 0;
     width: 16px;

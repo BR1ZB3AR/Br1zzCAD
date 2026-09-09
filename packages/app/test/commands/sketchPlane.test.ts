@@ -2,12 +2,12 @@
 // See LICENSE file in the project root for full license information.
 
 import {
-    GroupNode,
     type IDisposable,
     type INode,
     Matrix4,
     Plane,
     SelectShapeStep,
+    SketchGroupNode,
     VisualStates,
 } from "@chili3d/core";
 import {
@@ -196,8 +196,10 @@ describe("PickSketchPlane", () => {
         // made current, so everything drawn next collects under it.
         expect(rig.modelManagerAddedNodes).toHaveLength(1);
         const sketchGroup = rig.modelManagerAddedNodes[0];
-        expect(sketchGroup).toBeInstanceOf(GroupNode);
-        expect((sketchGroup as GroupNode).name).toMatch(/^Sketch \d+$/);
+        expect(sketchGroup).toBeInstanceOf(SketchGroupNode);
+        expect((sketchGroup as SketchGroupNode).name).toMatch(/^Sketch \d+$/);
+        // Remembered so `sketch.edit` can restore it when re-entering the sketch.
+        expect((sketchGroup as SketchGroupNode).plane).toBe(rig.view.workplane);
         expect(rig.doc.modelManager.currentNode).toBe(sketchGroup);
     });
 
@@ -207,14 +209,14 @@ describe("PickSketchPlane", () => {
         const app1 = createMockApplication();
         app1.activeView = rig1.view;
         await new PickSketchPlane().execute(app1);
-        const firstName = (rig1.modelManagerAddedNodes[0] as GroupNode).name;
+        const firstName = (rig1.modelManagerAddedNodes[0] as SketchGroupNode).name;
 
         const rig2 = buildRig();
         rig2.pickIndex = 1;
         const app2 = createMockApplication();
         app2.activeView = rig2.view;
         await new PickSketchPlane().execute(app2);
-        const secondName = (rig2.modelManagerAddedNodes[0] as GroupNode).name;
+        const secondName = (rig2.modelManagerAddedNodes[0] as SketchGroupNode).name;
 
         expect(firstName).not.toBe(secondName);
     });
