@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1049](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1049) — 2026-09-09
+
+- **Items tree**: Right-clicking any node — a sketch, a 3D feature, a shape, a dimension — now opens a context menu with **Edit**, **Rename** and **Delete**. Edit re-enters a sketch (restoring its working plane and switching back to the Sketch tab) or, for anything else, just selects the node so its values are ready to edit in the Properties panel. Rename edits the name in place.
+
 ### [v2026.09.09.1007](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1007) — 2026-09-09
 
 - **Sketching**: Fixed a real selection gap — a dimension could never be selected (and so never deleted) by clicking its line/arc in the viewport, only via its row in the Items tree; clicking it now selects and highlights it like any other shape. Moving a sketch now carries its dimensions along automatically, even when only the geometry is selected, not the dimension too. Picking a working plane now starts a named "Sketch N" group that collects everything drawn next, with a new **Finish Sketch** button that switches to the Model tab when done. The Dimension dropdown's default is now **Auto Dimension** — pick any edge and it infers Linear vs Radius for you; Diameter and Angle remain explicit choices.
