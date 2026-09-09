@@ -39,6 +39,27 @@ export abstract class ShapeNode extends GeometryNode {
         return ShapeTypeUtils.stringValue(this._shape.value.shapeType);
     }
 
+    /** A reference/guide shape (dashed, in `VisualConfig.constructionEdgeColor`)
+     * rather than real profile geometry - purely a rendering style, so
+     * toggling it mutates the already-built mesh directly instead of
+     * regenerating the underlying shape. Applies to any shape node (sketch
+     * primitives, imported/pasted shapes, ...), not just parametric ones. */
+    @serialize()
+    @property("common.isConstruction")
+    get isConstruction(): boolean {
+        return this.getPrivateValue("isConstruction", false);
+    }
+    set isConstruction(value: boolean) {
+        if (!this.setProperty("isConstruction", value)) return;
+        if (this.mesh.edges) {
+            this.mesh.edges.lineType = value ? "dash" : "solid";
+            this.mesh.edges.color = value
+                ? VisualConfig.constructionEdgeColor
+                : VisualConfig.defaultEdgeColor;
+        }
+        this.document.visual.context.redrawNode([this]);
+    }
+
     protected setShape(shape: Result<IShape>) {
         if (this._shape.isOk && this._shape.value.isEqual(shape.value)) {
             return;
@@ -65,6 +86,10 @@ export abstract class ShapeNode extends GeometryNode {
                 mesh.faces,
                 this.faceMaterialPair.map((x) => [x.faceIndex, x.materialIndex]),
             );
+        if (this.isConstruction && mesh.edges) {
+            mesh.edges.lineType = "dash";
+            mesh.edges.color = VisualConfig.constructionEdgeColor;
+        }
         return mesh;
     }
 

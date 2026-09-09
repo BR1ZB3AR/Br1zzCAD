@@ -132,8 +132,8 @@ export class ThreeGeometryFactory {
         if (data.lineType === "dash") {
             material.dashed = true;
             material.dashScale = 1;
-            material.dashSize = 30;
-            material.gapSize = 30;
+            material.dashSize = 15;
+            material.gapSize = 10;
             material.defines["USE_DASH"] = "";
         }
 

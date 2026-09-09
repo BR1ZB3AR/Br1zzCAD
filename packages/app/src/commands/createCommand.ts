@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import {
+    Config,
     type GeometryNode,
     type INode,
     MultistepCommand,
@@ -39,6 +40,13 @@ export abstract class CreateCommand extends MultistepCommand {
     protected override executeMainTask() {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
             const node = this.geometryNode();
+            // Every sketch-drawing command routes through here, so this is the
+            // single place construction mode needs to apply - whatever tool
+            // (Line, Rect, Circle, Arc, ...) drew this shape, mark it construction
+            // geometry from the start instead of requiring a separate toggle after.
+            if (Config.instance.constructionMode && node instanceof ShapeNode) {
+                node.isConstruction = true;
+            }
             this.document.modelManager.addNode(node);
             this.afterNodeCreated();
             this.document.visual.update();

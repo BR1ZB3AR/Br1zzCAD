@@ -2,7 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import type { CommandKeys, PushButton, RibbonCommand } from "@chili3d/core";
-import { CommandStore, ObservableCollection, PubSub, RibbonGroup } from "@chili3d/core";
+import { CommandStore, Config, ObservableCollection, PubSub, RibbonGroup } from "@chili3d/core";
 import { afterEach, describe, expect, test } from "@rstest/core";
 
 // CSS modules under test (plus those of buttons created via createRibbonButton)
@@ -16,6 +16,7 @@ rs.mock("../src/ribbon/ribbonGroup.module.css", () => ({
     collapsedDropdownItem: "rg-collapsed-item",
     collapsedDropdownIcon: "rg-collapsed-icon",
     collapsedDropdownText: "rg-collapsed-text",
+    constructionActive: "rg-construction-active",
 }));
 
 rs.mock("../src/ribbon/ribbonStack.module.css", () => ({
@@ -85,6 +86,10 @@ function makePushButton(command: CommandKeys): PushButton {
 
 function makeGroup(items: RibbonCommand[] = [], collapsedItems: CommandKeys[] = []): RibbonGroup {
     return new RibbonGroup("group.test" as RibbonGroup["groupName"], items, collapsedItems);
+}
+
+function makeDrawGroup(items: RibbonCommand[] = []): RibbonGroup {
+    return new RibbonGroup("ribbon.group.draw" as RibbonGroup["groupName"], items, []);
 }
 
 describe("RibbonStack", () => {
@@ -217,5 +222,48 @@ describe("RibbonGroupElement", () => {
             el.dispose();
             el.remove();
         }
+    });
+
+    describe("construction mode tint (Sketch tab's Draw group only)", () => {
+        afterEach(() => {
+            Config.instance.constructionMode = false;
+        });
+
+        test("a non-draw group never tints, even with constructionMode on", () => {
+            Config.instance.constructionMode = true;
+            const el = new RibbonGroupElement(makeGroup());
+            expect(el.classList.contains("rg-construction-active")).toBe(false);
+        });
+
+        test("the draw group tints immediately if constructionMode is already on at construction", () => {
+            Config.instance.constructionMode = true;
+            const el = new RibbonGroupElement(makeDrawGroup());
+            expect(el.classList.contains("rg-construction-active")).toBe(true);
+        });
+
+        test("the draw group is untinted by default", () => {
+            const el = new RibbonGroupElement(makeDrawGroup());
+            expect(el.classList.contains("rg-construction-active")).toBe(false);
+        });
+
+        test("the draw group reacts live to constructionMode turning on and off", () => {
+            const el = new RibbonGroupElement(makeDrawGroup());
+            expect(el.classList.contains("rg-construction-active")).toBe(false);
+
+            Config.instance.constructionMode = true;
+            expect(el.classList.contains("rg-construction-active")).toBe(true);
+
+            Config.instance.constructionMode = false;
+            expect(el.classList.contains("rg-construction-active")).toBe(false);
+        });
+
+        test("dispose stops reacting to further constructionMode changes", () => {
+            const el = new RibbonGroupElement(makeDrawGroup());
+            el.dispose();
+
+            Config.instance.constructionMode = true;
+
+            expect(el.classList.contains("rg-construction-active")).toBe(false);
+        });
     });
 });

@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IShape, type IShapeMeshData, Matrix4, Result } from "../src";
+import { type IShape, type IShapeMeshData, Matrix4, Result, VisualConfig } from "../src";
 import * as ShapeNodeClasses from "../src/model/shapeNode";
 import { MockShape, TestDocument } from "../test-utils";
 
@@ -104,6 +104,74 @@ describe("shapeNode", () => {
 
                 expect((node as any)._shape).toBeNull();
             });
+        });
+    });
+
+    describe("ShapeNode.isConstruction", () => {
+        // Keeps the real createMesh() (unlike the "ShapeNode" describe block
+        // above) so it exercises the actual dash/color-baking logic - relies
+        // on MockShape's default mesh, which already has real edges data.
+        let node: any;
+
+        beforeEach(() => {
+            const TestNode = class extends ShapeNodeClasses.ShapeNode {
+                display(): any {
+                    return "test.shape";
+                }
+            };
+            node = new TestNode({ document: doc, name: "test", materialId: "mat1" });
+            (node as any).setShape(Result.ok(mockShape));
+        });
+
+        test("should default to false", () => {
+            expect(node.isConstruction).toBe(false);
+        });
+
+        test("setting it should update the value and emit onPropertyChanged", () => {
+            const calls: string[] = [];
+            node.onPropertyChanged((property: string) => calls.push(property));
+
+            node.isConstruction = true;
+
+            expect(node.isConstruction).toBe(true);
+            expect(calls).toContain("isConstruction");
+        });
+
+        test("should mark the mesh's edges dashed and construction-colored", () => {
+            node.isConstruction = true;
+
+            expect(node.mesh.edges.lineType).toBe("dash");
+            expect(node.mesh.edges.color).toBe(VisualConfig.constructionEdgeColor);
+        });
+
+        test("toggling back off restores solid, default-colored edges", () => {
+            node.isConstruction = true;
+            node.isConstruction = false;
+
+            expect(node.mesh.edges.lineType).toBe("solid");
+            expect(node.mesh.edges.color).toBe(VisualConfig.defaultEdgeColor);
+        });
+
+        test("createMesh bakes construction styling in from the start when the shape wasn't built yet", () => {
+            node.isConstruction = true;
+            (node as any)._mesh = undefined;
+
+            const mesh = (node as any).createMesh();
+
+            expect(mesh.edges.lineType).toBe("dash");
+            expect(mesh.edges.color).toBe(VisualConfig.constructionEdgeColor);
+        });
+
+        test("setting the same value again is a no-op (no redundant redraw)", () => {
+            node.isConstruction = true;
+            let redrawCount = 0;
+            doc.visual.context.redrawNode = (() => {
+                redrawCount++;
+            }) as any;
+
+            node.isConstruction = true;
+
+            expect(redrawCount).toBe(0);
         });
     });
 

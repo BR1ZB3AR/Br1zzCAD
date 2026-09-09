@@ -137,6 +137,7 @@ export const I18N_KEYS = [
     "command.sketch.edit",
     "command.sketch.finish",
     "command.sketch.pickPlane",
+    "command.sketch.toggleConstructionMode",
     "command.special.last",
     "command.test.performance",
     "command.workingPlane.alignToPlane",

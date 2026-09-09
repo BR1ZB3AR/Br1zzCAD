@@ -70,6 +70,12 @@ describe("DefaultRibbon", () => {
         expect(allItems).toContain("modify.toggleConstruction");
     });
 
+    test("sketch tab's draw group starts with the construction-mode toggle", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const drawGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.draw")!;
+        expect(drawGroup.items[0]).toBe("sketch.toggleConstructionMode");
+    });
+
     test("sketch tab should have a boolean group with intersect/cut/join", () => {
         const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
         const booleanGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.boolean");

@@ -16,6 +16,11 @@ export class VisualItemConfig extends Observable {
     highlightFaceColor = 0x99ff00;
     selectedEdgeColor = 0x33ff33;
     selectedFaceColor = 0x33ff33;
+    /** Edge color for geometry marked construction (see `ShapeNode.isConstruction`) -
+     * always dashed too, but kept as its own color (rather than reusing
+     * `defaultEdgeColor`) so it reads as visually distinct at a glance,
+     * matching the convention most CAD sketchers use for reference geometry. */
+    constructionEdgeColor = 0x1e88e5;
     editVertexSize = 7;
     editVertexColor = 0x33ff33;
     hintVertexSize = 5;
@@ -92,6 +97,18 @@ export class Config extends Observable {
     }
     set dynamicWorkplane(value: boolean) {
         this.setProperty("dynamicWorkplane", value);
+    }
+
+    /** While on, every newly-created sketch shape (Line, Rect, Circle, Arc, ...)
+     * is marked construction geometry from the start - see `CreateCommand`.
+     * Not persisted (like `dynamicWorkplane`): resetting to off on reload avoids
+     * silently surprising a later session with everything drawn as reference
+     * geometry. */
+    get constructionMode() {
+        return this.getPrivateValue("constructionMode", false);
+    }
+    set constructionMode(value: boolean) {
+        this.setProperty("constructionMode", value);
     }
 
     @serialize()

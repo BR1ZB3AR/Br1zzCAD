@@ -5,7 +5,6 @@ import { VisualConfig } from "@chili3d/core";
 import { MeshLambertMaterial, PointsMaterial } from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
-    defaultDashedEdgeMaterial,
     defaultEdgeMaterial,
     defaultVertexMaterial,
     faceTransparentMaterial,
@@ -46,16 +45,6 @@ describe("materials", () => {
             expect(defaultEdgeMaterial).toBeInstanceOf(LineMaterial);
             expect(defaultEdgeMaterial.linewidth).toBe(1);
             expect(defaultEdgeMaterial.polygonOffset).toBe(true);
-        });
-
-        test("defaultDashedEdgeMaterial matches defaultEdgeMaterial's styling but is dashed", () => {
-            expect(defaultDashedEdgeMaterial).toBeInstanceOf(LineMaterial);
-            expect(defaultDashedEdgeMaterial.linewidth).toBe(defaultEdgeMaterial.linewidth);
-            expect(defaultDashedEdgeMaterial.polygonOffset).toBe(true);
-            expect(defaultDashedEdgeMaterial.dashed).toBe(true);
-            expect(defaultDashedEdgeMaterial.dashScale).toBeGreaterThan(0);
-            expect(defaultDashedEdgeMaterial.dashSize).toBeGreaterThan(0);
-            expect(defaultDashedEdgeMaterial.gapSize).toBeGreaterThan(0);
         });
 
         test("hilightEdgeMaterial has linewidth 3", () => {
@@ -124,19 +113,6 @@ describe("materials", () => {
                 VisualConfig.defaultEdgeColor = originalColor;
             }
             expect(defaultEdgeMaterial.color.getHex()).toBe(originalColor);
-        });
-
-        test("defaultDashedEdgeMaterial color updates when VisualConfig.defaultEdgeColor changes", () => {
-            const originalColor = VisualConfig.defaultEdgeColor;
-            const testColor = 0xabcdef;
-
-            try {
-                VisualConfig.defaultEdgeColor = testColor;
-                expect(defaultDashedEdgeMaterial.color.getHex()).toBe(testColor);
-            } finally {
-                VisualConfig.defaultEdgeColor = originalColor;
-            }
-            expect(defaultDashedEdgeMaterial.color.getHex()).toBe(originalColor);
         });
 
         test("defaultVertexMaterial color updates when VisualConfig.defaultEdgeColor changes", () => {

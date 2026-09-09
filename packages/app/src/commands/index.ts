@@ -16,5 +16,6 @@ export * from "./redo";
 export * from "./sketchEdit";
 export * from "./sketchFinish";
 export * from "./sketchPlane";
+export * from "./sketchToggleConstructionMode";
 export * from "./undo";
 export * from "./workingPlane";

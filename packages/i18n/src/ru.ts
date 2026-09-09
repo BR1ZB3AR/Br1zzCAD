@@ -136,6 +136,7 @@ export default {
         "command.sketch.edit": "Редактировать эскиз",
         "command.sketch.finish": "Завершить эскиз",
         "command.sketch.pickPlane": "Новый эскиз",
+        "command.sketch.toggleConstructionMode": "Режим построения",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Тест производительности",
         "command.workingPlane.alignToPlane": "Выравнивание",

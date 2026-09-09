@@ -14,6 +14,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
             {
                 groupName: "ribbon.group.draw",
                 items: [
+                    "sketch.toggleConstructionMode",
                     {
                         type: "split",
                         items: ["create.line", "create.lineMidpoint"],

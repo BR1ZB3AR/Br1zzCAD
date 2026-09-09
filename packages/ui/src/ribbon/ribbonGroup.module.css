@@ -58,6 +58,15 @@
     }
 }
 
+/* Construction mode active (Sketch tab's Draw group only) - the tool icons
+   here are fixed multi-color glyphs, so a tinted group background (reusing
+   the same "active" color as the toggle button itself) is the visible cue
+   instead of recoloring each icon. */
+.ribbonGroup.constructionActive {
+    background-color: var(--checked-color);
+    border-radius: 6px;
+}
+
 .ribbonGroup::after {
     content: "";
     position: absolute;

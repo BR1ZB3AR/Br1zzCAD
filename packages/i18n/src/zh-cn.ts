@@ -142,6 +142,7 @@ export default {
         "command.sketch.edit": "编辑草图",
         "command.sketch.finish": "完成草图",
         "command.sketch.pickPlane": "新建草图",
+        "command.sketch.toggleConstructionMode": "构造模式",
         "command.special.last": "__上个命令__",
         "command.test.performance": "性能测试",
         "command.workingPlane.alignToPlane": "对齐到平面",

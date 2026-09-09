@@ -1,10 +1,21 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { EditableShapeNode, type IDocument, Result, type ShapeType, ShapeTypes, XYZ } from "@chili3d/core";
-import { afterAll, beforeAll, describe, expect, test } from "@rstest/core";
+import {
+    Config,
+    command,
+    EditableShapeNode,
+    type GeometryNode,
+    type IDocument,
+    type IStep,
+    Result,
+    type ShapeType,
+    ShapeTypes,
+    XYZ,
+} from "@chili3d/core";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "@rstest/core";
 import { ExtrudeCommand } from "../../src/commands/create/extrude";
-import { selectedWholeShapeNodes } from "../../src/commands/createCommand";
+import { CreateCommand, selectedWholeShapeNodes } from "../../src/commands/createCommand";
 import {
     ensureGlobalStubApp,
     makeParent,
@@ -63,6 +74,62 @@ describe("selectedWholeShapeNodes", () => {
         ];
 
         expect(selectedWholeShapeNodes(datas)).toEqual([node]);
+    });
+});
+
+describe("CreateCommand construction mode", () => {
+    afterEach(() => {
+        Config.instance.constructionMode = false;
+    });
+
+    @command({ key: "test.createCommandConstructionMode" as any, icon: "icon-line" })
+    class TestCreate extends CreateCommand {
+        node!: GeometryNode;
+        protected override geometryNode(): GeometryNode {
+            return this.node;
+        }
+        protected override getSteps(): IStep[] {
+            return [];
+        }
+    }
+
+    function isolatedShapeNode(document: IDocument) {
+        // A dedicated mesh object (not the shared default fakeMesh) so
+        // mutating isConstruction's dash/color styling can't leak into
+        // other tests that also use mockShape()'s default mesh.
+        const edges = { lineType: "solid" as const, position: new Float32Array(), range: [], color: 0 };
+        return new EditableShapeNode({
+            document,
+            name: "node",
+            shape: Result.ok(
+                mockShape({
+                    shapeType: ShapeTypes.edge,
+                    mesh: { edges, faces: undefined, vertexs: undefined },
+                } as any),
+            ),
+        });
+    }
+
+    test("marks the newly created node construction when constructionMode is on", () => {
+        Config.instance.constructionMode = true;
+        const cmd = new TestCreate();
+        const { doc } = wireCommand(cmd);
+        cmd.node = isolatedShapeNode(doc);
+
+        (cmd as any).executeMainTask();
+
+        expect((cmd.node as EditableShapeNode).isConstruction).toBe(true);
+    });
+
+    test("leaves the newly created node alone when constructionMode is off", () => {
+        Config.instance.constructionMode = false;
+        const cmd = new TestCreate();
+        const { doc } = wireCommand(cmd);
+        cmd.node = isolatedShapeNode(doc);
+
+        (cmd as any).executeMainTask();
+
+        expect((cmd.node as EditableShapeNode).isConstruction).toBe(false);
     });
 });
 

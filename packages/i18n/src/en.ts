@@ -142,6 +142,7 @@ export default {
         "command.sketch.edit": "Edit Sketch",
         "command.sketch.finish": "Finish Sketch",
         "command.sketch.pickPlane": "New Sketch",
+        "command.sketch.toggleConstructionMode": "Construction Mode",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Performance Test",
         "command.workingPlane.alignToPlane": "Align",

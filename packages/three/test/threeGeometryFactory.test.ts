@@ -224,8 +224,8 @@ describe("ThreeGeometryFactory", () => {
             const mat = ThreeGeometryFactory.createEdgeMaterial(data);
             expect(mat.dashed).toBe(true);
             expect(mat.dashScale).toBe(1);
-            expect(mat.dashSize).toBe(30);
-            expect(mat.gapSize).toBe(30);
+            expect(mat.dashSize).toBe(15);
+            expect(mat.gapSize).toBe(10);
         });
     });
 

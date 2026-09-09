@@ -4,7 +4,7 @@
 import { ShapeTypes } from "@chili3d/core";
 import { Box3, Mesh, MeshBasicMaterial, Points } from "three";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
-import { defaultDashedEdgeMaterial, defaultEdgeMaterial } from "../src/materials";
+import { defaultEdgeMaterial } from "../src/materials";
 import { ThreeGeometry } from "../src/threeGeometry";
 import type { ThreeVisualContext } from "../src/threeVisualContext";
 import { createTestGeometryNode, createThreeMockVisualContext } from "./mocks";
@@ -54,10 +54,19 @@ describe("ThreeGeometry", () => {
             expect(geo.edges()?.material).toBe(defaultEdgeMaterial);
         });
 
-        test("dashed edges (e.g. a construction line) use defaultDashedEdgeMaterial", () => {
+        test("dashed edges (e.g. a construction line) get their own material, not the shared default", () => {
             const node = createTestGeometryNode({ edgeLineType: "dash" });
             const geo = new ThreeGeometry(node, context);
-            expect(geo.edges()?.material).toBe(defaultDashedEdgeMaterial);
+            expect(geo.edges()?.material).not.toBe(defaultEdgeMaterial);
+            expect((geo.edges()?.material as any).dashed).toBe(true);
+        });
+
+        test("dashed edges use the mesh data's own color (e.g. construction blue), not the shared default", () => {
+            const node = createTestGeometryNode({ edgeLineType: "dash" });
+            const geo = new ThreeGeometry(node, context);
+            const material = geo.edges()?.material as any;
+            // createTestGeometryNode's mock edges always carry color 0xff0000.
+            expect(material.color.getHex()).toBe(0xff0000);
         });
 
         test("dashed edges have their line distances computed (required for the dash pattern to render)", () => {

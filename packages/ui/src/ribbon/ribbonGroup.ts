@@ -3,6 +3,7 @@
 
 import {
     Binding,
+    Config,
     type IConverter,
     Localize,
     ObservableCollection,
@@ -50,14 +51,37 @@ class DisplayConverter implements IConverter<number> {
 export class RibbonGroupElement extends HTMLElement {
     #dropdown = new DropdownController(style.collapsedDropdown);
 
+    /** Only the Sketch tab's Draw group needs this - a session-wide "mode"
+     * toggle (construction geometry) benefits from a visible cue beyond just
+     * its own button, since the individual tool icons here are fixed
+     * multi-color glyphs (not `currentColor`-based) and can't be recolored
+     * via CSS the way the toggle button's own background can. */
+    private readonly isDrawGroup: boolean;
+
     constructor(readonly group: RibbonGroup) {
         super();
         this.className = style.ribbonGroup;
+        this.isDrawGroup = group.groupName === "ribbon.group.draw";
         this.initHTML();
+        if (this.isDrawGroup) {
+            this.updateConstructionTint();
+            Config.instance.onPropertyChanged(this.handleConfigChanged);
+        }
     }
 
     dispose(): void {
         this.#dropdown.dispose();
+        if (this.isDrawGroup) {
+            Config.instance.removePropertyChanged(this.handleConfigChanged);
+        }
+    }
+
+    private readonly handleConfigChanged = (property: keyof Config) => {
+        if (property === "constructionMode") this.updateConstructionTint();
+    };
+
+    private updateConstructionTint() {
+        this.classList.toggle(style.constructionActive, Config.instance.constructionMode);
     }
 
     private initHTML() {
