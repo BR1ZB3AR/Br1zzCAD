@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1007](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1007) — 2026-09-09
+
+- **Sketching**: Fixed a real selection gap — a dimension could never be selected (and so never deleted) by clicking its line/arc in the viewport, only via its row in the Items tree; clicking it now selects and highlights it like any other shape. Moving a sketch now carries its dimensions along automatically, even when only the geometry is selected, not the dimension too. Picking a working plane now starts a named "Sketch N" group that collects everything drawn next, with a new **Finish Sketch** button that switches to the Model tab when done. The Dimension dropdown's default is now **Auto Dimension** — pick any edge and it infers Linear vs Radius for you; Diameter and Angle remain explicit choices.
+
 ### [v2026.09.09.0005](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.0005) — 2026-09-09
 
 - **Sketching**: Added an **Angle Dimension** tool to the Dimension dropdown — pick two straight edges and a placement point to get an arc dimension labeled in degrees (e.g. a Rectangle corner reads "90.00°"). Added a **Move** tool to the Sketch tab so a finished sketch, dimensions included, can be repositioned as a unit — previously a selected dimension silently didn't move along with its geometry, since it's drawn from its own absolute points rather than a per-node transform like everything else.
