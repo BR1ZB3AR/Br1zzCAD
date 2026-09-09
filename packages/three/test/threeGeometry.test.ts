@@ -4,7 +4,7 @@
 import { ShapeTypes } from "@chili3d/core";
 import { Box3, Mesh, MeshBasicMaterial, Points } from "three";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
-import { defaultEdgeMaterial } from "../src/materials";
+import { defaultDashedEdgeMaterial, defaultEdgeMaterial } from "../src/materials";
 import { ThreeGeometry } from "../src/threeGeometry";
 import type { ThreeVisualContext } from "../src/threeVisualContext";
 import { createTestGeometryNode, createThreeMockVisualContext } from "./mocks";
@@ -46,6 +46,32 @@ describe("ThreeGeometry", () => {
             expect(geo.faces()).toBeUndefined();
             expect(geo.edges()).toBeUndefined();
             expect(geo.vertexs()).toBeInstanceOf(Points);
+        });
+
+        test("solid edges use defaultEdgeMaterial", () => {
+            const node = createTestGeometryNode({ edgeLineType: "solid" });
+            const geo = new ThreeGeometry(node, context);
+            expect(geo.edges()?.material).toBe(defaultEdgeMaterial);
+        });
+
+        test("dashed edges (e.g. a construction line) use defaultDashedEdgeMaterial", () => {
+            const node = createTestGeometryNode({ edgeLineType: "dash" });
+            const geo = new ThreeGeometry(node, context);
+            expect(geo.edges()?.material).toBe(defaultDashedEdgeMaterial);
+        });
+
+        test("dashed edges have their line distances computed (required for the dash pattern to render)", () => {
+            const node = createTestGeometryNode({ edgeLineType: "dash" });
+            const geo = new ThreeGeometry(node, context);
+            const geometry = geo.edges()?.geometry as any;
+            expect(geometry.attributes.instanceDistanceStart).toBeDefined();
+        });
+
+        test("solid edges do not get line distances computed", () => {
+            const node = createTestGeometryNode({ edgeLineType: "solid" });
+            const geo = new ThreeGeometry(node, context);
+            const geometry = geo.edges()?.geometry as any;
+            expect(geometry.attributes.instanceDistanceStart).toBeUndefined();
         });
     });
 

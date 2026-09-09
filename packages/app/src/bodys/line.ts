@@ -45,6 +45,22 @@ export class LineNode extends ParameterShapeNode {
         this.setPropertyEmitShapeChanged("end", pnt);
     }
 
+    /** A reference/guide line (dashed) rather than real sketch profile
+     * geometry - purely a rendering style, so toggling it mutates the
+     * already-built mesh directly instead of regenerating the OCCT shape. */
+    @serialize()
+    @property("common.isConstruction")
+    get isConstruction(): boolean {
+        return this.getPrivateValue("isConstruction", false);
+    }
+    set isConstruction(value: boolean) {
+        if (!this.setProperty("isConstruction", value)) return;
+        if (this.mesh.edges) {
+            this.mesh.edges.lineType = value ? "dash" : "solid";
+        }
+        this.document.visual.context.redrawNode([this]);
+    }
+
     constructor(options: LineOptions) {
         super({ document: options.document });
         this.setPrivateValue("start", options.start);
@@ -57,6 +73,10 @@ export class LineNode extends ParameterShapeNode {
 
     protected override createMesh(): IShapeMeshData {
         const mesh = super.createMesh();
-        return this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
+        const withVertices = this.shape.isOk ? withProfileVertices(mesh, this.shape.value) : mesh;
+        if (this.isConstruction && withVertices.edges) {
+            withVertices.edges.lineType = "dash";
+        }
+        return withVertices;
     }
 }

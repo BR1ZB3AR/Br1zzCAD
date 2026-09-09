@@ -20,4 +20,5 @@ export * from "./sew";
 export * from "./shell";
 export * from "./simplify";
 export * from "./split";
+export * from "./toggleConstruction";
 export * from "./trim";

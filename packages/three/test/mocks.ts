@@ -140,12 +140,14 @@ export function createTestGeometryNode(
         hasFaces?: boolean;
         hasEdges?: boolean;
         hasVertexs?: boolean;
+        edgeLineType?: "solid" | "dash";
     } = {},
 ): GeometryNode & Notifiable {
     const listeners: Array<(prop: string) => void> = [];
     const hasFaces = overrides.hasFaces ?? true;
     const hasEdges = overrides.hasEdges ?? true;
     const hasVertexs = overrides.hasVertexs ?? true;
+    const edgeLineType = overrides.edgeLineType ?? "solid";
 
     const vertexShape = {
         id: "v1",
@@ -194,7 +196,7 @@ export function createTestGeometryNode(
                 ? ({
                       position: new Float32Array([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0]),
                       color: 0xff0000,
-                      lineType: "solid" as const,
+                      lineType: edgeLineType,
                       range: [{ start: 0, count: 6, shape: edgeShape }],
                   } as any)
                 : null,

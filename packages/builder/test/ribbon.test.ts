@@ -63,6 +63,13 @@ describe("DefaultRibbon", () => {
         expect(allItems).not.toContain("modify.shell");
     });
 
+    test("sketch tab's modify group should include the construction-line toggle", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const modifyGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.modify")!;
+        const allItems = flattenItems(modifyGroup.items);
+        expect(allItems).toContain("modify.toggleConstruction");
+    });
+
     test("sketch tab should have a boolean group with intersect/cut/join", () => {
         const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
         const booleanGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.boolean");

@@ -100,14 +100,17 @@ export default defineConfig({
     },
     output: {
         clean: true,
-        // Content-hashed filenames so every deploy gets a distinct URL for its
-        // JS/CSS - GitHub Pages doesn't support custom cache-control headers,
-        // so a fixed "main.js" means browsers/CDNs can keep serving a stale
-        // bundle indefinitely after a new deploy even though index.html itself
-        // (short max-age) picks up the new build right away.
-        filename: "[name].[contenthash].js",
-        chunkFilename: "[name].[contenthash].js",
-        cssFilename: "[name].[contenthash].css",
-        cssChunkFilename: "[name].[contenthash].css",
+        // Content-hashed filenames (production only) so every deploy gets a
+        // distinct URL for its JS/CSS - GitHub Pages doesn't support custom
+        // cache-control headers, so a fixed "main.js" means browsers/CDNs can
+        // keep serving a stale bundle indefinitely after a new deploy even
+        // though index.html itself (short max-age) picks up the new build
+        // right away. Dev mode keeps stable names: rspack-dev-server's HMR
+        // (live CSS/module reload) tracks updates against a fixed bundle
+        // filename, and a hash that changes on every rebuild breaks it.
+        filename: isProduction ? "[name].[contenthash].js" : "[name].js",
+        chunkFilename: isProduction ? "[name].[contenthash].js" : "[name].js",
+        cssFilename: isProduction ? "[name].[contenthash].css" : "[name].css",
+        cssChunkFilename: isProduction ? "[name].[contenthash].css" : "[name].css",
     },
 });

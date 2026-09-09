@@ -103,4 +103,104 @@ describe("LineNode", () => {
             expect(result.isOk).toBe(false);
         });
     });
+
+    describe("isConstruction", () => {
+        function createMockShapeWithEdges() {
+            const edges = {
+                lineType: "solid" as const,
+                position: new Float32Array([0, 0, 0, 1, 1, 1]),
+                range: [{ start: 0, count: 1 }],
+                color: "#000000",
+            };
+            const shape = createMockShape();
+            // BodyMockShape.mesh is a getter-only accessor, so it must be
+            // replaced via defineProperty rather than a plain assignment.
+            Object.defineProperty(shape, "mesh", {
+                get: () => ({ edges, faces: undefined, vertexs: undefined }),
+                configurable: true,
+            });
+            return shape;
+        }
+
+        test("should default to false", () => {
+            const node = new LineNode({ document: doc, start, end });
+            expect(node.isConstruction).toBe(false);
+        });
+
+        test("setting it should update the value", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            node.isConstruction = true;
+            expect(node.isConstruction).toBe(true);
+        });
+
+        test("should emit onPropertyChanged", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            const handler = rs.fn((_property: string) => {});
+            node.onPropertyChanged(handler);
+            node.isConstruction = true;
+            expect(handler.mock.calls.map((c) => c[0])).toContain("isConstruction");
+        });
+
+        test("createMesh should mark edges dashed when isConstruction is true from the start", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            node.isConstruction = true;
+            // Force a fresh mesh build (isConstruction's setter already mutated the
+            // cached one) to also verify createMesh() itself bakes it in correctly -
+            // the path taken on document load, where the setter is never called.
+            (node as any)._mesh = undefined;
+            expect(node.mesh.edges?.lineType).toBe("dash");
+        });
+
+        test("createMesh should leave edges solid when isConstruction is false", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            expect(node.mesh.edges?.lineType).toBe("solid");
+        });
+
+        test("toggling on an already-built mesh mutates the cached mesh directly", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            const meshBefore = node.mesh;
+            expect(meshBefore.edges?.lineType).toBe("solid");
+
+            node.isConstruction = true;
+
+            expect(node.mesh).toBe(meshBefore);
+            expect(node.mesh.edges?.lineType).toBe("dash");
+        });
+
+        test("toggling back off restores a solid line", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            node.isConstruction = true;
+            node.isConstruction = false;
+            expect(node.mesh.edges?.lineType).toBe("solid");
+        });
+
+        test("should redraw the node's visual so the style change is visible immediately", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            const redrawNode = rs.fn();
+            (doc.visual.context as any).redrawNode = redrawNode;
+
+            node.isConstruction = true;
+
+            expect(redrawNode).toHaveBeenCalledWith([node]);
+        });
+
+        test("setting the same value again should not redraw", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShapeWithEdges()) });
+            const node = new LineNode({ document: doc, start, end });
+            node.isConstruction = true;
+            const redrawNode = rs.fn();
+            (doc.visual.context as any).redrawNode = redrawNode;
+
+            node.isConstruction = true;
+
+            expect(redrawNode).not.toHaveBeenCalled();
+        });
+    });
 });

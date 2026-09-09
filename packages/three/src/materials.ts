@@ -32,9 +32,26 @@ export const defaultEdgeMaterial = new LineMaterial({
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
 });
+
+/** Same styling as `defaultEdgeMaterial`, but dashed - for edges whose mesh
+ * data is flagged `lineType: "dash"` (e.g. a construction line), which
+ * would otherwise render as an ordinary solid edge. */
+export const defaultDashedEdgeMaterial = new LineMaterial({
+    linewidth: 1,
+    color: VisualConfig.defaultEdgeColor,
+    side: DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+    dashed: true,
+    dashScale: 1,
+    dashSize: 15,
+    gapSize: 10,
+});
 VisualConfig.onPropertyChanged((property: keyof VisualItemConfig) => {
     if (property === "defaultEdgeColor") {
         defaultEdgeMaterial.color.set(VisualConfig.defaultEdgeColor);
+        defaultDashedEdgeMaterial.color.set(VisualConfig.defaultEdgeColor);
         defaultVertexMaterial.color.set(VisualConfig.defaultEdgeColor);
     }
 });

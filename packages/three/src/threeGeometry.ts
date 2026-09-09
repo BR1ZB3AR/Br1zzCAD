@@ -23,7 +23,13 @@ import type { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { Constants } from "./constants";
-import { defaultEdgeMaterial, defaultVertexMaterial, lockFaceMaterial, lockLineMaterial } from "./materials";
+import {
+    defaultDashedEdgeMaterial,
+    defaultEdgeMaterial,
+    defaultVertexMaterial,
+    lockFaceMaterial,
+    lockLineMaterial,
+} from "./materials";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
 import type { ThreeVisualContext } from "./threeVisualContext";
@@ -115,7 +121,9 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
 
     private initEdges(data: EdgeMeshData) {
         const buff = ThreeGeometryFactory.createEdgeBufferGeometry(data);
-        this._edges = new LineSegments2(buff, defaultEdgeMaterial);
+        const isDashed = data.lineType === "dash";
+        this._edges = new LineSegments2(buff, isDashed ? defaultDashedEdgeMaterial : defaultEdgeMaterial);
+        if (isDashed) this._edges.computeLineDistances();
         this._edges.layers.set(Constants.Layers.Wireframe);
         this.add(this._edges);
     }
