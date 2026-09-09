@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1507](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1507) — 2026-09-09
+
+- **Sketching**: Added a **Construction Line** toggle — select a line and click it (Sketch tab's Modify group, or the new "Construction" checkbox in the Properties panel) to mark it dashed reference/guide geometry instead of real profile geometry. This also fixed a real rendering gap: dashed mesh data was never actually honored for a body's own persistent edges, only for temporary preview overlays, so nothing drawn could ever render dashed before now.
+
 ### [v2026.09.09.1232](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1232) — 2026-09-09
 
 - **Viewport**: Clicking a named view (Top/Front/Back/Left/Right/Bottom) on the navigation cube now snaps the camera to orthographic, so the view is genuinely flat — no more circles reading as ellipses or edges converging, matching how FreeCAD and most other CAD tools handle axis-aligned views. Orbiting to an edge/corner view leaves whatever projection mode you're already in untouched.
