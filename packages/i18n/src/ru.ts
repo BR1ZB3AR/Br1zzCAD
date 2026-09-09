@@ -134,7 +134,7 @@ export default {
         "command.modify.trim": "Обрезать",
         "command.sketch.edit": "Редактировать эскиз",
         "command.sketch.finish": "Завершить эскиз",
-        "command.sketch.pickPlane": "Плоскость эскиза",
+        "command.sketch.pickPlane": "Новый эскиз",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Тест производительности",
         "command.workingPlane.alignToPlane": "Выравнивание",
@@ -305,7 +305,7 @@ export default {
         "prompt.select.section": "Пожалуйста выберите секцию",
         "prompt.select.shape": "Пожалуйста выберите фигуру",
         "prompt.select.sketchPlane":
-            "Нажмите Top, Front или Right, чтобы рисовать на этой плоскости, ESC для отмены",
+            "Нажмите Top, Front, Right или любую грань, чтобы рисовать на этой плоскости, ESC для отмены",
         "prompt.select.solids": "Пожалуйста выберите массивы",
         "prompt.select.vertexes": "Пожалуйста выберите вершины",
         "prompt.select.wires": "Пожалуйста выберите ребра",

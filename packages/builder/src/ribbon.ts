@@ -62,17 +62,11 @@ export const DefaultRibbon: RibbonTabProfile[] = [
         tabName: "ribbon.tab.model",
         groups: [
             {
+                // 2D profile tools (Line, Rectangle, Circle, Arc, Pline, Bezier, ...)
+                // live on the Sketch tab only - a finished sketch is what Extrude/Loft/
+                // Sweep/Revolve etc. below consume, so this tab shows 3D-only tools.
                 groupName: "ribbon.group.draw",
                 items: [
-                    "create.line",
-                    {
-                        type: "split",
-                        items: ["create.rect", "create.circle", "create.ellipse", "create.regularPolygon"],
-                    },
-                    {
-                        type: "split",
-                        items: ["create.arc", "create.arc2point", "create.arc3point", "create.arcTTR"],
-                    },
                     {
                         type: "split",
                         items: [
@@ -86,13 +80,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                     "create.extrude",
                     ["create.loft", "create.sweep", "create.revol"],
                 ],
-                collapsedItems: [
-                    "create.point",
-                    "create.polygon",
-                    "create.bezier",
-                    "create.helix",
-                    "create.pipe",
-                ],
+                collapsedItems: ["create.point", "create.helix", "create.pipe"],
             },
             {
                 groupName: "ribbon.group.modify",

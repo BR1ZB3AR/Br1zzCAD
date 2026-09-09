@@ -73,6 +73,28 @@ describe("DefaultRibbon", () => {
         expect(allItems).toContain("create.box");
     });
 
+    test("model tab's draw group should not contain 2D sketch profile tools - those live on the sketch tab only", () => {
+        const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
+        const drawGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.draw")!;
+        const allItems = [...flattenItems(drawGroup.items), ...(drawGroup.collapsedItems ?? [])];
+        const sketchOnlyTools = [
+            "create.line",
+            "create.rect",
+            "create.circle",
+            "create.ellipse",
+            "create.regularPolygon",
+            "create.arc",
+            "create.arc2point",
+            "create.arc3point",
+            "create.arcTTR",
+            "create.polygon",
+            "create.bezier",
+        ];
+        for (const tool of sketchOnlyTools) {
+            expect(allItems).not.toContain(tool);
+        }
+    });
+
     test("modify group should contain modify commands", () => {
         const modelTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.model")!;
         const modifyGroup = modelTab.groups.find((g) => g.groupName === "ribbon.group.modify");

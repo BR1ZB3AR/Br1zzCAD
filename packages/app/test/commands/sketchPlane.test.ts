@@ -9,6 +9,7 @@ import {
     SelectShapeStep,
     SketchGroupNode,
     VisualStates,
+    XYZ,
 } from "@chili3d/core";
 import {
     createMockApplication,
@@ -30,6 +31,9 @@ interface Rig {
     highlightCalls: ReturnType<typeof createMockHighlighter>["addCalls"];
     /** Set this before invoking execute() to control which node the mock picker "clicks". */
     pickIndex: number | undefined;
+    /** Set instead of pickIndex to simulate clicking a REAL face - not one of
+     * the three temporary reference planes. */
+    customPick: { node: INode; shape: unknown } | undefined;
 }
 
 function buildRig(): Rig {
@@ -59,6 +63,16 @@ function buildRig(): Rig {
     (doc.selection as any).clearSelection = rs.fn();
     (doc as any).picker = {
         pickShape: async () => {
+            if (rig.customPick) {
+                return [
+                    {
+                        owner: { node: rig.customPick.node },
+                        shape: rig.customPick.shape,
+                        transform: Matrix4.identity(),
+                        indexes: [],
+                    },
+                ];
+            }
             if (rig.pickIndex === undefined) return [];
             return [
                 {
@@ -219,5 +233,83 @@ describe("PickSketchPlane", () => {
         const secondName = (rig2.modelManagerAddedNodes[0] as SketchGroupNode).name;
 
         expect(firstName).not.toBe(secondName);
+    });
+
+    describe("picking a real face (not one of the three reference planes)", () => {
+        function faceShape(point: XYZ, normal: XYZ) {
+            const shape = {
+                transformedMul: () => shape,
+                normal: () => [point, normal],
+                dispose: rs.fn(),
+            };
+            return shape;
+        }
+
+        test("derives a plane at the face's point and normal, and starts a sketch on it", async () => {
+            const rig = buildRig();
+            const point = new XYZ({ x: 5, y: 5, z: 10 });
+            const normal = XYZ.unitZ;
+            const shape = faceShape(point, normal);
+            rig.customPick = { node: { name: "Box1" } as unknown as INode, shape };
+            const app = createMockApplication();
+            app.activeView = rig.view;
+
+            await new PickSketchPlane().execute(app);
+
+            expect(rig.view.workplane.origin.isEqualTo(point)).toBe(true);
+            expect(rig.view.workplane.normal.isEqualTo(normal)).toBe(true);
+            expect(rig.view.workplaneVisible).toBe(true);
+            expect(shape.dispose).toHaveBeenCalledTimes(1);
+
+            expect(rig.modelManagerAddedNodes).toHaveLength(1);
+            const sketchGroup = rig.modelManagerAddedNodes[0] as SketchGroupNode;
+            expect(sketchGroup).toBeInstanceOf(SketchGroupNode);
+            expect(sketchGroup.plane.origin.isEqualTo(point)).toBe(true);
+            expect(rig.doc.modelManager.currentNode).toBe(sketchGroup);
+        });
+
+        test("uses unitX as xvec when the face normal is parallel to Z", async () => {
+            const rig = buildRig();
+            rig.customPick = {
+                node: { name: "Box1" } as unknown as INode,
+                shape: faceShape(XYZ.zero, XYZ.unitZ),
+            };
+            const app = createMockApplication();
+            app.activeView = rig.view;
+
+            await new PickSketchPlane().execute(app);
+
+            expect(rig.view.workplane.xvec.isEqualTo(XYZ.unitX)).toBe(true);
+        });
+
+        test("derives xvec from unitZ.cross(normal) when the face normal is not parallel to Z", async () => {
+            const rig = buildRig();
+            rig.customPick = {
+                node: { name: "Box1" } as unknown as INode,
+                shape: faceShape(XYZ.zero, XYZ.unitX),
+            };
+            const app = createMockApplication();
+            app.activeView = rig.view;
+
+            await new PickSketchPlane().execute(app);
+
+            // cross(unitZ, unitX) = unitY
+            expect(rig.view.workplane.xvec.isEqualTo(XYZ.unitY)).toBe(true);
+        });
+
+        test("still cleans up the three temporary reference-plane nodes", async () => {
+            const rig = buildRig();
+            rig.customPick = {
+                node: { name: "Box1" } as unknown as INode,
+                shape: faceShape(XYZ.zero, XYZ.unitZ),
+            };
+            const app = createMockApplication();
+            app.activeView = rig.view;
+
+            await new PickSketchPlane().execute(app);
+
+            expect(rig.removedNodes).toHaveLength(3);
+            expect(rig.removedNodes).toEqual(rig.addedNodes);
+        });
     });
 });

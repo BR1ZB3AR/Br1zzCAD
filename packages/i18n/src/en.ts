@@ -140,7 +140,7 @@ export default {
         "command.modify.trim": "Trim",
         "command.sketch.edit": "Edit Sketch",
         "command.sketch.finish": "Finish Sketch",
-        "command.sketch.pickPlane": "Sketch Plane",
+        "command.sketch.pickPlane": "New Sketch",
         "command.special.last": "__Last_COMMAND__",
         "command.test.performance": "Performance Test",
         "command.workingPlane.alignToPlane": "Align",
@@ -317,7 +317,8 @@ export default {
         "prompt.select.path": "Please select path",
         "prompt.select.section": "Please select section",
         "prompt.select.shape": "Please select shape",
-        "prompt.select.sketchPlane": "Click Top, Front, or Right to sketch on it, ESC key to cancel",
+        "prompt.select.sketchPlane":
+            "Click Top, Front, Right, or any face to sketch on it, ESC key to cancel",
         "prompt.select.solids": "Please select solids",
         "prompt.select.vertexes": "Please select vertexes",
         "prompt.select.wires": "Please select wires",

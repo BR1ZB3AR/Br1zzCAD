@@ -8,11 +8,15 @@ import {
     type IApplication,
     type ICommand,
     type IDisposable,
+    type IFace,
+    type IShape,
+    type Matrix4,
     Plane,
     SelectShapeStep,
     ShapeTypes,
     SketchGroupNode,
     VisualStates,
+    XYZ,
 } from "@chili3d/core";
 
 /** Session-wide counter, matching the established `Folder${index++}`
@@ -89,9 +93,13 @@ export class PickSketchPlane implements ICommand {
 
             const pickedNode = data.shapes[0].owner.node;
             const picked = CANDIDATES.find((_, i) => nodes[i] === pickedNode);
-            if (!picked) return;
+            // One of the three temporary reference planes -> use its exact
+            // plane. Anything else -> the user clicked a real face on an
+            // existing shape, so derive a plane from that face instead
+            // (same face-to-plane math as `workingPlane.alignToPlane`).
+            const plane = picked ? picked.plane : this.planeFromFace(data.shapes[0]);
 
-            view.workplane = picked.plane;
+            view.workplane = plane;
             view.workplaneVisible = true;
 
             // Everything drawn from here on (lines, rects, dimensions, ...)
@@ -102,7 +110,7 @@ export class PickSketchPlane implements ICommand {
             const sketchGroup = new SketchGroupNode({
                 document,
                 name: `Sketch ${sketchIndex++}`,
-                plane: picked.plane,
+                plane,
             });
             document.modelManager.addNode(sketchGroup);
             document.modelManager.currentNode = sketchGroup;
@@ -116,5 +124,16 @@ export class PickSketchPlane implements ICommand {
             labels.forEach((l) => l.dispose());
             view.update();
         }
+    }
+
+    private planeFromFace(shapeData: { shape: IShape; transform: Matrix4 }) {
+        const face = shapeData.shape.transformedMul(shapeData.transform) as IFace;
+        const [point, normal] = face.normal(0, 0);
+        face.dispose();
+        let xvec = XYZ.unitX;
+        if (!normal.isParallelTo(XYZ.unitZ)) {
+            xvec = XYZ.unitZ.cross(normal).normalize()!;
+        }
+        return new Plane({ origin: point, normal, xvec });
     }
 }
