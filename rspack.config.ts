@@ -100,5 +100,14 @@ export default defineConfig({
     },
     output: {
         clean: true,
+        // Content-hashed filenames so every deploy gets a distinct URL for its
+        // JS/CSS - GitHub Pages doesn't support custom cache-control headers,
+        // so a fixed "main.js" means browsers/CDNs can keep serving a stale
+        // bundle indefinitely after a new deploy even though index.html itself
+        // (short max-age) picks up the new build right away.
+        filename: "[name].[contenthash].js",
+        chunkFilename: "[name].[contenthash].js",
+        cssFilename: "[name].[contenthash].css",
+        cssChunkFilename: "[name].[contenthash].css",
     },
 });
