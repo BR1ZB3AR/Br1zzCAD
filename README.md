@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1232](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1232) — 2026-09-09
+
+- **Viewport**: Clicking a named view (Top/Front/Back/Left/Right/Bottom) on the navigation cube now snaps the camera to orthographic, so the view is genuinely flat — no more circles reading as ellipses or edges converging, matching how FreeCAD and most other CAD tools handle axis-aligned views. Orbiting to an edge/corner view leaves whatever projection mode you're already in untouched.
+
 ### [v2026.09.09.1158](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1158) — 2026-09-09
 
 - **Sketching**: Diameter dimensions now draw a proper diameter callout — one line spanning across the circle through its center with an arrowhead at each end and an Ø-prefixed label, instead of a radius-style line from the center to one edge. Auto Dimension on a circular edge now produces this diameter dimension by default (the conventional circle callout); Radius Dimension remains its own explicit tool for the center-to-edge case.
