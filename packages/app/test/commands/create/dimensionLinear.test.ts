@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { DimensionAnnotation, getDimensionEditHandler, XYZ } from "@chili3d/core";
+import { DimensionAnnotation, getDimensionEditHandler, getDimensionMeasuredNodes, XYZ } from "@chili3d/core";
 import { afterAll, beforeAll, describe, expect, test } from "@rstest/core";
 import { LineNode, RectNode } from "../../../src/bodys";
 import { LinearDimension } from "../../../src/commands/create/dimensionLinear";
@@ -130,6 +130,24 @@ describe("LinearDimension", () => {
             expect(handler!(25)).toBe(true);
             expect(rect.dx).toBe(25);
             expect(rect.dy).toBe(6);
+        });
+
+        test("should register the edge's owner as a measured node even when it's not independently editable", () => {
+            // A shape with an owner that's neither a LineNode nor a RectNode
+            // (e.g. a RegularPolygon edge) still isn't editable, but should
+            // still be tracked so Move can carry the dimension along with it.
+            const start = new XYZ({ x: 0, y: 0, z: 0 });
+            const end = new XYZ({ x: 10, y: 0, z: 0 });
+            const placement = new XYZ({ x: 5, y: 5, z: 0 });
+            const owner = {};
+            const cmd = new LinearDimension();
+            const { addedNodes } = wireCommand(cmd);
+            seedStepDatas(cmd, [lineEdgeStep(start, end, owner), pointStepResult({ point: placement })]);
+
+            (cmd as any).executeMainTask();
+
+            const annotation = addedNodes[0] as DimensionAnnotation;
+            expect(getDimensionMeasuredNodes(annotation)).toEqual([owner]);
         });
     });
 });

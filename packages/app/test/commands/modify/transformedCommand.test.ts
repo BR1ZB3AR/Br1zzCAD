@@ -9,11 +9,15 @@ import {
     Matrix4,
     MeshNode,
     MultistepCommand,
+    Plane,
     PubSub,
+    setDimensionMeasuredNodes,
     VisualConfig,
     XYZ,
 } from "@chili3d/core";
+import { TestDocument } from "@chili3d/core/test-utils";
 import { afterAll, beforeAll, describe, expect, rs, test } from "@rstest/core";
+import { LineNode } from "../../../src/bodys";
 import { Move } from "../../../src/commands/modify/move";
 import {
     ensureGlobalStubApp,
@@ -24,6 +28,21 @@ import {
     stubTransactionRun,
     wireCommand,
 } from "../commandTestUtils";
+
+/** Wires a command to a real TestDocument (not the lightweight `wireCommand`
+ * mock) - needed for the auto-follow tests, which sweep the real node tree
+ * via `NodeUtils.findNodes(document.modelManager.rootNode, ...)`; the mock
+ * document's rootNode doesn't maintain real firstChild/nextSibling links. */
+function wireCommandToRealDocument<C>(cmd: C, doc: TestDocument) {
+    (cmd as any)._application = {
+        activeView: {
+            document: doc,
+            workplane: Plane.XY,
+            direction: () => XYZ.unitNZ,
+            htmlText: rs.fn(),
+        },
+    };
+}
 
 let restoreApp: () => void;
 beforeAll(() => {
@@ -489,5 +508,130 @@ describe("TransformedCommand (via Move)", () => {
                 }
             });
         });
+
+        describe("auto-follow (unselected dimensions measuring a moved shape)", () => {
+            function setupLineAndDimension(doc: TestDocument) {
+                const start = new XYZ({ x: 0, y: 0, z: 0 });
+                const end = new XYZ({ x: 10, y: 0, z: 0 });
+                const line = new LineNode({ document: doc, start, end });
+                doc.modelManager.addNode(line);
+
+                const annotation = new DimensionAnnotation({
+                    document: doc,
+                    annotationType: "dimension",
+                    name: "Dimension",
+                    dimensionType: "linear",
+                    startPoint: start,
+                    endPoint: end,
+                    placement: new XYZ({ x: 5, y: 5, z: 0 }),
+                });
+                doc.modelManager.addNode(annotation);
+                setDimensionMeasuredNodes(annotation, [line]);
+
+                return { line, annotation };
+            }
+
+            test("should move a dimension that measures a selected shape, even when the dimension itself isn't selected", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const doc = new TestDocument();
+                    const cmd = new Move();
+                    wireCommandToRealDocument(cmd, doc);
+                    const { line, annotation } = setupLineAndDimension(doc);
+                    (cmd as any).models = [line]; // dimension deliberately NOT included
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 0, y: 10, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.startPoint.isEqualTo(new XYZ({ x: 0, y: 10, z: 0 }), 1e-6)).toBe(true);
+                    expect(annotation.endPoint.isEqualTo(new XYZ({ x: 10, y: 10, z: 0 }), 1e-6)).toBe(true);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should not move a dimension whose measured shape wasn't part of the move", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const doc = new TestDocument();
+                    const cmd = new Move();
+                    wireCommandToRealDocument(cmd, doc);
+                    const { annotation } = setupLineAndDimension(doc);
+                    const { node: unrelated } = trackingNode();
+                    (cmd as any).models = [unrelated]; // moving something else entirely
+                    const originalStart = annotation.startPoint;
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 0, y: 10, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    expect(annotation.startPoint).toEqual(originalStart);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should not double-move a dimension that's both explicitly selected and auto-followed", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const doc = new TestDocument();
+                    const cmd = new Move();
+                    wireCommandToRealDocument(cmd, doc);
+                    const { line, annotation } = setupLineAndDimension(doc);
+                    (cmd as any).models = [line, annotation]; // explicitly selected too
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 0, y: 10, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    // A single translation, not two applied back-to-back.
+                    expect(annotation.startPoint.isEqualTo(new XYZ({ x: 0, y: 10, z: 0 }), 1e-6)).toBe(true);
+                } finally {
+                    restore();
+                }
+            });
+
+            test("should not auto-follow (or clone) an unselected dimension when isClone is true", () => {
+                const restore = stubTransactionRun();
+                try {
+                    const doc = new TestDocument();
+                    const cmd = new Move();
+                    cmd.isClone = true;
+                    wireCommandToRealDocument(cmd, doc);
+                    const { line, annotation } = setupLineAndDimension(doc);
+                    (cmd as any).models = [line];
+                    seedStepDatas(cmd, [
+                        pointStepResult({ point: XYZ.zero }),
+                        pointStepResult({ point: new XYZ({ x: 0, y: 10, z: 0 }) }),
+                    ]);
+
+                    (cmd as any).executeMainTask();
+
+                    // The original dimension is untouched, and no clone of it
+                    // was created - only the explicitly-selected line was cloned.
+                    expect(annotation.startPoint.isEqualTo(new XYZ({ x: 0, y: 0, z: 0 }), 1e-6)).toBe(true);
+                    expect(countDimensionAnnotations(doc)).toBe(1);
+                } finally {
+                    restore();
+                }
+            });
+        });
     });
 });
+
+function countDimensionAnnotations(doc: TestDocument): number {
+    let count = 0;
+    let node = (doc.modelManager.rootNode as any).firstChild;
+    while (node) {
+        if (node instanceof DimensionAnnotation) count++;
+        node = node.nextSibling;
+    }
+    return count;
+}

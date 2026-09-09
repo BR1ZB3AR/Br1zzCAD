@@ -12,6 +12,7 @@ import {
     PointStep,
     SelectShapeStep,
     ShapeTypes,
+    setDimensionMeasuredNodes,
     Transaction,
     type XYZ,
 } from "@chili3d/core";
@@ -51,6 +52,10 @@ export class AngleDimension extends MultistepCommand {
                 placement,
             });
             this.document.modelManager.addNode(annotation);
+            setDimensionMeasuredNodes(annotation, [
+                this.stepDatas[0].shapes[0].owner.node,
+                this.stepDatas[1].shapes[0].owner.node,
+            ]);
             this.document.visual.update();
         });
         this.repeatOperation = true;

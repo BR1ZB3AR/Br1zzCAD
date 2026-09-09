@@ -5,14 +5,16 @@ import {
     CurveUtils,
     type DimensionAnnotation,
     type DimensionEditHandler,
+    type DimensionType,
     type ICircle,
     type IEdge,
     type IShape,
     type IShapeFilter,
     Precision,
+    type VisualNode,
     type XYZ,
 } from "@chili3d/core";
-import { type LineNode, RectNode } from "../../bodys";
+import { CircleNode, LineNode, RectNode } from "../../bodys";
 
 /** An edge's own `.curve` is always the ITrimmedCurve wrapper, never the
  * circle itself - the circle only shows up one level down, as `basisCurve`. */
@@ -131,4 +133,45 @@ export function rectNodeEditHandler(
         };
     }
     return undefined;
+}
+
+/** Dispatches to whichever edit handler applies to a straight edge's owner
+ * (LineNode or RectNode) - shared by the Linear and Auto dimension tools so
+ * both drive the exact same write-back logic for the exact same shape
+ * types. */
+export function linearEdgeEditHandler(
+    annotation: DimensionAnnotation,
+    owner: VisualNode,
+    start: XYZ,
+    end: XYZ,
+): DimensionEditHandler | undefined {
+    if (owner instanceof LineNode) return lineNodeEditHandler(annotation, owner, start, end);
+    if (owner instanceof RectNode) return rectNodeEditHandler(annotation, owner, start, end);
+    return undefined;
+}
+
+/** A radial/diameter dimension is editable when the picked circular edge
+ * belongs to a CircleNode - its `radius` is a plain settable property.
+ * Shared by the Radius/Diameter and Auto dimension tools. */
+export function circleNodeEditHandler(
+    annotation: DimensionAnnotation,
+    owner: VisualNode,
+    center: XYZ,
+    onCircle: XYZ,
+    dimensionType: Extract<DimensionType, "radial" | "diameter">,
+): DimensionEditHandler | undefined {
+    if (!(owner instanceof CircleNode)) return undefined;
+    const direction = onCircle.sub(center).normalize();
+    if (!direction) return undefined;
+
+    return (newValue: number) => {
+        const radius = dimensionType === "diameter" ? newValue / 2 : newValue;
+        if (radius <= Precision.Distance) return false;
+        owner.radius = radius;
+
+        // Keep the annotation's own endPoint in sync so the rendered
+        // radial line tracks the circle it measures.
+        annotation.endPoint = center.add(direction.multiply(radius));
+        return true;
+    };
 }

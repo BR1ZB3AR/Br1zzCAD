@@ -4,7 +4,6 @@
 import {
     command,
     DimensionAnnotation,
-    type DimensionEditHandler,
     Dimensions,
     type DimensionType,
     type IEdge,
@@ -12,14 +11,13 @@ import {
     MultistepCommand,
     type PointSnapData,
     PointStep,
-    Precision,
     SelectShapeStep,
     ShapeTypes,
     setDimensionEditHandler,
+    setDimensionMeasuredNodes,
     Transaction,
 } from "@chili3d/core";
-import { CircleNode } from "../../bodys";
-import { circleFromEdge, circularEdgeFilter } from "./dimensionUtils";
+import { circleFromEdge, circleNodeEditHandler, circularEdgeFilter } from "./dimensionUtils";
 
 /**
  * Shared logic for the Radius and Diameter dimension tools: pick a circular
@@ -52,23 +50,16 @@ export abstract class RadialDimensionCommandBase extends MultistepCommand {
                 placement,
             });
             this.document.modelManager.addNode(annotation);
+            setDimensionMeasuredNodes(annotation, [edgeData.owner.node]);
 
-            const owner = edgeData.owner.node;
-            if (owner instanceof CircleNode) {
-                const dimensionType = this.dimensionType;
-                const direction = onCircle.sub(center).normalize();
-                const handler: DimensionEditHandler = (newValue: number) => {
-                    const radius = dimensionType === "diameter" ? newValue / 2 : newValue;
-                    if (radius <= Precision.Distance || !direction) return false;
-                    owner.radius = radius;
-
-                    // Keep the annotation's own endPoint in sync so the
-                    // rendered radial line tracks the circle it measures.
-                    annotation.endPoint = center.add(direction.multiply(radius));
-                    return true;
-                };
-                setDimensionEditHandler(annotation, handler);
-            }
+            const handler = circleNodeEditHandler(
+                annotation,
+                edgeData.owner.node,
+                center,
+                onCircle,
+                this.dimensionType,
+            );
+            if (handler) setDimensionEditHandler(annotation, handler);
 
             this.document.visual.update();
         });

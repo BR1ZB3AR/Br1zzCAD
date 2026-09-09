@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 import type { DimensionAnnotation } from "./annotation";
+import type { VisualNode } from "./visualNode";
 
 /**
  * Called with the value the user typed while editing a dimension; returns
@@ -28,4 +29,22 @@ export function setDimensionEditHandler(annotation: DimensionAnnotation, handler
 
 export function getDimensionEditHandler(annotation: DimensionAnnotation): DimensionEditHandler | undefined {
     return handlers.get(annotation);
+}
+
+/**
+ * A session-local (not serialized) link from a DimensionAnnotation to the
+ * shape(s) it measures - set regardless of whether an edit handler exists
+ * (an Arc's radius or a Polygon's edge aren't editable, but should still be
+ * tracked). Lets Move/Rotate/Mirror carry an unselected dimension along
+ * with the shape it's measuring, instead of requiring it to be selected
+ * alongside that shape every time. Same reload caveat as the edit handler.
+ */
+const measuredNodes = new WeakMap<DimensionAnnotation, VisualNode[]>();
+
+export function setDimensionMeasuredNodes(annotation: DimensionAnnotation, nodes: VisualNode[]) {
+    measuredNodes.set(annotation, nodes);
+}
+
+export function getDimensionMeasuredNodes(annotation: DimensionAnnotation): VisualNode[] | undefined {
+    return measuredNodes.get(annotation);
 }

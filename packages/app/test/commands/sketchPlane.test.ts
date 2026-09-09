@@ -1,7 +1,15 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IDisposable, type INode, Matrix4, Plane, SelectShapeStep, VisualStates } from "@chili3d/core";
+import {
+    GroupNode,
+    type IDisposable,
+    type INode,
+    Matrix4,
+    Plane,
+    SelectShapeStep,
+    VisualStates,
+} from "@chili3d/core";
 import {
     createMockApplication,
     createMockDocument,
@@ -17,6 +25,7 @@ interface Rig {
     view: ReturnType<typeof createMockView>;
     addedNodes: INode[];
     removedNodes: INode[];
+    modelManagerAddedNodes: INode[];
     labelDisposeSpies: ReturnType<typeof rs.fn>[];
     highlightCalls: ReturnType<typeof createMockHighlighter>["addCalls"];
     /** Set this before invoking execute() to control which node the mock picker "clicks". */
@@ -26,12 +35,17 @@ interface Rig {
 function buildRig(): Rig {
     const addedNodes: INode[] = [];
     const removedNodes: INode[] = [];
+    const modelManagerAddedNodes: INode[] = [];
     const labelDisposeSpies: ReturnType<typeof rs.fn>[] = [];
     const rig = { pickIndex: undefined } as unknown as Rig;
 
     const doc = createMockDocument();
     (doc.visual.context as any).addNode = (nodes: INode[]) => addedNodes.push(...nodes);
     (doc.visual.context as any).removeNode = (nodes: INode[]) => removedNodes.push(...nodes);
+    // The default mock's modelManager.addNode is a no-op - override so the
+    // "Sketch N" group PickSketchPlane creates on a successful pick is
+    // observable, same as the temp-plane tracking above.
+    (doc.modelManager as any).addNode = (...nodes: INode[]) => modelManagerAddedNodes.push(...nodes);
     // Each temp node gets its own fake "visual object" so getVisual(node) can
     // resolve it - a plain marker object per node is enough for addState's
     // (untyped-in-tests) shape parameter.
@@ -69,7 +83,15 @@ function buildRig(): Rig {
     });
     (view as any).document = doc;
 
-    Object.assign(rig, { doc, view, addedNodes, removedNodes, labelDisposeSpies, highlightCalls: addCalls });
+    Object.assign(rig, {
+        doc,
+        view,
+        addedNodes,
+        removedNodes,
+        modelManagerAddedNodes,
+        labelDisposeSpies,
+        highlightCalls: addCalls,
+    });
     return rig;
 }
 
@@ -141,6 +163,9 @@ describe("PickSketchPlane", () => {
         }
         // No plane picked -> workplane untouched.
         expect(rig.view.workplaneVisible).toBe(false);
+        // No plane picked -> no sketch started either.
+        expect(rig.modelManagerAddedNodes).toHaveLength(0);
+        expect(rig.doc.modelManager.currentNode).toBeUndefined();
     });
 
     test.each([
@@ -166,5 +191,31 @@ describe("PickSketchPlane", () => {
         // (SelectShapeStep itself also clears selection once up front, so
         // this is the second call - the one this command is responsible for.)
         expect(rig.doc.selection.clearSelection).toHaveBeenCalledTimes(2);
+
+        // A successful pick starts a sketch: a new named group is added and
+        // made current, so everything drawn next collects under it.
+        expect(rig.modelManagerAddedNodes).toHaveLength(1);
+        const sketchGroup = rig.modelManagerAddedNodes[0];
+        expect(sketchGroup).toBeInstanceOf(GroupNode);
+        expect((sketchGroup as GroupNode).name).toMatch(/^Sketch \d+$/);
+        expect(rig.doc.modelManager.currentNode).toBe(sketchGroup);
+    });
+
+    test("each successful pick gets its own sketch group with an incrementing name", async () => {
+        const rig1 = buildRig();
+        rig1.pickIndex = 0;
+        const app1 = createMockApplication();
+        app1.activeView = rig1.view;
+        await new PickSketchPlane().execute(app1);
+        const firstName = (rig1.modelManagerAddedNodes[0] as GroupNode).name;
+
+        const rig2 = buildRig();
+        rig2.pickIndex = 1;
+        const app2 = createMockApplication();
+        app2.activeView = rig2.view;
+        await new PickSketchPlane().execute(app2);
+        const secondName = (rig2.modelManagerAddedNodes[0] as GroupNode).name;
+
+        expect(firstName).not.toBe(secondName);
     });
 });

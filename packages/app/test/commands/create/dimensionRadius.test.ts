@@ -1,7 +1,13 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type DimensionAnnotation, getDimensionEditHandler, type IShape, XYZ } from "@chili3d/core";
+import {
+    type DimensionAnnotation,
+    getDimensionEditHandler,
+    getDimensionMeasuredNodes,
+    type IShape,
+    XYZ,
+} from "@chili3d/core";
 import { afterAll, beforeAll, describe, expect, test } from "@rstest/core";
 import { CircleNode } from "../../../src/bodys";
 import { DiameterDimension, RadiusDimension } from "../../../src/commands/create/dimensionRadius";
@@ -144,6 +150,23 @@ describe("RadiusDimension", () => {
 
             expect(handler(0)).toBe(false);
             expect(circleNode.radius).toBe(5);
+        });
+
+        test("should register the edge's owner as a measured node even when it's not a CircleNode", () => {
+            const center = new XYZ({ x: 0, y: 0, z: 0 });
+            const placement = new XYZ({ x: 0, y: 10, z: 0 });
+            const owner = {}; // e.g. an Arc's circular edge - not editable, but should still be tracked
+            const cmd = new RadiusDimension();
+            const { addedNodes } = wireCommand(cmd);
+            seedStepDatas(cmd, [
+                shapeStepResult([{ shape: circleEdgeShape(center, 5), node: owner }]),
+                pointStepResult({ point: placement }),
+            ]);
+
+            (cmd as any).executeMainTask();
+
+            const annotation = addedNodes[0] as DimensionAnnotation;
+            expect(getDimensionMeasuredNodes(annotation)).toEqual([owner]);
         });
     });
 });

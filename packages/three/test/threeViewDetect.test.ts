@@ -3,6 +3,7 @@
 
 import {
     BoundingBox,
+    DimensionAnnotation,
     type EdgeMeshData,
     type I18nKeys,
     type IDocument,
@@ -512,5 +513,76 @@ describe("ThreeView detect — rectangle selection", () => {
             empty.y + 5,
         );
         expect(atEmpty.length).toBe(0);
+    });
+});
+
+// Regression coverage for a real bug: findIntersectedNodes/getNodeFromObject
+// only recognized ThreeVisualObject and ThreeRefSegmentAnnotation, so a
+// DimensionAnnotation's rendered line/arc could never be clicked - selecting
+// one (and so deleting it) only worked by clicking its tree row, not its
+// line in the viewport.
+function createSceneWithDimension() {
+    const doc = new TestDocument();
+    const visual = new ThreeVisual(doc, new NodeSelectionHandler(doc, true));
+    doc.visual = visual;
+    const view = new TestView(doc, visual.context);
+    view.camera.updateProjectionMatrix();
+    view.camera.updateMatrixWorld(true);
+    visual.context.scene.updateMatrixWorld(true);
+
+    const annotation = new DimensionAnnotation({
+        document: doc,
+        annotationType: "dimension",
+        name: "Dimension",
+        dimensionType: "linear",
+        startPoint: new XYZ({ x: -5, y: 0, z: 0 }),
+        endPoint: new XYZ({ x: 5, y: 0, z: 0 }),
+        placement: new XYZ({ x: 0, y: 5, z: 0 }),
+    });
+    visual.context.addNode([annotation]);
+
+    // Midpoint of the offset dimension line computeLinearDimensionGeometry
+    // draws for these points - a real point on the rendered mesh, not just
+    // near the annotation's own start/end/placement.
+    const onDimensionLine = view.worldToScreen(new XYZ({ x: 0, y: 5, z: 0 }));
+
+    return { doc, visual, view, annotation, onDimensionLine };
+}
+
+describe("ThreeView detect — DimensionAnnotation is selectable", () => {
+    test("detectVisual hits the dimension's rendered line and resolves back to its node", () => {
+        const { view, visual, annotation, onDimensionLine } = createSceneWithDimension();
+
+        const hits = view.detectVisual(onDimensionLine.x, onDimensionLine.y);
+
+        // LineSegments2 raycasting reports one intersection per line segment
+        // in the mesh (this dimension renders 7: 2 extension lines, the
+        // dimension line itself, and 2 two-wing arrowheads) - every one of
+        // them must resolve back to the same annotation node.
+        expect(hits.length).toBeGreaterThan(0);
+        expect(hits.every((h) => h === visual.context.getVisual(annotation))).toBe(true);
+    });
+
+    test("detectVisual excludes the dimension when a nodeFilter rejects it", () => {
+        const { view, annotation, onDimensionLine } = createSceneWithDimension();
+
+        const hits = view.detectVisual(onDimensionLine.x, onDimensionLine.y, {
+            allow: (node) => node !== annotation,
+        });
+
+        expect(hits.length).toBe(0);
+    });
+
+    test("detectVisualRect hits the dimension when its line is inside the rect", () => {
+        const { view, visual, annotation, onDimensionLine } = createSceneWithDimension();
+
+        const hits = view.detectVisualRect(
+            onDimensionLine.x - 10,
+            onDimensionLine.y - 10,
+            onDimensionLine.x + 10,
+            onDimensionLine.y + 10,
+        );
+
+        expect(hits).toContain(visual.context.getVisual(annotation));
     });
 });

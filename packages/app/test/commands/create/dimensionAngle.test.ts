@@ -1,7 +1,12 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { computeAngleDimensionGeometry, DimensionAnnotation, XYZ } from "@chili3d/core";
+import {
+    computeAngleDimensionGeometry,
+    DimensionAnnotation,
+    getDimensionMeasuredNodes,
+    XYZ,
+} from "@chili3d/core";
 import { afterAll, beforeAll, describe, expect, test } from "@rstest/core";
 import { AngleDimension } from "../../../src/commands/create/dimensionAngle";
 import {
@@ -121,6 +126,27 @@ describe("AngleDimension", () => {
 
             const annotation = addedNodes[0] as DimensionAnnotation;
             expect(annotation.startPoint.x).toBeCloseTo(0.0005, 6);
+        });
+
+        test("should register both edges' owners as measured nodes", () => {
+            const vertex = new XYZ({ x: 0, y: 0, z: 0 });
+            const far1 = new XYZ({ x: 10, y: 0, z: 0 });
+            const far2 = new XYZ({ x: 0, y: 10, z: 0 });
+            const placement = new XYZ({ x: 5, y: 5, z: 0 });
+            const owner1 = {};
+            const owner2 = {};
+            const cmd = new AngleDimension();
+            const { addedNodes } = wireCommand(cmd);
+            seedStepDatas(cmd, [
+                shapeStepResult([{ shape: lineEdgeShape(vertex, far1), node: owner1 }]),
+                shapeStepResult([{ shape: lineEdgeShape(vertex, far2), node: owner2 }]),
+                pointStepResult({ point: placement }),
+            ]);
+
+            (cmd as any).executeMainTask();
+
+            const annotation = addedNodes[0] as DimensionAnnotation;
+            expect(getDimensionMeasuredNodes(annotation)).toEqual([owner1, owner2]);
         });
     });
 });

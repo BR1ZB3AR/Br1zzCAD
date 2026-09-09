@@ -61,6 +61,7 @@ import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRe
 import { CameraController } from "./cameraController";
 import { Constants } from "./constants";
 import { ThreeRefSegmentAnnotation } from "./threeAnnotation";
+import { ThreeDimensionAnnotation } from "./threeDimensionAnnotation";
 import { ThreeGeometry } from "./threeGeometry";
 import { ThreeHelper } from "./threeHelper";
 import type { ThreeHighlighter } from "./threeHighlighter";
@@ -509,6 +510,8 @@ export class ThreeView extends Observable implements IView {
         } else if (threeObject instanceof ThreeComponentObject) {
             node = threeObject.componentNode;
         } else if (threeObject instanceof ThreeRefSegmentAnnotation) {
+            node = threeObject.annotation;
+        } else if (threeObject instanceof ThreeDimensionAnnotation) {
             node = threeObject.annotation;
         }
         return node;
@@ -963,6 +966,8 @@ export class ThreeView extends Observable implements IView {
             if (x instanceof ThreeVisualObject && x.node.visible && x.node.parentVisible) {
                 visuals.push(...x.wholeVisual());
             } else if (x instanceof ThreeRefSegmentAnnotation) {
+                visuals.push(...x.wholeVisual());
+            } else if (x instanceof ThreeDimensionAnnotation) {
                 visuals.push(...x.wholeVisual());
             }
         });

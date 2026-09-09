@@ -9,7 +9,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
         groups: [
             {
                 groupName: "ribbon.group.workingPlane",
-                items: ["sketch.pickPlane"],
+                items: ["sketch.pickPlane", "sketch.finish"],
             },
             {
                 groupName: "ribbon.group.draw",
@@ -43,6 +43,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                     {
                         type: "split",
                         items: [
+                            "create.dimensionAuto",
                             "create.dimensionLinear",
                             "create.dimensionRadius",
                             "create.dimensionDiameter",

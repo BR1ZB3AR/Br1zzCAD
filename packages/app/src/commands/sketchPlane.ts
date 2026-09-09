@@ -5,6 +5,7 @@ import {
     AsyncController,
     command,
     EditableShapeNode,
+    GroupNode,
     type IApplication,
     type ICommand,
     type IDisposable,
@@ -13,6 +14,10 @@ import {
     ShapeTypes,
     VisualStates,
 } from "@chili3d/core";
+
+/** Session-wide counter, matching the established `Folder${index++}`
+ * pattern (`create/folder.ts`) - not reset per document. */
+let sketchIndex = 1;
 
 /** Size (mm) of each temporary reference plane shown for picking - matches
  * the world-origin AxesHelper's own fixed size, so it reads as one coherent
@@ -88,6 +93,15 @@ export class PickSketchPlane implements ICommand {
 
             view.workplane = picked.plane;
             view.workplaneVisible = true;
+
+            // Everything drawn from here on (lines, rects, dimensions, ...)
+            // routes through `modelManager.addNode`, which targets
+            // `currentNode ?? rootNode` - making a new named group the
+            // current node is what makes it collect this sketch's geometry
+            // instead of scattering it at the document root.
+            const sketchGroup = new GroupNode({ document, name: `Sketch ${sketchIndex++}` });
+            document.modelManager.addNode(sketchGroup);
+            document.modelManager.currentNode = sketchGroup;
         } finally {
             controller.dispose();
             // The picker leaves the clicked shape selected (a highlighted

@@ -4,7 +4,6 @@
 import {
     command,
     DimensionAnnotation,
-    type DimensionEditHandler,
     Dimensions,
     type IEdge,
     type IStep,
@@ -14,12 +13,10 @@ import {
     SelectShapeStep,
     ShapeTypes,
     setDimensionEditHandler,
+    setDimensionMeasuredNodes,
     Transaction,
-    type VisualNode,
-    type XYZ,
 } from "@chili3d/core";
-import { LineNode, RectNode } from "../../bodys";
-import { lineNodeEditHandler, rectNodeEditHandler, straightEdgeFilter } from "./dimensionUtils";
+import { linearEdgeEditHandler, straightEdgeFilter } from "./dimensionUtils";
 
 /**
  * Creates an editable linear dimension by picking a straight edge directly
@@ -53,24 +50,14 @@ export class LinearDimension extends MultistepCommand {
                 placement,
             });
             this.document.modelManager.addNode(annotation);
+            setDimensionMeasuredNodes(annotation, [edgeData.owner.node]);
 
-            const handler = this.buildEditHandler(annotation, edgeData.owner.node, start, end);
+            const handler = linearEdgeEditHandler(annotation, edgeData.owner.node, start, end);
             if (handler) setDimensionEditHandler(annotation, handler);
 
             this.document.visual.update();
         });
         this.repeatOperation = true;
-    }
-
-    private buildEditHandler(
-        annotation: DimensionAnnotation,
-        owner: VisualNode,
-        start: XYZ,
-        end: XYZ,
-    ): DimensionEditHandler | undefined {
-        if (owner instanceof LineNode) return lineNodeEditHandler(annotation, owner, start, end);
-        if (owner instanceof RectNode) return rectNodeEditHandler(annotation, owner, start, end);
-        return undefined;
     }
 
     getSteps(): IStep[] {

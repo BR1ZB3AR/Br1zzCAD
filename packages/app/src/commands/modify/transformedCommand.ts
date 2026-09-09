@@ -8,10 +8,12 @@ import {
     DimensionAnnotation,
     type EdgeMeshData,
     GeometryNode,
+    getDimensionMeasuredNodes,
     type Matrix4,
     MeshDataUtils,
     MeshNode,
     MultistepCommand,
+    NodeUtils,
     PubSub,
     property,
     Transaction,
@@ -81,24 +83,28 @@ export abstract class TransformedCommand extends MultistepCommand {
         return MeshDataUtils.createEdgeMesh(start, end, VisualConfig.temporaryEdgeColor, "solid");
     }
 
+    // A DimensionAnnotation renders straight from its own absolute
+    // startPoint/endPoint/placement, not from a `.transform` matrix (unlike
+    // GeometryNode/MeshNode/ComponentNode) - moving it has to carry those
+    // points through the same transform instead, or it's left behind (or,
+    // for a clone, left overlapping the original).
+    private moveAnnotation(x: DimensionAnnotation, transform: Matrix4): void {
+        const target = this.isClone ? x.clone() : x;
+        target.startPoint = transform.ofPoint(x.startPoint);
+        target.endPoint = transform.ofPoint(x.endPoint);
+        if (x.point2) target.point2 = transform.ofPoint(x.point2);
+        target.placement = transform.ofPoint(x.placement);
+        if (this.isClone) x.parent?.insertAfter(x, target);
+    }
+
     protected executeMainTask(): void {
         Transaction.execute(this.document, `excute ${Object.getPrototypeOf(this).data.name}`, () => {
             const transform = this.transfrom(this.stepDatas.at(-1)!.point!);
+            const selected = new Set<VisualNode>(this.models);
 
             this.models?.forEach((x) => {
-                // A DimensionAnnotation renders straight from its own
-                // absolute startPoint/endPoint/placement, not from a
-                // `.transform` matrix (unlike GeometryNode/MeshNode/
-                // ComponentNode) - moving it has to carry those points
-                // through the same transform instead, or it's left behind
-                // (or, for a clone, left overlapping the original).
                 if (x instanceof DimensionAnnotation) {
-                    const target = this.isClone ? x.clone() : x;
-                    target.startPoint = transform.ofPoint(x.startPoint);
-                    target.endPoint = transform.ofPoint(x.endPoint);
-                    if (x.point2) target.point2 = transform.ofPoint(x.point2);
-                    target.placement = transform.ofPoint(x.placement);
-                    if (this.isClone) x.parent?.insertAfter(x, target);
+                    this.moveAnnotation(x, transform);
                     return;
                 }
 
@@ -110,6 +116,27 @@ export abstract class TransformedCommand extends MultistepCommand {
                     x.transform = x.transform.multiply(transform);
                 }
             });
+
+            // A dimension not explicitly selected still moves along with
+            // whatever it measures, as long as everything it measures is
+            // part of this move - so dimensioning a sketch and then moving
+            // the sketch's shapes doesn't leave dimensions stranded behind.
+            // Scoped to plain moves; auto-cloning an unselected dimension
+            // when the user only meant to duplicate a shape would surprise
+            // more than it'd help.
+            if (!this.isClone) {
+                const annotations = NodeUtils.findNodes(
+                    this.document.modelManager.rootNode,
+                    (n) => n instanceof DimensionAnnotation,
+                ) as DimensionAnnotation[];
+                for (const annotation of annotations) {
+                    if (selected.has(annotation)) continue;
+                    const measured = getDimensionMeasuredNodes(annotation);
+                    if (!measured || measured.length === 0) continue;
+                    if (!measured.every((m) => selected.has(m))) continue;
+                    this.moveAnnotation(annotation, transform);
+                }
+            }
 
             this.document.visual.update();
         });

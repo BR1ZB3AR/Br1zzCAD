@@ -18,6 +18,7 @@ export * from "./copySubShape";
 export * from "./curveProjection";
 export * from "./cylinder";
 export * from "./dimensionAngle";
+export * from "./dimensionAuto";
 export * from "./dimensionLinear";
 export * from "./dimensionRadius";
 export * from "./ellipse";
