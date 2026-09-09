@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1123](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1123) — 2026-09-09
+
+- **Sketching**: The Sketch tab's plane-picker is now **New Sketch** and can start a sketch on any existing face, not just the three TOP/FRONT/RIGHT reference planes — click a face on your model and the sketch plane lines up with it. The Model tab no longer duplicates 2D drawing tools (Line, Rectangle, Circle, Arc, ...) that already live on the Sketch tab; it now shows only 3D primitives and features (Box/Sphere/Cylinder/Cone/Pyramid, Extrude, Loft, Sweep, Revolve).
+
 ### [v2026.09.09.1049](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1049) — 2026-09-09
 
 - **Items tree**: Right-clicking any node — a sketch, a 3D feature, a shape, a dimension — now opens a context menu with **Edit**, **Rename** and **Delete**. Edit re-enters a sketch (restoring its working plane and switching back to the Sketch tab) or, for anything else, just selects the node so its values are ready to edit in the Properties panel. Rename edits the name in place.
