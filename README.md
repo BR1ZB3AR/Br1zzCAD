@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.09.1148](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1148) — 2026-09-09
+
+- **Sketching**: The Sketch tab's Modify group now also has **Rotate**, **Mirror**, **Array**, **Trim** and **Extend**, plus a new **Boolean** group with **Intersect**, **Cut** and **Join** — the same tools already available in the Model tab, now usable on 2D sketch geometry without switching tabs. Shell stays Model-only, since it only applies to a 3D solid.
+
 ### [v2026.09.09.1138](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1138) — 2026-09-09
 
 - **Build**: Fixed a deploy-caching bug — the app's JS/CSS bundle was always named `main.js`/`main.css`, so on GitHub Pages (which doesn't allow custom cache headers) a browser or CDN edge could keep serving an old bundle for a while after a new version deployed, showing a stale version number even on a hard refresh. Every build now gets a uniquely-named bundle, so a new deploy can never be masked by a stale cache again.
