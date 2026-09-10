@@ -6,6 +6,7 @@ import {
     type GeometryNode,
     type IStep,
     type IWire,
+    nonConstructionNodeFilter,
     property,
     SelectShapeStep,
     type ShapeType,
@@ -45,6 +46,7 @@ export class Sweep extends CreateFromSelectionCommand {
             new SelectShapeStep((ShapeTypes.edge | ShapeTypes.wire) as ShapeType, "prompt.select.path"),
             new SelectShapeStep((ShapeTypes.edge | ShapeTypes.wire) as ShapeType, "prompt.select.section", {
                 multiple: true,
+                nodeFilter: nonConstructionNodeFilter,
                 beforeSelection: () => this.addFirstSelectedState(VisualStates.edgeSelected),
                 afterSelection: () => this.removeFirstSelectedState(VisualStates.edgeSelected),
             }),

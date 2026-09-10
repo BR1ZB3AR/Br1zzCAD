@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { EditableShapeNode, FolderNode, ShapeNodeFilter } from "../src";
+import { EditableShapeNode, FolderNode, nonConstructionNodeFilter, ShapeNodeFilter } from "../src";
 import { Result } from "../src/foundation";
 import type { IShape } from "../src/shape";
 import { TestDocument } from "../test-utils";
@@ -121,5 +121,42 @@ describe("ShapeNodeFilter", () => {
 
         // Should not throw any errors
         expect(filter.allow(shapeNode)).toBe(true);
+    });
+});
+
+describe("nonConstructionNodeFilter", () => {
+    let doc: any;
+    let mockShape: IShape;
+
+    beforeEach(() => {
+        doc = new TestDocument() as any;
+        mockShape = {
+            id: "test-shape",
+            isNull: () => false,
+            dispose: () => {},
+            isEqual: (other: IShape) => other === mockShape,
+            mesh: { edges: undefined, faces: undefined },
+            matrix: { multiply: (m: any) => m },
+            transformed: (m: any) => mockShape,
+            transformedMul: (m: any) => mockShape,
+            isClosed: () => true,
+            shapeType: "test" as any,
+        } as unknown as IShape;
+    });
+
+    test("allows a non-construction ShapeNode", () => {
+        const node = new EditableShapeNode({ document: doc, name: "n", shape: Result.ok(mockShape) });
+        expect(nonConstructionNodeFilter.allow(node)).toBe(true);
+    });
+
+    test("rejects a ShapeNode marked construction", () => {
+        const node = new EditableShapeNode({ document: doc, name: "n", shape: Result.ok(mockShape) });
+        node.isConstruction = true;
+        expect(nonConstructionNodeFilter.allow(node)).toBe(false);
+    });
+
+    test("allows a non-ShapeNode (isConstruction doesn't apply to it)", () => {
+        const folder = new FolderNode({ document: doc, name: "f" });
+        expect(nonConstructionNodeFilter.allow(folder)).toBe(true);
     });
 });

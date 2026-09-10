@@ -14,6 +14,7 @@ import {
     type IStep,
     type LengthAtAxisSnapData,
     LengthAtAxisStep,
+    nonConstructionNodeFilter,
     Precision,
     PubSub,
     Result,
@@ -41,7 +42,10 @@ const SECTION_SHAPE_TYPES = (ShapeTypes.face | ShapeTypes.edge | ShapeTypes.wire
  */
 class SelectExtrudeSectionStep extends GetOrSelectShapeStep {
     constructor(private readonly command: ExtrudeCommand) {
-        super(SECTION_SHAPE_TYPES, "prompt.select.shape", { multiple: true });
+        super(SECTION_SHAPE_TYPES, "prompt.select.shape", {
+            multiple: true,
+            nodeFilter: nonConstructionNodeFilter,
+        });
     }
 
     override async execute(

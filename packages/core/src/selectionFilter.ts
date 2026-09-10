@@ -27,3 +27,15 @@ export class ShapeNodeFilter implements INodeFilter {
         return false;
     }
 }
+
+/**
+ * Rejects a shape node marked construction (see `ShapeNode.isConstruction`).
+ * Construction/guide geometry is meant to help draw real profiles, not
+ * become 3D material itself - so Extrude/Revolve/Loft/Sweep's *profile* pick
+ * uses this to exclude it, matching how FreeCAD and other CAD tools treat
+ * construction geometry. It's still usable as a reference (e.g. a Revolve
+ * axis or Sweep path), since those picks don't apply this filter.
+ */
+export const nonConstructionNodeFilter: INodeFilter = {
+    allow: (node: INode) => !(node instanceof ShapeNode && node.isConstruction),
+};

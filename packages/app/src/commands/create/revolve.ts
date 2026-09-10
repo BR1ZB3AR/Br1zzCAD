@@ -11,6 +11,7 @@ import {
     type IShapeFilter,
     type IStep,
     Line,
+    nonConstructionNodeFilter,
     property,
     SelectShapeStep,
     type ShapeType,
@@ -49,6 +50,7 @@ export class Revolve extends CreateFromSelectionCommand {
             new SelectShapeStep(
                 (ShapeTypes.edge | ShapeTypes.face | ShapeTypes.wire) as ShapeType,
                 "prompt.select.section",
+                { nodeFilter: nonConstructionNodeFilter },
             ),
             new SelectShapeStep(ShapeTypes.edge, "prompt.select.axis", {
                 shapeFilter: new LineFilter(),

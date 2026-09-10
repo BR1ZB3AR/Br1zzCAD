@@ -1,7 +1,16 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IEdge, type IShape, type IWire, PubSub, Result, ShapeTypes, XYZ } from "@chili3d/core";
+import {
+    EditableShapeNode,
+    type IEdge,
+    type IShape,
+    type IWire,
+    PubSub,
+    Result,
+    ShapeTypes,
+    XYZ,
+} from "@chili3d/core";
 import { afterAll, beforeAll, describe, expect, rs, test } from "@rstest/core";
 import { ExtrudeNode } from "../../../src/bodys/extrude";
 import { ExtrudeCommand } from "../../../src/commands/create/extrude";
@@ -381,6 +390,34 @@ describe("ExtrudeCommand", () => {
             const result = await step.execute(doc, controller);
 
             expect(result?.shapes).toHaveLength(1);
+        });
+
+        // Construction geometry is a drawing guide, not real profile material
+        // (matches FreeCAD) - it should never itself become the shape an
+        // Extrude turns into a solid.
+        test("excludes a construction shape from a mixed pre-selection", async () => {
+            const { doc, step } = buildStepWithPreselection([]);
+            const constructionNode = new EditableShapeNode({
+                document: doc,
+                name: "construction",
+                shape: Result.ok(createMockShape({ shapeType: ShapeTypes.face })),
+            });
+            constructionNode.isConstruction = true;
+            const normalNode = new EditableShapeNode({
+                document: doc,
+                name: "normal",
+                shape: Result.ok(createMockShape({ shapeType: ShapeTypes.face })),
+            });
+            (doc.selection as any).getSelectedShapes = () => [
+                shapeData({ shape: { shapeType: ShapeTypes.face }, node: constructionNode }),
+                shapeData({ shape: { shapeType: ShapeTypes.face }, node: normalNode }),
+            ];
+            const controller = { success: rs.fn() } as any;
+
+            const result = await step.execute(doc, controller);
+
+            expect(result?.shapes).toHaveLength(1);
+            expect(result?.nodes?.[0]).toBe(normalNode);
         });
     });
 });

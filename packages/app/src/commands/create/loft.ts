@@ -13,6 +13,7 @@ import {
     type IShape,
     type IVertex,
     type IWire,
+    nonConstructionNodeFilter,
     PubSub,
     property,
     Result,
@@ -126,6 +127,7 @@ export class LoftCommand extends CancelableCommand {
         const step = new SelectShapeStep(
             (ShapeTypes.vertex | ShapeTypes.wire | ShapeTypes.edge) as ShapeType,
             "prompt.select.section",
+            { nodeFilter: nonConstructionNodeFilter },
         );
         return await step.execute(this.document, this.controller);
     }
