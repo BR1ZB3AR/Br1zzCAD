@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.10.1059](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.1059) — 2026-09-10
+
+- **Sketching**: A closed-loop construction (dashed/blue) shape no longer shows a filled face — only a real (non-construction) closed profile reads as "this is a solid region" now, matching FreeCAD. Its interior stays click-selectable (the face geometry itself is unchanged), just invisible; this also fixes hovering/selecting a construction face from briefly then permanently revealing that fill, the same class of bug fixed for dashed edges in the previous release.
+
 ### [v2026.09.10.0958](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.0958) — 2026-09-10
 
 - **Sketching**: Construction geometry (dashed/blue) is now excluded from Extrude, Revolve, Loft and Sweep's profile pick, matching how FreeCAD and other CAD tools treat construction lines — they're a drawing guide, not real profile material. It's still usable as a reference for those same tools (e.g. a Revolve axis or a Sweep path), since only the "this becomes the solid" pick is filtered.
