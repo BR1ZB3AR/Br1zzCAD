@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.10.0925](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.0925) — 2026-09-10
+
+- **Sketching**: Fixed construction geometry (dashed/blue) losing its dashed look the moment it was hovered or selected — and staying stuck solid afterward, even after deselecting. Hover/select now use dashed variants of the highlight materials for dashed edges, and deselecting correctly restores the edge's own material instead of always falling back to the shared solid default.
+
 ### [v2026.09.09.1558](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.09.1558) — 2026-09-09
 
 - **Sketching**: Added a **Construction Mode** toggle (Sketch tab's Draw group) — turn it on and every shape you draw next with any sketch tool (Line, Rectangle, Circle, 3-Point Arc, Regular Polygon, Bezier) is created as construction/reference geometry from the start, rendered dashed in a distinct blue instead of the normal solid color. The Draw group's background tints while the mode is active so it's clear it's on; turning it off returns to normal geometry for anything drawn afterward. This builds on the per-line Construction Line toggle added earlier today, generalizing it into a mode that applies to every sketch tool up front rather than a manual toggle per shape.
