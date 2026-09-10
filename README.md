@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.10.0958](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.0958) — 2026-09-10
+
+- **Sketching**: Construction geometry (dashed/blue) is now excluded from Extrude, Revolve, Loft and Sweep's profile pick, matching how FreeCAD and other CAD tools treat construction lines — they're a drawing guide, not real profile material. It's still usable as a reference for those same tools (e.g. a Revolve axis or a Sweep path), since only the "this becomes the solid" pick is filtered.
+
 ### [v2026.09.10.0925](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.0925) — 2026-09-10
 
 - **Sketching**: Fixed construction geometry (dashed/blue) losing its dashed look the moment it was hovered or selected — and staying stuck solid afterward, even after deselecting. Hover/select now use dashed variants of the highlight materials for dashed edges, and deselecting correctly restores the edge's own material instead of always falling back to the shared solid default.
