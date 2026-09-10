@@ -10,7 +10,7 @@ const SKETCH_MATERIAL_NAME = "Sketch Profile";
  * Bezier has no fill to apply it to - so a faint, non-zero opacity here
  * still reads as "just an outline" for those, while giving a closed profile
  * a slight tint to set it apart from an open one. */
-const SKETCH_PROFILE_OPACITY = 0.1;
+const SKETCH_PROFILE_OPACITY = 0.2;
 
 /**
  * A shared, mostly-transparent-fill material for 2D sketch profile shapes

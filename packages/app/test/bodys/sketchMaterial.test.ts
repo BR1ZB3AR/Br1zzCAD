@@ -6,14 +6,14 @@ import { describe, expect, test } from "@rstest/core";
 import { sketchProfileMaterialId } from "../../src/bodys/sketchMaterial";
 
 describe("sketchProfileMaterialId", () => {
-    test("creates a faint (10% opacity) material on first use", () => {
+    test("creates a faint (20% opacity) material on first use", () => {
         const doc = createMockDocument();
 
         const id = sketchProfileMaterialId(doc);
 
         const material = doc.modelManager.materials.find((m) => m.id === id);
         expect(material).toBeDefined();
-        expect(material!.opacity).toBe(0.1);
+        expect(material!.opacity).toBe(0.2);
         expect(material!.name).toBe("Sketch Profile");
     });
 
