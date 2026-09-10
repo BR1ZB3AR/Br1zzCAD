@@ -21,7 +21,9 @@ import {
     faceTransparentMaterial,
     highlightFaceMaterial,
     highlightVertexMaterial,
+    hilightDashedEdgeMaterial,
     hilightEdgeMaterial,
+    selectedDashedEdgeMaterial,
     selectedEdgeMaterial,
     selectedFaceColoredMaterial,
     selectedVertexMaterial,
@@ -68,14 +70,23 @@ export class GeometryState {
         const key = this.state_key(type);
         const [_oldState, newState] = this.updateStates(key, method, state);
         if (this.visual instanceof ThreeGeometry) {
+            // A dashed edge (e.g. construction geometry) needs a dashed hover/select
+            // material too - otherwise it flips to solid the moment it's interacted
+            // with, and `removeTemperaryMaterial` restoring the real one afterwards
+            // doesn't undo that, since the highlight/select material is what's shown.
+            const isDashedEdges = this.visual.geometryNode.mesh.edges?.lineType === "dash";
             if (newState === VisualStates.normal) {
                 this.visual.removeTemperaryMaterial();
             } else if (VisualStateUtils.hasState(newState, VisualStates.edgeHighlight)) {
                 this.visual.setVertexsMateiralTemperary(highlightVertexMaterial);
-                this.visual.setEdgesMateiralTemperary(hilightEdgeMaterial);
+                this.visual.setEdgesMateiralTemperary(
+                    isDashedEdges ? hilightDashedEdgeMaterial : hilightEdgeMaterial,
+                );
             } else if (VisualStateUtils.hasState(newState, VisualStates.edgeSelected)) {
                 this.visual.setVertexsMateiralTemperary(selectedVertexMaterial);
-                this.visual.setEdgesMateiralTemperary(selectedEdgeMaterial);
+                this.visual.setEdgesMateiralTemperary(
+                    isDashedEdges ? selectedDashedEdgeMaterial : selectedEdgeMaterial,
+                );
             } else if (VisualStateUtils.hasState(newState, VisualStates.faceTransparent)) {
                 this.visual.removeTemperaryMaterial();
                 this.visual.setFacesMateiralTemperary(faceTransparentMaterial);

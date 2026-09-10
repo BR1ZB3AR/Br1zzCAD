@@ -32,6 +32,7 @@ import { ThreeVisualObject } from "./threeVisualObject";
 export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry {
     private _faceMaterial: Material | Material[];
     private _edges?: LineSegments2;
+    private _normalEdgeMaterial?: LineMaterial;
     private _faces?: Mesh;
     private _vertexs?: Points;
 
@@ -98,6 +99,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
             this.remove(this._edges);
             this._edges.geometry.dispose();
             this._edges = null as any;
+            this._normalEdgeMaterial = undefined;
         }
         if (this._faces) {
             this.remove(this._faces);
@@ -124,6 +126,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
             const buff = ThreeGeometryFactory.createEdgeBufferGeometry(data);
             this._edges = new LineSegments2(buff, defaultEdgeMaterial);
         }
+        this._normalEdgeMaterial = this._edges.material as LineMaterial;
         this._edges.layers.set(Constants.Layers.Wireframe);
         this.add(this._edges);
     }
@@ -151,7 +154,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     removeTemperaryMaterial(): void {
         if (this._vertexs) this._vertexs.material = defaultVertexMaterial;
         if (this._edges && this._edges.material !== lockLineMaterial)
-            this._edges.material = defaultEdgeMaterial;
+            this._edges.material = this._normalEdgeMaterial ?? defaultEdgeMaterial;
         if (this._faces && this._faces.material !== lockFaceMaterial)
             this._faces.material = this._faceMaterial;
     }

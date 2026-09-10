@@ -189,6 +189,23 @@ describe("ThreeGeometry", () => {
             expect(geo.faces()?.material).toBe(originalFaceMat);
             expect(geo.edges()?.material).toBe(defaultEdgeMaterial);
         });
+
+        test("removeTemperaryMaterial restores a dashed edge's own material, not the shared solid default", () => {
+            // Regression test: hovering/selecting a construction line used to
+            // permanently flip it solid, since this always restored
+            // defaultEdgeMaterial regardless of what the edge actually started as.
+            const node = createTestGeometryNode({ edgeLineType: "dash" });
+            const geo = new ThreeGeometry(node, context);
+            const originalEdgeMat = geo.edges()?.material;
+            expect(originalEdgeMat).not.toBe(defaultEdgeMaterial);
+
+            const tempEdgeMat = { isLineMaterial: true } as any;
+            geo.setEdgesMateiralTemperary(tempEdgeMat);
+            expect(geo.edges()?.material).toBe(tempEdgeMat);
+
+            geo.removeTemperaryMaterial();
+            expect(geo.edges()?.material).toBe(originalEdgeMat);
+        });
     });
 
     describe("subShapeVisual / wholeVisual", () => {

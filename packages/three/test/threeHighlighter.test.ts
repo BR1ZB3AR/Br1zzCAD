@@ -4,7 +4,13 @@
 import type { EdgeMeshData, FaceMeshData } from "@chili3d/core";
 import { ShapeTypes, VisualStates } from "@chili3d/core";
 import type { IHighlightable } from "../src/highlightable";
-import { defaultEdgeMaterial, hilightEdgeMaterial, selectedEdgeMaterial } from "../src/materials";
+import {
+    defaultEdgeMaterial,
+    hilightDashedEdgeMaterial,
+    hilightEdgeMaterial,
+    selectedDashedEdgeMaterial,
+    selectedEdgeMaterial,
+} from "../src/materials";
 import { ThreeGeometry } from "../src/threeGeometry";
 import { ThreeHighlighter } from "../src/threeHighlighter";
 import type { ThreeVisualObject } from "../src/threeVisualObject";
@@ -552,5 +558,55 @@ describe("GeometryState with ThreeGeometry", () => {
 
         expect(highlighter.container.children.length).toBe(beforeCount + 1);
         expect(highlighter.getState(geo, ShapeTypes.edge, 0)).toBe(VisualStates.edgeHighlight);
+    });
+});
+
+// ============================================================================
+// GeometryState with a dashed ThreeGeometry (e.g. construction geometry) -
+// regression coverage for hover/select losing the dashed look.
+// ============================================================================
+
+describe("GeometryState with a dashed ThreeGeometry", () => {
+    let context: ReturnType<typeof createThreeMockVisualContext>;
+    let highlighter: ThreeHighlighter;
+    let geo: ThreeGeometry;
+
+    beforeEach(() => {
+        context = createThreeMockVisualContext();
+        highlighter = new ThreeHighlighter(context);
+        const node = createTestGeometryNode({ edgeLineType: "dash" });
+        geo = new ThreeGeometry(node, context);
+    });
+
+    test("addState edgeHighlight uses the dashed hover material, not the solid one", () => {
+        highlighter.addState(geo, VisualStates.edgeHighlight, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(hilightDashedEdgeMaterial);
+        expect(geo.edges()?.material).not.toBe(hilightEdgeMaterial);
+    });
+
+    test("addState edgeSelected uses the dashed selected material, not the solid one", () => {
+        highlighter.addState(geo, VisualStates.edgeSelected, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(selectedDashedEdgeMaterial);
+        expect(geo.edges()?.material).not.toBe(selectedEdgeMaterial);
+    });
+
+    test("removeState after hover restores the dashed edge to its own material, not the solid default", () => {
+        const originalEdgeMat = geo.edges()?.material;
+        highlighter.addState(geo, VisualStates.edgeHighlight, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(hilightDashedEdgeMaterial);
+
+        highlighter.removeState(geo, VisualStates.edgeHighlight, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(originalEdgeMat);
+        expect(geo.edges()?.material).not.toBe(defaultEdgeMaterial);
+    });
+
+    test("removeState after select restores the dashed edge to its own material, not the solid default", () => {
+        const originalEdgeMat = geo.edges()?.material;
+        highlighter.addState(geo, VisualStates.edgeSelected, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(selectedDashedEdgeMaterial);
+
+        highlighter.removeState(geo, VisualStates.edgeSelected, ShapeTypes.shape);
+        expect(geo.edges()?.material).toBe(originalEdgeMat);
+        expect(geo.edges()?.material).not.toBe(defaultEdgeMaterial);
     });
 });

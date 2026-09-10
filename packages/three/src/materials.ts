@@ -49,6 +49,9 @@ export const hilightEdgeMaterial = new LineMaterial({
     polygonOffsetUnits: -4,
 });
 
+/** Hover state for a dashed edge (e.g. construction geometry) - same cadence as
+ * the non-highlighted dash (`ThreeGeometryFactory.createEdgeMaterial`) so the
+ * pattern doesn't visibly shift when the mouse moves over it. */
 export const hilightDashedEdgeMaterial = new LineMaterial({
     linewidth: 3,
     color: ThreeHelper.fromColor(VisualConfig.highlightEdgeColor),
@@ -57,9 +60,9 @@ export const hilightDashedEdgeMaterial = new LineMaterial({
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -4,
     dashed: true,
-    dashScale: 100,
-    dashSize: 100,
-    gapSize: 100,
+    dashScale: 1,
+    dashSize: 15,
+    gapSize: 10,
 });
 
 export const selectedEdgeMaterial = new LineMaterial({
@@ -69,6 +72,20 @@ export const selectedEdgeMaterial = new LineMaterial({
     polygonOffset: true,
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -4,
+});
+
+/** Selected state for a dashed edge - see `hilightDashedEdgeMaterial`. */
+export const selectedDashedEdgeMaterial = new LineMaterial({
+    linewidth: 3,
+    color: ThreeHelper.fromColor(VisualConfig.selectedEdgeColor),
+    side: DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+    dashed: true,
+    dashScale: 1,
+    dashSize: 15,
+    gapSize: 10,
 });
 
 export const faceTransparentMaterial = new MeshLambertMaterial({

@@ -14,6 +14,7 @@ import {
     hilightEdgeMaterial,
     lockFaceMaterial,
     lockLineMaterial,
+    selectedDashedEdgeMaterial,
     selectedEdgeMaterial,
     selectedFaceColoredMaterial,
     selectedVertexMaterial,
@@ -52,18 +53,27 @@ describe("materials", () => {
             expect(hilightEdgeMaterial.linewidth).toBe(3);
         });
 
-        test("hilightDashedEdgeMaterial has dash properties", () => {
+        test("hilightDashedEdgeMaterial has dash properties matching the non-highlighted dash cadence", () => {
             expect(hilightDashedEdgeMaterial).toBeInstanceOf(LineMaterial);
             expect(hilightDashedEdgeMaterial.linewidth).toBe(3);
             expect(hilightDashedEdgeMaterial.dashed).toBe(true);
-            expect(hilightDashedEdgeMaterial.dashScale).toBe(100);
-            expect(hilightDashedEdgeMaterial.dashSize).toBe(100);
-            expect(hilightDashedEdgeMaterial.gapSize).toBe(100);
+            expect(hilightDashedEdgeMaterial.dashScale).toBe(1);
+            expect(hilightDashedEdgeMaterial.dashSize).toBe(15);
+            expect(hilightDashedEdgeMaterial.gapSize).toBe(10);
         });
 
         test("selectedEdgeMaterial has linewidth 3", () => {
             expect(selectedEdgeMaterial).toBeInstanceOf(LineMaterial);
             expect(selectedEdgeMaterial.linewidth).toBe(3);
+        });
+
+        test("selectedDashedEdgeMaterial has dash properties matching the non-highlighted dash cadence", () => {
+            expect(selectedDashedEdgeMaterial).toBeInstanceOf(LineMaterial);
+            expect(selectedDashedEdgeMaterial.linewidth).toBe(3);
+            expect(selectedDashedEdgeMaterial.dashed).toBe(true);
+            expect(selectedDashedEdgeMaterial.dashScale).toBe(1);
+            expect(selectedDashedEdgeMaterial.dashSize).toBe(15);
+            expect(selectedDashedEdgeMaterial.gapSize).toBe(10);
         });
     });
 
