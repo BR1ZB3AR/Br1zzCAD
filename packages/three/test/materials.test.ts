@@ -5,6 +5,7 @@ import { VisualConfig } from "@chili3d/core";
 import { MeshLambertMaterial, PointsMaterial } from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
+    constructionFaceMaterial,
     defaultEdgeMaterial,
     defaultVertexMaterial,
     faceTransparentMaterial,
@@ -82,6 +83,12 @@ describe("materials", () => {
             expect(faceTransparentMaterial).toBeInstanceOf(MeshLambertMaterial);
             expect(faceTransparentMaterial.transparent).toBe(true);
             expect(faceTransparentMaterial.opacity).toBeCloseTo(0.1);
+        });
+
+        test("constructionFaceMaterial is fully invisible", () => {
+            expect(constructionFaceMaterial).toBeInstanceOf(MeshLambertMaterial);
+            expect(constructionFaceMaterial.transparent).toBe(true);
+            expect(constructionFaceMaterial.opacity).toBe(0);
         });
 
         test("selectedFaceColoredMaterial has polygon offset", () => {

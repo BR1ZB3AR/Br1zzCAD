@@ -1,13 +1,22 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { ShapeTypes } from "@chili3d/core";
+import { EditableShapeNode, Result, ShapeTypes } from "@chili3d/core";
+import { MockShape, TestDocument } from "@chili3d/core/test-utils";
 import { Box3, Mesh, MeshBasicMaterial, Points } from "three";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
-import { defaultEdgeMaterial } from "../src/materials";
+import { constructionFaceMaterial, defaultEdgeMaterial } from "../src/materials";
 import { ThreeGeometry } from "../src/threeGeometry";
 import type { ThreeVisualContext } from "../src/threeVisualContext";
 import { createTestGeometryNode, createThreeMockVisualContext } from "./mocks";
+
+/** A real ShapeNode (unlike createTestGeometryNode's plain duck-typed
+ * object) - needed because ThreeGeometry's construction-face handling
+ * checks `geometryNode instanceof ShapeNode`. MockShape's default mesh
+ * already has real face data. */
+function createConstructionCapableNode(doc: TestDocument) {
+    return new EditableShapeNode({ document: doc, name: "n", shape: Result.ok(new MockShape()) });
+}
 
 describe("ThreeGeometry", () => {
     let context: ThreeVisualContext;
@@ -82,6 +91,21 @@ describe("ThreeGeometry", () => {
             const geometry = geo.edges()?.geometry as any;
             expect(geometry.attributes.instanceDistanceStart).toBeUndefined();
         });
+
+        test("a construction shape's face is invisible, not the normal fill", () => {
+            const doc = new TestDocument();
+            const node = createConstructionCapableNode(doc);
+            node.isConstruction = true;
+            const geo = new ThreeGeometry(node, context);
+            expect(geo.faces()?.material).toBe(constructionFaceMaterial);
+        });
+
+        test("a non-construction shape's face uses its normal materialId-based material", () => {
+            const doc = new TestDocument();
+            const node = createConstructionCapableNode(doc);
+            const geo = new ThreeGeometry(node, context);
+            expect(geo.faces()?.material).not.toBe(constructionFaceMaterial);
+        });
     });
 
     describe("faces / edges / vertexs accessors", () => {
@@ -154,6 +178,17 @@ describe("ThreeGeometry", () => {
             geo.changeFaceMaterial(new MeshBasicMaterial());
             expect(geo.faces()).toBeUndefined();
         });
+
+        test("changeFaceMaterial keeps a construction shape's face invisible", () => {
+            const doc = new TestDocument();
+            const node = createConstructionCapableNode(doc);
+            node.isConstruction = true;
+            const geo = new ThreeGeometry(node, context);
+
+            geo.changeFaceMaterial(new MeshBasicMaterial({ color: 0xff00ff }));
+
+            expect(geo.faces()?.material).toBe(constructionFaceMaterial);
+        });
     });
 
     describe("set temporary materials", () => {
@@ -188,6 +223,22 @@ describe("ThreeGeometry", () => {
             geo.removeTemperaryMaterial();
             expect(geo.faces()?.material).toBe(originalFaceMat);
             expect(geo.edges()?.material).toBe(defaultEdgeMaterial);
+        });
+
+        test("removeTemperaryMaterial restores a construction shape's face to invisible, not its normal fill", () => {
+            // Regression test: hovering/selecting a construction shape's face
+            // used to permanently reveal its normal fill, since this always
+            // restored the materialId-based material regardless of what the
+            // face actually started as.
+            const doc = new TestDocument();
+            const node = createConstructionCapableNode(doc);
+            node.isConstruction = true;
+            const geo = new ThreeGeometry(node, context);
+
+            geo.setFacesMateiralTemperary(new MeshBasicMaterial({ color: 0xaa00aa }) as any);
+            geo.removeTemperaryMaterial();
+
+            expect(geo.faces()?.material).toBe(constructionFaceMaterial);
         });
 
         test("removeTemperaryMaterial restores a dashed edge's own material, not the shared solid default", () => {

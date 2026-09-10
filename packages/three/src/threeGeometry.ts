@@ -23,7 +23,13 @@ import type { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { Constants } from "./constants";
-import { defaultEdgeMaterial, defaultVertexMaterial, lockFaceMaterial, lockLineMaterial } from "./materials";
+import {
+    constructionFaceMaterial,
+    defaultEdgeMaterial,
+    defaultVertexMaterial,
+    lockFaceMaterial,
+    lockLineMaterial,
+} from "./materials";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
 import type { ThreeVisualContext } from "./threeVisualContext";
@@ -49,7 +55,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     changeFaceMaterial(material: Material | Material[]) {
         if (this._faces) {
             this._faceMaterial = material;
-            this._faces.material = material;
+            this._faces.material = this.isConstructionNode() ? constructionFaceMaterial : material;
         }
     }
 
@@ -134,9 +140,18 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
     private initFaces(data: FaceMeshData) {
         const buff = ThreeGeometryFactory.createFaceBufferGeometry(data);
         if (data.groups.length > 1) buff.groups = data.groups;
-        this._faces = new Mesh(buff, this._faceMaterial);
+        // A construction shape's face still exists (so its interior stays
+        // click-selectable) but shouldn't ever look filled - only real
+        // profile geometry should read as "this is a solid region" (matches
+        // FreeCAD: construction geometry never shows a fill).
+        const material = this.isConstructionNode() ? constructionFaceMaterial : this._faceMaterial;
+        this._faces = new Mesh(buff, material);
         this._faces.layers.set(Constants.Layers.Solid);
         this.add(this._faces);
+    }
+
+    private isConstructionNode(): boolean {
+        return this.geometryNode instanceof ShapeNode && this.geometryNode.isConstruction;
     }
 
     setFacesMateiralTemperary(material: MeshLambertMaterial) {
@@ -156,7 +171,7 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
         if (this._edges && this._edges.material !== lockLineMaterial)
             this._edges.material = this._normalEdgeMaterial ?? defaultEdgeMaterial;
         if (this._faces && this._faces.material !== lockFaceMaterial)
-            this._faces.material = this._faceMaterial;
+            this._faces.material = this.isConstructionNode() ? constructionFaceMaterial : this._faceMaterial;
     }
 
     cloneSubEdge(index: number) {

@@ -88,6 +88,20 @@ export const selectedDashedEdgeMaterial = new LineMaterial({
     gapSize: 10,
 });
 
+/** A construction shape's face (see `ThreeGeometry.isConstructionNode`) -
+ * fully invisible rather than the faint `sketchProfileMaterialId` tint, so a
+ * closed construction loop never reads as "this is a solid region" the way
+ * a real (non-construction) profile does, matching FreeCAD. The face
+ * geometry itself is untouched, so the interior stays click-selectable. */
+export const constructionFaceMaterial = new MeshLambertMaterial({
+    transparent: true,
+    side: DoubleSide,
+    opacity: 0,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+});
+
 export const faceTransparentMaterial = new MeshLambertMaterial({
     transparent: true,
     side: DoubleSide,
