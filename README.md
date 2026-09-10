@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.10.1438](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.1438) — 2026-09-10
+
+- **Sketching**: Added the first phase of real geometric constraints — **Coincident**, **Horizontal**, **Vertical**, **Parallel**, **Perpendicular** and **Equal**, in a new Constraints group on the Sketch tab. Select the points a constraint applies to (Line endpoints and Rectangle corners for now) and click the constraint — a small numerical solver repositions the sketch to satisfy it, and the constraint stays stored on the sketch so any later edit (changing a line's length, say) re-solves and keeps it satisfied, not a one-time snap. An unsatisfiable pick is rejected with a toast rather than corrupting the sketch. Dragging a constrained point to see it live-resolve, and Concentric/Tangent/Midpoint/Symmetric for circles and arcs, are follow-up work.
+
 ### [v2026.09.10.1206](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.1206) — 2026-09-10
 
 - **Sketching**: A closed-loop sketch profile's faint fill (the real, non-construction kind) is now 20% opacity, up from 10%, so it reads more clearly as a filled region while sketching.
