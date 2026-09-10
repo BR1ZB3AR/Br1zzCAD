@@ -7,6 +7,7 @@ import {
     type IDocument,
     type IShape,
     type IShapeMeshData,
+    type ISketchPointOwner,
     type Plane,
     property,
     type Result,
@@ -24,8 +25,10 @@ export interface RectOptions {
     dy: number;
 }
 
+const SKETCH_POINT_ROLES = ["corner0", "corner1", "corner2", "corner3"] as const;
+
 @serializable()
-export class RectNode extends FacebaseNode {
+export class RectNode extends FacebaseNode implements ISketchPointOwner {
     override display(): I18nKeys {
         return "body.rect";
     }
@@ -84,5 +87,55 @@ export class RectNode extends FacebaseNode {
             start.add(plane.yvec.multiply(dy)),
             start,
         ];
+    }
+
+    sketchPointRoles(): readonly string[] {
+        return SKETCH_POINT_ROLES;
+    }
+
+    getSketchPoint(role: string): XYZ | undefined {
+        const [corner0, corner1, corner2, corner3] = RectNode.points(this.plane, this.dx, this.dy);
+        switch (role) {
+            case "corner0":
+                return corner0;
+            case "corner1":
+                return corner1;
+            case "corner2":
+                return corner2;
+            case "corner3":
+                return corner3;
+            default:
+                return undefined;
+        }
+    }
+
+    /**
+     * Best-effort inverse of `points()` - a rect corner isn't an
+     * independently-stored point, it's derived from `plane`/`dx`/`dy`, so
+     * moving one corner can only ever change the one or two dimensions that
+     * corner actually depends on:
+     * - corner0 (the plane-origin corner) translates the whole rect.
+     * - corner1/corner3 (adjacent to corner0) can only slide along one of
+     *   the rect's own edges, recomputing just `dx` or just `dy`.
+     * - corner2 (diagonal from corner0) recomputes both.
+     * Any component of the requested point that falls outside what that
+     * corner's own freedom allows (e.g. off-plane) is silently dropped,
+     * matching `ISketchPointOwner.setSketchPoint`'s "best effort" contract.
+     */
+    setSketchPoint(role: string, point: XYZ): void {
+        if (role === "corner0") {
+            this.plane = this.plane.translateTo(point);
+            return;
+        }
+
+        const offset = point.sub(this.plane.origin);
+        if (role === "corner1") {
+            this.dx = offset.dot(this.plane.xvec);
+        } else if (role === "corner3") {
+            this.dy = offset.dot(this.plane.yvec);
+        } else if (role === "corner2") {
+            this.dx = offset.dot(this.plane.xvec);
+            this.dy = offset.dot(this.plane.yvec);
+        }
     }
 }

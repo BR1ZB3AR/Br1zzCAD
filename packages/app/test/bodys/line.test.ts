@@ -118,4 +118,45 @@ describe("LineNode", () => {
             expect(node.isConstruction).toBe(true);
         });
     });
+
+    describe("ISketchPointOwner", () => {
+        test("sketchPointRoles returns start and end", () => {
+            const node = new LineNode({ document: doc, start, end });
+            expect(node.sketchPointRoles()).toEqual(["start", "end"]);
+        });
+
+        test("getSketchPoint returns the matching point for each role", () => {
+            const node = new LineNode({ document: doc, start, end });
+            expect(node.getSketchPoint("start")).toBe(start);
+            expect(node.getSketchPoint("end")).toBe(end);
+        });
+
+        test("getSketchPoint returns undefined for an unknown role", () => {
+            const node = new LineNode({ document: doc, start, end });
+            expect(node.getSketchPoint("center")).toBeUndefined();
+        });
+
+        test("setSketchPoint updates start", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShape()) });
+            const node = new LineNode({ document: doc, start, end });
+            const moved = new XYZ({ x: 9, y: 9, z: 9 });
+            node.setSketchPoint("start", moved);
+            expect(node.start).toBe(moved);
+        });
+
+        test("setSketchPoint updates end", () => {
+            setupShapeFactoryMock({ line: () => Result.ok(createMockShape()) });
+            const node = new LineNode({ document: doc, start, end });
+            const moved = new XYZ({ x: 8, y: 8, z: 8 });
+            node.setSketchPoint("end", moved);
+            expect(node.end).toBe(moved);
+        });
+
+        test("setSketchPoint is a no-op for an unknown role", () => {
+            const node = new LineNode({ document: doc, start, end });
+            node.setSketchPoint("center", new XYZ({ x: 1, y: 1, z: 1 }));
+            expect(node.start).toBe(start);
+            expect(node.end).toBe(end);
+        });
+    });
 });

@@ -76,6 +76,23 @@ describe("DefaultRibbon", () => {
         expect(drawGroup.items[0]).toBe("sketch.toggleConstructionMode");
     });
 
+    test("sketch tab should have a constraint group with all six Phase 1 constraints", () => {
+        const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
+        const constraintGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.constraint")!;
+        expect(constraintGroup).toBeDefined();
+        const allItems = flattenItems(constraintGroup.items);
+        expect(allItems).toEqual(
+            expect.arrayContaining([
+                "constraint.coincident",
+                "constraint.horizontal",
+                "constraint.vertical",
+                "constraint.parallel",
+                "constraint.perpendicular",
+                "constraint.equal",
+            ]),
+        );
+    });
+
     test("sketch tab should have a boolean group with intersect/cut/join", () => {
         const sketchTab = DefaultRibbon.find((t) => t.tabName === "ribbon.tab.draw")!;
         const booleanGroup = sketchTab.groups.find((g) => g.groupName === "ribbon.group.boolean");

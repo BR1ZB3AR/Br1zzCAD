@@ -12,5 +12,8 @@ export * from "./groupNode";
 export * from "./meshNode";
 export * from "./node";
 export * from "./shapeNode";
+export * from "./sketchConstraint";
 export * from "./sketchGroupNode";
+export * from "./sketchPointOwner";
+export * from "./sketchSolverRunner";
 export * from "./visualNode";

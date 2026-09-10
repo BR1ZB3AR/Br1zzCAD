@@ -140,4 +140,36 @@ describe("Plane", () => {
         expect(proj.y).toBeCloseTo(0);
         expect(proj.z).toBeCloseTo(25);
     });
+
+    describe("toUV / fromUV", () => {
+        test("XY plane: world XY maps directly to (u, v)", () => {
+            const point = new XYZ({ x: 3, y: 4, z: 0 });
+            expect(Plane.XY.toUV(point)).toEqual({ u: 3, v: 4 });
+        });
+
+        test("fromUV is the inverse of toUV on an offset, rotated plane", () => {
+            const plane = new Plane({
+                origin: new XYZ({ x: 10, y: -5, z: 2 }),
+                normal: XYZ.unitZ,
+                xvec: new XYZ({ x: 1, y: 1, z: 0 }),
+            });
+            const point = new XYZ({ x: 7, y: 3, z: 2 });
+
+            const { u, v } = plane.toUV(point);
+            const roundTripped = plane.fromUV(u, v);
+
+            expect(roundTripped.x).toBeCloseTo(point.x);
+            expect(roundTripped.y).toBeCloseTo(point.y);
+            expect(roundTripped.z).toBeCloseTo(point.z);
+        });
+
+        test("origin maps to (0, 0)", () => {
+            const plane = new Plane({
+                origin: new XYZ({ x: 5, y: 5, z: 5 }),
+                normal: XYZ.unitY,
+                xvec: XYZ.unitX,
+            });
+            expect(plane.toUV(plane.origin)).toEqual({ u: 0, v: 0 });
+        });
+    });
 });

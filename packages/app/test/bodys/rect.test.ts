@@ -200,4 +200,84 @@ describe("RectNode", () => {
             expect(result.isOk).toBe(true);
         });
     });
+
+    describe("ISketchPointOwner", () => {
+        test("sketchPointRoles returns all four corners", () => {
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            expect(node.sketchPointRoles()).toEqual(["corner0", "corner1", "corner2", "corner3"]);
+        });
+
+        test("getSketchPoint returns each corner matching RectNode.points()", () => {
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            const [p0, p1, p2, p3] = RectNode.points(plane, 10, 20);
+            expect(node.getSketchPoint("corner0")).toEqual(p0);
+            expect(node.getSketchPoint("corner1")).toEqual(p1);
+            expect(node.getSketchPoint("corner2")).toEqual(p2);
+            expect(node.getSketchPoint("corner3")).toEqual(p3);
+        });
+
+        test("getSketchPoint returns undefined for an unknown role", () => {
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            expect(node.getSketchPoint("center")).toBeUndefined();
+        });
+
+        test("setSketchPoint on corner0 translates the whole rect, leaving dx/dy unchanged", () => {
+            setupShapeFactoryMock({
+                polygon: () => Result.ok(createMockShape()),
+                wire: () => Result.ok(createMockShape()),
+            });
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            node.setSketchPoint("corner0", new XYZ({ x: 5, y: 5, z: 0 }));
+
+            expect(node.plane.origin).toEqual(new XYZ({ x: 5, y: 5, z: 0 }));
+            expect(node.dx).toBe(10);
+            expect(node.dy).toBe(20);
+        });
+
+        test("setSketchPoint on corner1 recomputes only dx", () => {
+            setupShapeFactoryMock({
+                polygon: () => Result.ok(createMockShape()),
+                wire: () => Result.ok(createMockShape()),
+            });
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            node.setSketchPoint("corner1", new XYZ({ x: 15, y: 3, z: 0 }));
+
+            expect(node.dx).toBeCloseTo(15);
+            expect(node.dy).toBe(20);
+            expect(node.plane.origin).toEqual(XYZ.zero);
+        });
+
+        test("setSketchPoint on corner3 recomputes only dy", () => {
+            setupShapeFactoryMock({
+                polygon: () => Result.ok(createMockShape()),
+                wire: () => Result.ok(createMockShape()),
+            });
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            node.setSketchPoint("corner3", new XYZ({ x: 2, y: 25, z: 0 }));
+
+            expect(node.dy).toBeCloseTo(25);
+            expect(node.dx).toBe(10);
+            expect(node.plane.origin).toEqual(XYZ.zero);
+        });
+
+        test("setSketchPoint on corner2 recomputes both dx and dy", () => {
+            setupShapeFactoryMock({
+                polygon: () => Result.ok(createMockShape()),
+                wire: () => Result.ok(createMockShape()),
+            });
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            node.setSketchPoint("corner2", new XYZ({ x: 12, y: 22, z: 0 }));
+
+            expect(node.dx).toBeCloseTo(12);
+            expect(node.dy).toBeCloseTo(22);
+        });
+
+        test("setSketchPoint is a no-op for an unknown role", () => {
+            const node = new RectNode({ document: doc, plane, dx: 10, dy: 20 });
+            node.setSketchPoint("center", new XYZ({ x: 1, y: 1, z: 1 }));
+            expect(node.dx).toBe(10);
+            expect(node.dy).toBe(20);
+            expect(node.plane).toBe(plane);
+        });
+    });
 });

@@ -54,6 +54,13 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                 ],
             },
             {
+                groupName: "ribbon.group.constraint",
+                items: [
+                    ["constraint.coincident", "constraint.horizontal", "constraint.vertical"],
+                    ["constraint.parallel", "constraint.perpendicular", "constraint.equal"],
+                ],
+            },
+            {
                 groupName: "ribbon.group.modify",
                 items: [
                     "modify.move",

@@ -99,4 +99,16 @@ export class Plane {
         const dp2 = this.project(p2);
         return dp1.distanceTo(dp2);
     }
+
+    /** World point to plane-local (u, v) - the (x, y) a caller would use if
+     * this plane were its own 2D coordinate system, `origin` at (0, 0). */
+    toUV(point: XYZ): { u: number; v: number } {
+        const vector = point.sub(this.origin);
+        return { u: vector.dot(this.xvec), v: vector.dot(this.yvec) };
+    }
+
+    /** Inverse of `toUV`. */
+    fromUV(u: number, v: number): XYZ {
+        return this.origin.add(this.xvec.multiply(u)).add(this.yvec.multiply(v));
+    }
 }
