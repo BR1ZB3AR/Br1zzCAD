@@ -7,6 +7,7 @@ import {
     type IDocument,
     type IShape,
     type IShapeMeshData,
+    type ISketchPointOwner,
     property,
     type Result,
     serializable,
@@ -23,8 +24,10 @@ export interface CircleOptions {
     radius: number;
 }
 
+const SKETCH_POINT_ROLES = ["center"] as const;
+
 @serializable()
-export class CircleNode extends FacebaseNode {
+export class CircleNode extends FacebaseNode implements ISketchPointOwner {
     override display(): I18nKeys {
         return "body.circle";
     }
@@ -69,5 +72,17 @@ export class CircleNode extends FacebaseNode {
     protected override createMesh(): IShapeMeshData {
         const mesh = super.createMesh();
         return this.shape.isOk ? withProfileVertices(mesh, this.shape.value, [this.center]) : mesh;
+    }
+
+    sketchPointRoles(): readonly string[] {
+        return SKETCH_POINT_ROLES;
+    }
+
+    getSketchPoint(role: string): XYZ | undefined {
+        return role === "center" ? this.center : undefined;
+    }
+
+    setSketchPoint(role: string, point: XYZ): void {
+        if (role === "center") this.center = point;
     }
 }

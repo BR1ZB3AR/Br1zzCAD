@@ -6,6 +6,7 @@ import {
     type IShapeMeshData,
     type ISubShape,
     type IVertex,
+    type ShapeMeshRange,
     ShapeTypes,
     VisualConfig,
     type XYZ,
@@ -31,7 +32,7 @@ export function withProfileVertices(
 
     const count = vertices.length + extraPoints.length;
     const position = new Float32Array(count * 3);
-    const range = vertices.map((v, i) => {
+    const range: ShapeMeshRange[] = vertices.map((v, i) => {
         const point = (v as IVertex).point();
         position[i * 3] = point.x;
         position[i * 3 + 1] = point.y;
@@ -47,6 +48,22 @@ export function withProfileVertices(
         position[i * 3] = point.x;
         position[i * 3 + 1] = point.y;
         position[i * 3 + 2] = point.z;
+
+        // Not real topology, so there's no sub-shape from `findSubShapes` to
+        // reuse - build a genuine standalone OCCT vertex via shapeFactory
+        // instead of a hand-rolled object implementing only the methods
+        // that seemed needed at the time. That shortcut is exactly what
+        // made an extra point (e.g. this circle's own center) impossible to
+        // pick, and made picking any point at all throw once something
+        // downstream called a method the hand-rolled object didn't have.
+        const vertex = shapeFactory.point(point);
+        if (vertex.isOk) {
+            range.push({
+                start: i,
+                count: 1,
+                shape: Object.assign(vertex.value, { index: i, parent: shape }) as ISubShape,
+            });
+        }
     });
 
     // Read edges/faces by explicit property access, not `{...mesh}` - the

@@ -171,4 +171,35 @@ describe("CircleNode", () => {
             expect(result.isOk).toBe(true);
         });
     });
+
+    describe("ISketchPointOwner", () => {
+        test("sketchPointRoles returns just center", () => {
+            const node = new CircleNode({ document: doc, normal, center, radius: 5 });
+            expect(node.sketchPointRoles()).toEqual(["center"]);
+        });
+
+        test("getSketchPoint returns the center for role 'center'", () => {
+            const node = new CircleNode({ document: doc, normal, center, radius: 5 });
+            expect(node.getSketchPoint("center")).toBe(center);
+        });
+
+        test("getSketchPoint returns undefined for an unknown role", () => {
+            const node = new CircleNode({ document: doc, normal, center, radius: 5 });
+            expect(node.getSketchPoint("edge")).toBeUndefined();
+        });
+
+        test("setSketchPoint moves the center", () => {
+            setupShapeFactoryMock({ circle: () => Result.ok(createMockShape()) });
+            const node = new CircleNode({ document: doc, normal, center, radius: 5 });
+            const moved = new XYZ({ x: 3, y: 4, z: 0 });
+            node.setSketchPoint("center", moved);
+            expect(node.center).toBe(moved);
+        });
+
+        test("setSketchPoint is a no-op for an unknown role", () => {
+            const node = new CircleNode({ document: doc, normal, center, radius: 5 });
+            node.setSketchPoint("edge", new XYZ({ x: 1, y: 1, z: 1 }));
+            expect(node.center).toBe(center);
+        });
+    });
 });

@@ -1,9 +1,10 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { type IShape, ShapeTypes, XYZ } from "@chili3d/core";
+import { type IShape, Result, ShapeTypes, XYZ } from "@chili3d/core";
 import { describe, expect, test } from "@rstest/core";
 import { withProfileVertices } from "../../src/bodys/profileVertices";
+import { setupShapeFactoryMock } from "./_utils";
 
 function mockVertex(point: XYZ) {
     return { point: () => point } as unknown as IShape;
@@ -13,6 +14,13 @@ function mockShape(vertices: XYZ[]): IShape {
     return {
         findSubShapes: (type: unknown) => (type === ShapeTypes.vertex ? vertices.map(mockVertex) : []),
     } as unknown as IShape;
+}
+
+/** `withProfileVertices` builds a genuine standalone vertex (via
+ * `shapeFactory.point`) for every extra/non-topological point, so it needs
+ * that factory method mocked wherever extraPoints are exercised. */
+function mockPointFactory() {
+    setupShapeFactoryMock({ point: (p: XYZ) => Result.ok(mockVertex(p)) });
 }
 
 describe("withProfileVertices", () => {
@@ -44,22 +52,45 @@ describe("withProfileVertices", () => {
     });
 
     test("appends extra (non-topological) points after the shape's own vertices", () => {
+        mockPointFactory();
         const mesh = { edges: undefined, faces: undefined, vertexs: undefined };
         const edgePoint = new XYZ({ x: 5, y: 0, z: 0 });
         const center = new XYZ({ x: 0, y: 0, z: 0 });
         const result = withProfileVertices(mesh as any, mockShape([edgePoint]), [center]);
 
         expect(Array.from(result.vertexs!.position)).toEqual([5, 0, 0, 0, 0, 0]);
-        // Only the real topological vertex gets a pickable range entry.
+        // Both the real topological vertex and the extra point are pickable.
+        expect(result.vertexs!.range).toHaveLength(2);
+    });
+
+    test("an extra point's range entry resolves to its own position, not the shape's", () => {
+        mockPointFactory();
+        const mesh = { edges: undefined, faces: undefined, vertexs: undefined };
+        const center = new XYZ({ x: 7, y: 8, z: 9 });
+        const result = withProfileVertices(mesh as any, mockShape([]), [center]);
+
         expect(result.vertexs!.range).toHaveLength(1);
+        const extraShape = result.vertexs!.range[0].shape as unknown as { point(): XYZ };
+        expect(extraShape.point()).toEqual(center);
     });
 
     test("still adds a marker for extra points even when the shape itself has no vertices", () => {
+        mockPointFactory();
         const mesh = { edges: undefined, faces: undefined, vertexs: undefined };
         const center = new XYZ({ x: 1, y: 2, z: 3 });
         const result = withProfileVertices(mesh as any, mockShape([]), [center]);
 
         expect(Array.from(result.vertexs!.position)).toEqual([1, 2, 3]);
+    });
+
+    test("skips the range entry (but keeps the position marker) if the vertex factory fails", () => {
+        setupShapeFactoryMock({ point: () => Result.err("boom") });
+        const mesh = { edges: undefined, faces: undefined, vertexs: undefined };
+        const center = new XYZ({ x: 1, y: 2, z: 3 });
+        const result = withProfileVertices(mesh as any, mockShape([]), [center]);
+
+        expect(Array.from(result.vertexs!.position)).toEqual([1, 2, 3]);
+        expect(result.vertexs!.range).toHaveLength(0);
     });
 
     test("preserves the original edges/faces mesh data", () => {
