@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.11.1116](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.11.1116) — 2026-09-11
+
+- **Sketching**: A Circle's center point can now be picked for constraints — e.g. Coincident between a circle's center and a line/triangle-corner endpoint, which previously did nothing since the center marker wasn't a genuinely pickable point (it was drawn but had no selectable geometry behind it). Fixed at the root: an extra, non-topological point (a circle/ellipse's center) now gets a real, standalone vertex behind its marker instead of only a visual dot, the same fix that also protects against another "picking a point silently does nothing" case for any future point of this kind.
+
 ### [v2026.09.11.1047](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.11.1047) — 2026-09-11
 
 - **Sketching**: Fixed two bugs that made picking a point for a constraint unreliable or crash outright. First, clicking a line's endpoint could throw `TypeError: a.point is not a function` instead of selecting it. Second — the real usability problem — a vertex marker's clickable radius was computed as a fixed world-space distance rather than a screen-space one, so the same click tolerance only actually covered the marker at one specific zoom level and was nearly impossible to hit at any other. Both are fixed: point picking now reads the position the picker already resolved instead of re-deriving it unsafely, and a vertex's hit radius is now computed in real screen pixels at the current zoom, matching how edges already behaved. Plain, precise clicks on line endpoints now work consistently.
