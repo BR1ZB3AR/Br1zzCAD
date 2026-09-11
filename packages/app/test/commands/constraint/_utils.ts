@@ -16,12 +16,15 @@ import { LineNode } from "../../../src/bodys/line";
 import { createMockShape, setupShapeFactoryMock } from "../../bodys/_utils";
 
 /** A picked vertex, as a constraint command's step would receive it -
- * `.point()` is all `resolveSketchPointHandle` reads off the shape. */
+ * `.point` (the field, set by the detection layer) is all
+ * `resolveSketchPointHandle` reads; `.shape` deliberately has no `.point()`
+ * method, as a regression check that nothing calls it. */
 export function vertexPick(node: INode, point: XYZ): VisualShapeData {
     return {
-        shape: { shapeType: ShapeTypes.vertex, point: () => point } as any,
+        shape: { shapeType: ShapeTypes.vertex } as any,
         owner: { node },
         transform: Matrix4.identity(),
+        point,
         indexes: [],
     } as unknown as VisualShapeData;
 }

@@ -1269,12 +1269,24 @@ describe("ThreeView — initRaycaster", () => {
         expect(raycaster.layers.isEnabled(0)).toBe(true);
     });
 
-    test("raycaster has SnapDistance threshold", () => {
+    test("raycaster has SnapDistance threshold for lines (already screen-space via material.resolution)", () => {
         const { view } = createTestView();
         const raycaster = (view as any).initRaycaster(50, 50) as Raycaster;
         expect(raycaster.params.Line2?.threshold).toBe(Config.instance.SnapDistance);
         expect(raycaster.params.Line?.threshold).toBe(Config.instance.SnapDistance);
-        expect(raycaster.params.Points?.threshold).toBe(Config.instance.SnapDistance);
+    });
+
+    test("raycaster's Points threshold is converted to world units, not the raw pixel count", () => {
+        // Unlike Line2 (screen-space aware via its own raycasting), Three.js's
+        // built-in Points.raycast treats `threshold` as a plain world-space
+        // distance - passing SnapDistance straight through would make a
+        // vertex marker's hit radius depend on zoom level (see
+        // threeViewRaycastThreshold.test.ts for the full regression coverage).
+        const { view } = createTestView();
+        const raycaster = (view as any).initRaycaster(50, 50) as Raycaster;
+        const expected = (view as any).pixelsToWorldThreshold(Config.instance.SnapDistance);
+        expect(raycaster.params.Points?.threshold).toBeCloseTo(expected, 9);
+        expect(raycaster.params.Points?.threshold).not.toBe(Config.instance.SnapDistance);
     });
 });
 

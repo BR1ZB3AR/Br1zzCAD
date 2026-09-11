@@ -1012,8 +1012,35 @@ export class ThreeView extends Observable implements IView {
             ...raycaster.params,
             Line2: { threshold },
             Line: { threshold },
-            Points: { threshold },
+            Points: { threshold: this.pixelsToWorldThreshold(threshold) },
         };
         return raycaster;
+    }
+
+    /**
+     * Three.js's built-in `Points.raycast` treats `params.Points.threshold`
+     * as a raw world-space distance from the ray - unlike `Line2`'s own
+     * raycasting just above, which already resolves its threshold in
+     * screen pixels via the line material's `resolution` uniform. Passing
+     * a pixel-intended value like `Config.SnapDistance` straight through
+     * (as this used to) made vertex markers reliably clickable only at one
+     * specific zoom level, and near-unclickable at any other - this
+     * converts it to the world-space distance that currently corresponds
+     * to that many pixels, using the same distance*tan(fov/2) relationship
+     * `CameraController` itself already uses to size an orthographic
+     * camera's frustum (`updateOrthographicCamera`), so both camera types
+     * get a consistent on-screen hit radius.
+     */
+    private pixelsToWorldThreshold(pixels: number): number {
+        const height = this.height || 1;
+        if (this.camera instanceof OrthographicCamera) {
+            const worldPerPixel = (this.camera.top - this.camera.bottom) / this.camera.zoom / height;
+            return pixels * worldPerPixel;
+        }
+
+        const distance = this.camera.position.distanceTo(this.cameraController.target);
+        const fovRadians = (this.camera.fov * Math.PI) / 180;
+        const worldPerPixel = (2 * distance * Math.tan(fovRadians / 2)) / height;
+        return pixels * worldPerPixel;
     }
 }

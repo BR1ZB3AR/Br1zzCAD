@@ -4,7 +4,6 @@
 import {
     type IDocument,
     type INode,
-    type IVertex,
     isSketchPointOwner,
     PubSub,
     type SketchConstraint,
@@ -23,13 +22,22 @@ import {
  * finding whichever of the owner's declared points is (numerically)
  * closest to the picked vertex's actual position, rather than relying on
  * shape sub-indexing, which isn't guaranteed to line up with role order.
+ *
+ * Reads the world-space position the detection layer already computed
+ * (`VisualShapeData.point`, populated by `ThreeView`'s raycast hit-testing
+ * for every sub-shape pick, vertex included - see `detectSubShapes` in
+ * `threeView.ts`) rather than casting `.shape` to `IVertex` and calling
+ * `.point()` itself, which threw in practice (a picked vertex's `.shape`
+ * isn't guaranteed to be a plain object exposing that method). `.point` is
+ * already the exact value that method would have returned, so this is
+ * strictly more robust, not just a workaround.
  */
 export function resolveSketchPointHandle(shapeData: VisualShapeData): SketchPointHandle | undefined {
     const node = shapeData.owner.node;
     if (!isSketchPointOwner(node)) return undefined;
 
-    const vertex = shapeData.shape as IVertex;
-    const picked = shapeData.transform.ofPoint(vertex.point());
+    const picked = shapeData.point;
+    if (!picked) return undefined;
 
     let bestRole: string | undefined;
     let bestDistance = Number.POSITIVE_INFINITY;
