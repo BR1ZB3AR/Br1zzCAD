@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.11.1920](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.11.1920) — 2026-09-11
+
+- **Sketching**: Applied constraints (Coincident, Horizontal, ...) are now real, visible things — each one shows up in the Items tree under its sketch, with a small on-canvas badge at the point it applies to, and can be deleted like any other node (Delete key or right-click → Delete), fully undoable. Deleting a constraint removes it from the solver immediately, so the geometry it was holding together is free to move on its own again. Previously a constraint was invisible data with no way to remove it short of undoing the whole command that created it.
+
 ### [v2026.09.11.1116](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.11.1116) — 2026-09-11
 
 - **Sketching**: A Circle's center point can now be picked for constraints — e.g. Coincident between a circle's center and a line/triangle-corner endpoint, which previously did nothing since the center marker wasn't a genuinely pickable point (it was drawn but had no selectable geometry behind it). Fixed at the root: an extra, non-topological point (a circle/ellipse's center) now gets a real, standalone vertex behind its marker instead of only a visual dot, the same fix that also protects against another "picking a point silently does nothing" case for any future point of this kind.
