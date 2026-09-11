@@ -13,6 +13,7 @@ export * from "./meshNode";
 export * from "./node";
 export * from "./shapeNode";
 export * from "./sketchConstraint";
+export * from "./sketchConstraintNode";
 export * from "./sketchGroupNode";
 export * from "./sketchPointOwner";
 export * from "./sketchSolverRunner";

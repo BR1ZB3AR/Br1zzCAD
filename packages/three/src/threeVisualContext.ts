@@ -29,6 +29,7 @@ import {
     type ShapeNode,
     type ShapeType,
     ShapeTypes,
+    SketchConstraintNode,
     Texture,
     XY,
     type XYZ,
@@ -54,6 +55,7 @@ import { ThreeDimensionAnnotation } from "./threeDimensionAnnotation";
 import { ThreeGeometry } from "./threeGeometry";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
+import { ThreeSketchConstraintMarker } from "./threeSketchConstraintMarker";
 import { GroupVisualObject, ThreeComponentObject, ThreeMeshObject } from "./threeVisualObject";
 
 export class ThreeVisualContext implements IVisualContext {
@@ -379,6 +381,8 @@ export class ThreeVisualContext implements IVisualContext {
             visualObject = new ThreeRefSegmentAnnotation(this, node);
         } else if (node instanceof DimensionAnnotation) {
             visualObject = new ThreeDimensionAnnotation(this, node);
+        } else if (node instanceof SketchConstraintNode) {
+            visualObject = new ThreeSketchConstraintMarker(this, node);
         }
 
         if (visualObject) {

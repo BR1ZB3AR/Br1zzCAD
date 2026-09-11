@@ -6,6 +6,7 @@ import {
     FolderNode,
     type ISketchPointOwner,
     Plane,
+    SketchConstraintNode,
     SketchGroupNode,
     SketchPointHandle,
     solveSketch,
@@ -65,10 +66,13 @@ describe("solveSketch", () => {
         nodeB.setPoint("p", new XYZ({ x: 10, y: 10, z: 0 }));
         sketch.add(nodeA, nodeB);
 
-        sketch.addConstraint(
-            new CoincidentConstraint({
-                p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
-                p2: new SketchPointHandle({ nodeId: nodeB.id, role: "p" }),
+        sketch.add(
+            new SketchConstraintNode({
+                document: doc,
+                constraint: new CoincidentConstraint({
+                    p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
+                    p2: new SketchPointHandle({ nodeId: nodeB.id, role: "p" }),
+                }),
             }),
         );
 
@@ -87,10 +91,13 @@ describe("solveSketch", () => {
         nodeA.setPoint("p", original);
         sketch.add(nodeA);
 
-        sketch.addConstraint(
-            new CoincidentConstraint({
-                p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
-                p2: new SketchPointHandle({ nodeId: "does-not-exist", role: "p" }),
+        sketch.add(
+            new SketchConstraintNode({
+                document: doc,
+                constraint: new CoincidentConstraint({
+                    p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
+                    p2: new SketchPointHandle({ nodeId: "does-not-exist", role: "p" }),
+                }),
             }),
         );
 
@@ -107,10 +114,13 @@ describe("solveSketch", () => {
         nodeB.setPoint("p", new XYZ({ x: 1, y: 1, z: 0 }));
         sketch.add(nodeA, nodeB);
 
-        sketch.addConstraint(
-            new CoincidentConstraint({
-                p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
-                p2: new SketchPointHandle({ nodeId: nodeB.id, role: "nonexistentRole" }),
+        sketch.add(
+            new SketchConstraintNode({
+                document: doc,
+                constraint: new CoincidentConstraint({
+                    p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
+                    p2: new SketchPointHandle({ nodeId: nodeB.id, role: "nonexistentRole" }),
+                }),
             }),
         );
 

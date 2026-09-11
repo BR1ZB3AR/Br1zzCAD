@@ -7,6 +7,7 @@ import {
     isSketchPointOwner,
     PubSub,
     type SketchConstraint,
+    SketchConstraintNode,
     SketchGroupNode,
     SketchPointHandle,
     type SnapResult,
@@ -76,24 +77,27 @@ export function findOwningSketch(node: INode): SketchGroupNode | undefined {
     return undefined;
 }
 
-/** Adds a constraint and immediately re-solves the sketch, inside one
- * transaction. If the solve doesn't converge, the constraint is rolled
- * back (never left attached in a permanently-unsatisfiable state) and the
- * user is told why - the sketch's existing geometry is never touched by a
- * failed attempt, only ever by a successful one. Returns whether it stuck. */
+/** Adds a constraint (as a real `SketchConstraintNode` child of the sketch -
+ * visible in the Items tree, deletable via the generic delete command) and
+ * immediately re-solves the sketch, inside one transaction. If the solve
+ * doesn't converge, the node is rolled back (never left attached in a
+ * permanently-unsatisfiable state) and the user is told why - the sketch's
+ * existing geometry is never touched by a failed attempt, only ever by a
+ * successful one. Returns whether it stuck. */
 export function applyConstraint(
     document: IDocument,
     sketch: SketchGroupNode,
     constraint: SketchConstraint,
 ): boolean {
     let succeeded = false;
+    const node = new SketchConstraintNode({ document, constraint });
     Transaction.execute(document, `add ${constraint.kind} constraint`, () => {
-        sketch.addConstraint(constraint);
+        sketch.add(node);
         const outcome = solveSketch(sketch);
         if (outcome.status === "converged") {
             succeeded = true;
         } else {
-            sketch.removeConstraint(constraint.id);
+            sketch.remove(node);
             PubSub.default.pub("showToast", "toast.constraint.unsolvable");
         }
     });

@@ -4,7 +4,9 @@
 import type { Plane } from "../math";
 import { serializable, serialize } from "../serialize";
 import { GroupNode, type GroupNodeOptions } from "./groupNode";
+import { NodeUtils } from "./node";
 import type { SketchConstraint } from "./sketchConstraint";
+import { SketchConstraintNode } from "./sketchConstraintNode";
 
 export interface SketchGroupNodeOptions extends GroupNodeOptions {
     plane: Plane;
@@ -22,25 +24,20 @@ export class SketchGroupNode extends GroupNode {
 
     /** Geometric constraints (Coincident, Horizontal, ...) between this
      * sketch's own points - re-applied by `solveSketch` whenever the
-     * sketch changes, not baked in once. */
-    @serialize()
+     * sketch changes, not baked in once. Derived from this sketch's own
+     * `SketchConstraintNode` children, not stored separately - each
+     * constraint is a real tree node (visible in the Items tree, deletable
+     * via the generic `modify.deleteNode` command with full undo/redo),
+     * created via `constraintUtils.applyConstraint` rather than through
+     * this class directly. */
     get constraints(): readonly SketchConstraint[] {
-        return this.getPrivateValue("constraints", []);
-    }
-    set constraints(value: readonly SketchConstraint[]) {
-        this.setProperty("constraints", value);
+        return NodeUtils.findNodes(this, (n) => n instanceof SketchConstraintNode).map(
+            (n) => (n as SketchConstraintNode).constraint,
+        );
     }
 
     constructor(options: SketchGroupNodeOptions) {
         super(options);
         this.plane = options.plane;
-    }
-
-    addConstraint(constraint: SketchConstraint) {
-        this.constraints = [...this.constraints, constraint];
-    }
-
-    removeConstraint(id: string) {
-        this.constraints = this.constraints.filter((c) => c.id !== id);
     }
 }
