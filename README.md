@@ -204,6 +204,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### [v2026.09.11.1047](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.11.1047) — 2026-09-11
+
+- **Sketching**: Fixed two bugs that made picking a point for a constraint unreliable or crash outright. First, clicking a line's endpoint could throw `TypeError: a.point is not a function` instead of selecting it. Second — the real usability problem — a vertex marker's clickable radius was computed as a fixed world-space distance rather than a screen-space one, so the same click tolerance only actually covered the marker at one specific zoom level and was nearly impossible to hit at any other. Both are fixed: point picking now reads the position the picker already resolved instead of re-deriving it unsafely, and a vertex's hit radius is now computed in real screen pixels at the current zoom, matching how edges already behaved. Plain, precise clicks on line endpoints now work consistently.
+
 ### [v2026.09.10.1438](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.10.1438) — 2026-09-10
 
 - **Sketching**: Added the first phase of real geometric constraints — **Coincident**, **Horizontal**, **Vertical**, **Parallel**, **Perpendicular** and **Equal**, in a new Constraints group on the Sketch tab. Select the points a constraint applies to (Line endpoints and Rectangle corners for now) and click the constraint — a small numerical solver repositions the sketch to satisfy it, and the constraint stays stored on the sketch so any later edit (changing a line's length, say) re-solves and keeps it satisfied, not a one-time snap. An unsatisfiable pick is rejected with a toast rather than corrupting the sketch. Dragging a constrained point to see it live-resolve, and Concentric/Tangent/Midpoint/Symmetric for circles and arcs, are follow-up work.
