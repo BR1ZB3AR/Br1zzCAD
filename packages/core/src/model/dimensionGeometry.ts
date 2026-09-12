@@ -110,11 +110,21 @@ export function computeRadialDimensionGeometry(
         : [center, center.add(direction.multiply(Math.max(radius, placementDistance)))];
     const value = isDiameter ? radius * 2 : radius;
 
+    // Diameter's own line always spans symmetrically through the center (the
+    // conventional look), so its midpoint can't be used for the label - it
+    // would sit dead on the center forever, no matter how far `placement` is
+    // dragged. Position the label the same way radial's line[1] already
+    // does instead: out past the edge, at the dragged distance, clamped so
+    // it never lands inside the circle.
+    const labelPosition = isDiameter
+        ? center.add(direction.multiply(Math.max(radius, placementDistance)))
+        : XYZ.center(line[0], line[1]);
+
     return {
         line,
         direction,
         perp: anyPerpendicular(direction),
-        labelPosition: XYZ.center(line[0], line[1]),
+        labelPosition,
         value,
         isDiameter,
     };

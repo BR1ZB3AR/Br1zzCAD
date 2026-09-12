@@ -190,15 +190,31 @@ describe("computeRadialDimensionGeometry", () => {
         expect(geometry.line[0].y).toBeCloseTo(-5, 6);
     });
 
-    test("diameter labelPosition should be the circle's center", () => {
+    test("diameter labelPosition sits at the edge when placement is at (or inside) the radius", () => {
         const center = new XYZ({ x: 3, y: 4, z: 0 });
         const onCircle = new XYZ({ x: 8, y: 4, z: 0 });
         const placement = new XYZ({ x: 8, y: 4, z: 0 });
 
         const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "diameter");
 
-        expect(geometry.labelPosition.x).toBeCloseTo(3, 6);
+        // Clamped to the edge (distance = radius), not the line's midpoint
+        // (the center) - a label glued to dead center could never be dragged
+        // clear of the circle.
+        expect(geometry.labelPosition.x).toBeCloseTo(8, 6);
         expect(geometry.labelPosition.y).toBeCloseTo(4, 6);
+    });
+
+    test("diameter labelPosition moves out past the edge as placement is dragged farther", () => {
+        const center = new XYZ({ x: 0, y: 0, z: 0 });
+        const onCircle = new XYZ({ x: 5, y: 0, z: 0 });
+        const placement = new XYZ({ x: 0, y: 20, z: 0 });
+
+        const geometry = computeRadialDimensionGeometry(center, onCircle, placement, "diameter");
+
+        // Follows placement's direction and distance, same as radial's line[1] -
+        // clear of the circle (radius 5), not stuck at the center.
+        expect(geometry.labelPosition.x).toBeCloseTo(0, 6);
+        expect(geometry.labelPosition.y).toBeCloseTo(20, 6);
     });
 });
 
