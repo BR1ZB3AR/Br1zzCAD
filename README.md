@@ -207,6 +207,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### v2026.09.15.1039 — 2026-09-15
+
+- **Sketching**: Editing a shape's own properties (a line's endpoint, a rectangle's width, and so on) now re-solves any constraints it's part of and drives every point they connect to, instead of the solve only ever running right after a constraint is first created. An edit that can't be satisfied is rejected with a toast and reverted rather than left half-applied; a rectangle's four corners are solved through its own origin/width/height so it can't be distorted into a non-rectangle.
+
 ### v2026.09.15.0946 — 2026-09-15
 
 - **Orthographic zoom**: Keep the rendered camera in front of all model geometry while zoom changes framing, preventing close-up views from slicing through parts. Size the depth range to the complete model and keep foreground surfaces selectable. Preserve cursor anchoring, view-cube framing, resize behavior, and saved-view restoration; remove the perspective-only distance limit from orthographic zoom.
