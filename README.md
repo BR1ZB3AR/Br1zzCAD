@@ -207,6 +207,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### v2026.09.15.1545 — 2026-09-15
+
+- **Architecture**: Began migrating the document model toward a parametric feature tree — `SketchGroupNode` now implements a new `IFeatureNode` interface (`dependencies`, `compute()`), the first step away from a flat, feature-unaware node history. Added a new Distance constraint that pins two points to a named, editable length (rather than a fixed structural relationship like every other constraint) — editing its value in the Properties panel dispatches the sketch's constraints to the Web Worker solver added earlier today and writes the converged geometry back into the viewport live. Undo isn't fully atomic yet for this one constraint kind — reverting a distance edit takes two Undo steps (geometry, then the value) rather than one — a known, intentional limitation for this proof of concept, not the final design.
+
 ### v2026.09.15.1447 — 2026-09-15
 
 - **Infrastructure**: Added a new `@chili3d/worker` package with a generic, typed Web Worker RPC bridge, and offloaded the 2D sketch solver's numerical core into a real worker as a first proof of concept. Nothing existing changed — every constraint command and the live-editing path added earlier this week keep running exactly as before, synchronously, on the main thread; this is purely new, additive plumbing for a future live-drag feature to build on, verified end-to-end in a real browser via a temporary probe.
