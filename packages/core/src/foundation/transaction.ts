@@ -13,6 +13,10 @@ export class Transaction {
         readonly name: string,
     ) {}
 
+    static isActive(document: IDocument): boolean {
+        return Transaction._transactionMap.has(document);
+    }
+
     static add(document: IDocument, record: IHistoryRecord) {
         if (document.history.disabled) return;
         const arrayRecord = Transaction._transactionMap.get(document);

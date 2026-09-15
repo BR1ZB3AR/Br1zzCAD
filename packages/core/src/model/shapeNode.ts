@@ -3,7 +3,7 @@
 
 import { VisualConfig } from "../config";
 import type { IDocument } from "../document";
-import { type IEqualityComparer, Logger, PubSub, Result } from "../foundation";
+import { type IEqualityComparer, Logger, PubSub, Result, Transaction } from "../foundation";
 import { I18n, type I18nKeys } from "../i18n";
 import { Matrix4 } from "../math";
 import { property } from "../property";
@@ -18,6 +18,8 @@ import {
 } from "../shape";
 import { MeshUtils } from "../shape/meshUtils";
 import { GeometryNode } from "./geometryNode";
+import { SketchGroupNode } from "./sketchGroupNode";
+import { isSolvingSketch, prepareSketchSolve, withSketchSolveGuard } from "./sketchSolverRunner";
 
 const SHAPE_UNDEFINED = "Shape not initialized";
 
@@ -217,12 +219,47 @@ export abstract class ParameterShapeNode extends ShapeNode {
         onPropertyChanged?: (property: K, oldValue: this[K]) => void,
         equals?: IEqualityComparer<this[K]> | undefined,
     ): boolean {
-        if (this.setProperty(property, newValue, onPropertyChanged, equals)) {
+        const update = () => {
+            if (!this.setProperty(property, newValue, onPropertyChanged, equals)) return false;
             this.setShape(this.generateShape());
             return true;
+        };
+        let parent = this.parent;
+        while (parent && !(parent instanceof SketchGroupNode)) parent = parent.parent;
+        const sketch = parent;
+        if (
+            !sketch ||
+            this.document.history.disabled ||
+            isSolvingSketch(sketch) ||
+            !sketch.constraints.some((c) => c.handles().some((h) => h.nodeId === this.id))
+        ) {
+            return update();
         }
 
-        return false;
+        // Preview the parameter without emitting events, rebuilding meshes,
+        // or recording history. A conflicting edit never reaches the document.
+        const oldValue = this[property];
+        let prepared: ReturnType<typeof prepareSketchSolve>;
+        this.setPrivateValue(property, newValue);
+        try {
+            prepared = prepareSketchSolve(sketch, new Set([this.id]));
+        } finally {
+            this.setPrivateValue(property, oldValue);
+        }
+        if (prepared.status !== "converged") {
+            PubSub.default.pub("showToast", "toast.constraint.unsolvable");
+            this.emitPropertyChanged(property, oldValue);
+            return false;
+        }
+        let changed = false;
+        const apply = () =>
+            withSketchSolveGuard(sketch, () => {
+                changed = update();
+                if (changed) prepared.apply?.();
+            });
+        if (Transaction.isActive(this.document)) apply();
+        else Transaction.execute(this.document, "edit constrained sketch", apply);
+        return changed;
     }
 
     constructor(options: ParameterShapeNodeOptions) {

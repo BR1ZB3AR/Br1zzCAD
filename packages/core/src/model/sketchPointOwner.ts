@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import type { XYZ } from "../math";
+import type { Plane, XYZ } from "../math";
 import { serializable, serialize } from "../serialize";
 
 export interface SketchPointHandleOptions {
@@ -50,6 +50,11 @@ export interface ISketchPointOwner {
     sketchPointRoles(): readonly string[];
     getSketchPoint(role: string): XYZ | undefined;
     setSketchPoint(role: string, point: XYZ): void;
+    /** Coupled points are solved through the shape's actual parameters. */
+    getSketchParameters?(plane: Plane): number[];
+    getParameterizedSketchPoint?(role: string, parameters: readonly number[], plane: Plane): XYZ | undefined;
+    setSketchParameters?(parameters: readonly number[], plane: Plane): void;
+    isValidSketchParameters?(parameters: readonly number[]): boolean;
 }
 
 export function isSketchPointOwner(value: unknown): value is ISketchPointOwner {

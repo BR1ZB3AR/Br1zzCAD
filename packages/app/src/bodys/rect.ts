@@ -9,6 +9,7 @@ import {
     type IShapeMeshData,
     type ISketchPointOwner,
     type Plane,
+    Precision,
     property,
     type Result,
     serializable,
@@ -91,6 +92,33 @@ export class RectNode extends FacebaseNode implements ISketchPointOwner {
 
     sketchPointRoles(): readonly string[] {
         return SKETCH_POINT_ROLES;
+    }
+
+    getSketchParameters(plane: Plane): number[] {
+        const { u, v } = plane.toUV(this.plane.origin);
+        return [u, v, this.dx, this.dy];
+    }
+
+    getParameterizedSketchPoint(role: string, parameters: readonly number[], plane: Plane): XYZ | undefined {
+        const index = SKETCH_POINT_ROLES.indexOf(role as (typeof SKETCH_POINT_ROLES)[number]);
+        if (index < 0) return undefined;
+        const localPlane = this.plane.translateTo(plane.fromUV(parameters[0], parameters[1]));
+        return RectNode.points(localPlane, parameters[2], parameters[3])[index];
+    }
+
+    setSketchParameters(parameters: readonly number[], plane: Plane): void {
+        const origin = plane.fromUV(parameters[0], parameters[1]);
+        if (this.plane.origin.distanceTo(origin) > 1e-9) this.plane = this.plane.translateTo(origin);
+        if (Math.abs(this.dx - parameters[2]) > 1e-9) this.dx = parameters[2];
+        if (Math.abs(this.dy - parameters[3]) > 1e-9) this.dy = parameters[3];
+    }
+
+    isValidSketchParameters(parameters: readonly number[]): boolean {
+        return (
+            parameters.every(Number.isFinite) &&
+            Math.abs(parameters[2]) > Precision.Distance &&
+            Math.abs(parameters[3]) > Precision.Distance
+        );
     }
 
     getSketchPoint(role: string): XYZ | undefined {
