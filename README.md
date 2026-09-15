@@ -207,6 +207,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### v2026.09.15.1227 — 2026-09-15
+
+- **Sketching**: While editing a sketch, every entity is now colored by how constrained it is — blue while it can still move, its normal color once every degree of freedom is pinned, and red if it's caught in a constraint that can't actually be satisfied — updating live as constraints are added, removed, or an edit re-solves the sketch. Colors only apply during that sketch's own edit session, reverting to normal once you finish it. Added a new Fixed constraint (pins one point to its current location) alongside this, since without it a sketch could never actually reach "fully constrained" — every other constraint kind ties points to each other, none of them anchor a sketch in absolute space on their own.
+
 ### v2026.09.15.1039 — 2026-09-15
 
 - **Sketching**: Editing a shape's own properties (a line's endpoint, a rectangle's width, and so on) now re-solves any constraints it's part of and drives every point they connect to, instead of the solve only ever running right after a constraint is first created. An edit that can't be satisfied is rejected with a toast and reverted rather than left half-applied; a rectangle's four corners are solved through its own origin/width/height so it can't be distorted into a non-rectangle.
