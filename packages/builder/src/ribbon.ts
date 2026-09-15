@@ -58,6 +58,7 @@ export const DefaultRibbon: RibbonTabProfile[] = [
                 items: [
                     ["constraint.coincident", "constraint.horizontal", "constraint.vertical"],
                     ["constraint.parallel", "constraint.perpendicular", "constraint.equal"],
+                    ["constraint.fixed"],
                 ],
             },
             {

@@ -28,6 +28,8 @@ function createVisualWithObserverTracking(): {
                 const idx = nodeObservers.indexOf(fn);
                 if (idx >= 0) nodeObservers.splice(idx, 1);
             },
+            onPropertyChanged: () => {},
+            removePropertyChanged: () => {},
             materials: {
                 forEach: () => {},
                 removeCollectionChanged: () => {},

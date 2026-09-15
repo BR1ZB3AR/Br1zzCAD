@@ -16,7 +16,9 @@ import {
     type ShapeType,
     ShapeTypes,
     ShapeTypeUtils,
+    type SketchDofStatus,
     type VertexMeshData,
+    VisualConfig,
 } from "@chili3d/core";
 import { type Material, Mesh, type MeshLambertMaterial, Points, type PointsMaterial } from "three";
 import type { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
@@ -27,6 +29,8 @@ import {
     constructionFaceMaterial,
     defaultEdgeMaterial,
     defaultVertexMaterial,
+    dofColor,
+    dofEdgeMaterial,
     lockFaceMaterial,
     lockLineMaterial,
 } from "./materials";
@@ -164,6 +168,33 @@ export class ThreeGeometry extends ThreeVisualObject implements IVisualGeometry 
 
     setVertexsMateiralTemperary(material: PointsMaterial) {
         if (this._vertexs) this._vertexs.material = material;
+    }
+
+    /** Recolors this entity's edges for its current sketch constraint
+     * status (see `analyzeSketchDOF`/`ThreeSketchDofCoordinator`), or back
+     * to normal when `status` is undefined (sketch editing ended). Mutates
+     * `_normalEdgeMaterial` in place rather than tearing down and
+     * rebuilding this whole visual object (the way `ShapeNode.isConstruction`'s
+     * `redrawNode` does) - this can recompute on every solve, so it needs
+     * to stay cheap. */
+    setDofStatus(status: SketchDofStatus | undefined): void {
+        if (!this._edges) return;
+
+        if (this.geometryNode.mesh.edges?.lineType === "dash") {
+            // A dashed (construction) edge already gets a one-off
+            // LineMaterial per instance (see initEdges), not shared with
+            // anything else - mutate its color directly rather than
+            // swapping to a shared singleton.
+            (this._normalEdgeMaterial as LineMaterial).color.set(
+                status ? dofColor(status) : VisualConfig.constructionEdgeColor,
+            );
+            return;
+        }
+
+        const material = status ? dofEdgeMaterial(status) : defaultEdgeMaterial;
+        const wasAtRest = this._edges.material === this._normalEdgeMaterial;
+        this._normalEdgeMaterial = material;
+        if (wasAtRest) this._edges.material = material; // don't clobber a live hover/select overlay
     }
 
     removeTemperaryMaterial(): void {

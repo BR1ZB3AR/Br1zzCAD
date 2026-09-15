@@ -246,6 +246,46 @@ export class PerpendicularConstraint extends SketchConstraint {
     }
 }
 
+export interface FixedConstraintOptions extends SketchConstraintOptions {
+    p1: SketchPointHandle;
+    u: number;
+    v: number;
+}
+
+/** Pins a single point to an absolute (u, v) location in the sketch plane -
+ * the only constraint kind that anchors absolute position rather than a
+ * relationship between points. Every other constraint kind is relative
+ * (ties points/directions/lengths to each other), so without this, a
+ * sketch always retains a permanent rigid-body translation freedom no
+ * matter how thoroughly its geometry is otherwise triangulated. */
+@serializable()
+export class FixedConstraint extends SketchConstraint {
+    readonly kind = "fixed";
+
+    @serialize()
+    readonly p1: SketchPointHandle;
+    @serialize()
+    readonly u: number;
+    @serialize()
+    readonly v: number;
+
+    constructor(options: FixedConstraintOptions) {
+        super(options);
+        this.p1 = options.p1;
+        this.u = options.u;
+        this.v = options.v;
+    }
+
+    handles(): readonly SketchPointHandle[] {
+        return [this.p1];
+    }
+
+    residuals(index: UnknownIndex): Residual[] {
+        const i1 = index(this.p1);
+        return [(u) => u[i1] - this.u, (u) => u[i1 + 1] - this.v];
+    }
+}
+
 export interface EqualConstraintOptions extends SketchConstraintOptions {
     a1: SketchPointHandle;
     a2: SketchPointHandle;

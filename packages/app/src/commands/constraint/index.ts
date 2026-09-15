@@ -3,6 +3,7 @@
 
 export * from "./coincident";
 export * from "./equal";
+export * from "./fixed";
 export * from "./horizontal";
 export * from "./parallel";
 export * from "./perpendicular";

@@ -30,6 +30,7 @@ import {
     type ShapeType,
     ShapeTypes,
     SketchConstraintNode,
+    SketchGroupNode,
     Texture,
     XY,
     type XYZ,
@@ -56,6 +57,7 @@ import { ThreeGeometry } from "./threeGeometry";
 import { ThreeGeometryFactory } from "./threeGeometryFactory";
 import { ThreeHelper } from "./threeHelper";
 import { ThreeSketchConstraintMarker } from "./threeSketchConstraintMarker";
+import { ThreeSketchDofCoordinator } from "./threeSketchDofCoordinator";
 import { GroupVisualObject, ThreeComponentObject, ThreeMeshObject } from "./threeVisualObject";
 
 export class ThreeVisualContext implements IVisualContext {
@@ -67,6 +69,8 @@ export class ThreeVisualContext implements IVisualContext {
     readonly tempShapes: Group;
     readonly cssObjects: Group;
 
+    private _dofCoordinator?: ThreeSketchDofCoordinator;
+
     constructor(
         readonly visual: IVisual,
         readonly scene: Scene,
@@ -77,7 +81,22 @@ export class ThreeVisualContext implements IVisualContext {
         scene.add(this.visualShapes, this.tempShapes, this.cssObjects);
         visual.document.modelManager.addNodeObserver(this.handleNodeChanged);
         visual.document.modelManager.materials.onCollectionChanged(this.onMaterialCollectionChanged);
+        visual.document.modelManager.onPropertyChanged(this.handleModelManagerPropertyChanged);
     }
+
+    /** DOF status coloring only applies while a sketch is the active edit
+     * target (`ModelManager.currentNode`) - matches how the working-plane
+     * grid, snap points, and other sketch-only overlays already behave,
+     * rather than staying visible across the whole 3D model view. */
+    private readonly handleModelManagerPropertyChanged = (property: string) => {
+        if (property !== "currentNode") return;
+        this._dofCoordinator?.dispose();
+        this._dofCoordinator = undefined;
+        const current = this.visual.document.modelManager.currentNode;
+        if (current instanceof SketchGroupNode) {
+            this._dofCoordinator = new ThreeSketchDofCoordinator(this, current);
+        }
+    };
 
     private readonly onMaterialCollectionChanged = (args: CollectionChangedArgs) => {
         if (args.action === "add") {
@@ -165,6 +184,8 @@ export class ThreeVisualContext implements IVisualContext {
     }
 
     dispose() {
+        this._dofCoordinator?.dispose();
+        this._dofCoordinator = undefined;
         this.visualShapes.traverse((x) => {
             if (isDisposable(x)) x.dispose();
         });
@@ -173,6 +194,7 @@ export class ThreeVisualContext implements IVisualContext {
         );
         this.visual.document.modelManager.materials.removeCollectionChanged(this.onMaterialCollectionChanged);
         this.visual.document.modelManager.removeNodeObserver(this.handleNodeChanged);
+        this.visual.document.modelManager.removePropertyChanged(this.handleModelManagerPropertyChanged);
         this.materialMap.forEach((x) => x.dispose());
         this.materialMap.clear();
         this.visualShapes.clear();

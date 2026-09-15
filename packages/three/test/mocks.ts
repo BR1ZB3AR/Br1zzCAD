@@ -373,6 +373,8 @@ export function createMockIVisualForContext(overrides?: {
             modelManager: {
                 addNodeObserver: () => {},
                 removeNodeObserver: () => {},
+                onPropertyChanged: () => {},
+                removePropertyChanged: () => {},
                 materials: {
                     onCollectionChanged: () => {},
                     removeCollectionChanged: () => {},

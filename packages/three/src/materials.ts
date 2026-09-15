@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { VisualConfig, type VisualItemConfig } from "@chili3d/core";
+import { type SketchDofStatus, VisualConfig, type VisualItemConfig } from "@chili3d/core";
 import { DoubleSide, MeshLambertMaterial, PointsMaterial } from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { ThreeHelper } from "./threeHelper";
@@ -33,12 +33,68 @@ export const defaultEdgeMaterial = new LineMaterial({
     polygonOffsetUnits: -2,
 });
 
+/** Sketch entity coloring while its constraint status is under review (see
+ * `analyzeSketchDOF`/`ThreeSketchDofCoordinator`) - shared singletons
+ * swapped by reference on solid edges, same as `defaultEdgeMaterial`
+ * already is one; a dashed (construction) edge instead gets its own
+ * per-instance material's color mutated directly (see
+ * `ThreeGeometry.setDofStatus`), so these two aren't used for that case. */
+export const dofUnderConstrainedEdgeMaterial = new LineMaterial({
+    linewidth: 1,
+    color: VisualConfig.dofUnderConstrainedColor,
+    side: DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+});
+
+export const dofConflictingEdgeMaterial = new LineMaterial({
+    linewidth: 1,
+    color: VisualConfig.dofConflictingColor,
+    side: DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+});
+
 VisualConfig.onPropertyChanged((property: keyof VisualItemConfig) => {
     if (property === "defaultEdgeColor") {
         defaultEdgeMaterial.color.set(VisualConfig.defaultEdgeColor);
         defaultVertexMaterial.color.set(VisualConfig.defaultEdgeColor);
     }
+    if (property === "dofUnderConstrainedColor") {
+        dofUnderConstrainedEdgeMaterial.color.set(VisualConfig.dofUnderConstrainedColor);
+    }
+    if (property === "dofConflictingColor") {
+        dofConflictingEdgeMaterial.color.set(VisualConfig.dofConflictingColor);
+    }
 });
+
+/** "Fully constrained" deliberately has no material of its own - it reuses
+ * `defaultEdgeMaterial`/`defaultEdgeColor`, which already adapts across
+ * light/dark themes the same way a plain black/white "locked" indicator
+ * would need to (see `VisualItemConfig.dofUnderConstrainedColor`'s doc). */
+export function dofEdgeMaterial(status: SketchDofStatus): LineMaterial {
+    switch (status) {
+        case "underConstrained":
+            return dofUnderConstrainedEdgeMaterial;
+        case "conflicting":
+            return dofConflictingEdgeMaterial;
+        case "fullyConstrained":
+            return defaultEdgeMaterial;
+    }
+}
+
+export function dofColor(status: SketchDofStatus): number {
+    switch (status) {
+        case "underConstrained":
+            return VisualConfig.dofUnderConstrainedColor;
+        case "conflicting":
+            return VisualConfig.dofConflictingColor;
+        case "fullyConstrained":
+            return VisualConfig.defaultEdgeColor;
+    }
+}
 
 export const hilightEdgeMaterial = new LineMaterial({
     linewidth: 3,

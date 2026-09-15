@@ -22,6 +22,7 @@ const DISPLAY_KEYS: Record<string, I18nKeys> = {
     parallel: "body.constraint.parallel",
     perpendicular: "body.constraint.perpendicular",
     equal: "body.constraint.equal",
+    fixed: "body.constraint.fixed",
 };
 
 /**

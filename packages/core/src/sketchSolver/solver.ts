@@ -136,8 +136,11 @@ function evaluateResiduals(residuals: Residual[], u: Unknowns): Float64Array {
 }
 
 /** Row-major m*n: jacobian[i*n+j] = d(residual_i)/d(unknown_j), via central
- * finite differences (two residual evaluations per unknown). */
-function numericJacobian(residuals: Residual[], x: Unknowns, epsilon: number): Float64Array {
+ * finite differences (two residual evaluations per unknown). Exported for
+ * `sketchDofAnalyzer.ts`, which needs the Jacobian at a point the solver
+ * itself never visits (the sketch's current, not-being-solved-for,
+ * geometry) to determine which directions remain unconstrained. */
+export function numericJacobian(residuals: Residual[], x: Unknowns, epsilon: number): Float64Array {
     const n = x.length;
     const m = residuals.length;
     const jacobian = new Float64Array(m * n);
@@ -158,8 +161,12 @@ function numericJacobian(residuals: Residual[], x: Unknowns, epsilon: number): F
     return jacobian;
 }
 
-/** n*n row-major: JᵀJ. */
-function multiplyJtJ(jacobian: Float64Array, m: number, n: number): Float64Array {
+/** n*n row-major: JᵀJ. Exported for `sketchDofAnalyzer.ts` - its null space
+ * equals the Jacobian's own null space (`‖Jv‖² = vᵀJᵀJv`, so `Jv=0 ⟺
+ * JᵀJv=0`), which is cheaper to extract from a symmetric n*n matrix via
+ * Gaussian elimination (see `nullSpace.ts`) than from the non-square,
+ * generally-taller m*n Jacobian directly. */
+export function multiplyJtJ(jacobian: Float64Array, m: number, n: number): Float64Array {
     const result = new Float64Array(n * n);
     for (let a = 0; a < n; a++) {
         for (let b = 0; b < n; b++) {

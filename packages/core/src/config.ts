@@ -21,6 +21,17 @@ export class VisualItemConfig extends Observable {
      * `defaultEdgeColor`) so it reads as visually distinct at a glance,
      * matching the convention most CAD sketchers use for reference geometry. */
     constructionEdgeColor = 0x1e88e5;
+    /** Sketch entity coloring while its constraint status is under review
+     * (see `analyzeSketchDOF`/`ThreeSketchDofCoordinator`) - under-constrained
+     * (can still move) and conflicting (can't be satisfied) respectively.
+     * Deliberately a different blue from `constructionEdgeColor` so a
+     * construction-marked, under-constrained entity's color reads as "still
+     * free to move," not "this happens to be construction geometry."
+     * "Fully constrained" has no color of its own here - it reuses
+     * `defaultEdgeColor`, which already adapts across light/dark themes the
+     * same way a plain black/white indicator would need to. */
+    dofUnderConstrainedColor = 0x2979ff;
+    dofConflictingColor = 0xe53935;
     editVertexSize = 7;
     editVertexColor = 0x33ff33;
     hintVertexSize = 5;
