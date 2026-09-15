@@ -1,0 +1,9 @@
+.git
+**/node_modules
+**/dist
+**/build
+**/coverage
+.claude
+.codex
+.agents
+.vscode

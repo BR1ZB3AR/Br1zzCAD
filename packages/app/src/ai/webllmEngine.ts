@@ -11,11 +11,17 @@ let enginePromise: Promise<MLCEngine> | null = null;
  * in the browser via WebGPU - no network calls once the model is cached. */
 export function getWebLLMEngine(onProgress?: (report: InitProgressReport) => void): Promise<MLCEngine> {
     if (!enginePromise) {
-        enginePromise = import("@mlc-ai/web-llm").then(({ CreateMLCEngine }) =>
-            CreateMLCEngine(MODEL_ID, {
-                initProgressCallback: onProgress,
-            }),
-        );
+        enginePromise = import("@mlc-ai/web-llm")
+            .then(({ CreateMLCEngine }) =>
+                CreateMLCEngine(MODEL_ID, {
+                    initProgressCallback: onProgress,
+                }),
+            )
+            .catch((error) => {
+                // Let a later request retry a failed download or initialization.
+                enginePromise = null;
+                throw error;
+            });
     }
     return enginePromise;
 }

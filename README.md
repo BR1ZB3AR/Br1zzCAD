@@ -173,6 +173,7 @@ The prebuilt WASM module is included in the repository. If you want to build it 
 ```bash
 npm run test    # Run all tests (Rstest + Happy-DOM)
 npm run testc   # Tests with coverage
+npm run typecheck # Check application and test types
 npm run check   # Biome lint + auto-fix
 npm run format  # Biome + clang-format across all files
 ```
@@ -186,6 +187,8 @@ docker compose up -d   # Builds and serves the app at http://localhost:8080
 ```
 
 ## Code Style
+
+`npm run typecheck` checks application and test code with strict TypeScript settings. It skips checking dependency declaration files (`skipLibCheck`), matching the Rspack build checker; WebLLM's published declarations reference development-only packages and browser extension globals absent from this app.
 
 - **TypeScript**: Biome for linting and formatting — 4-space indent, 110-char line width, double quotes, semicolons always
 - **C++**: clang-format with WebKit style
@@ -203,6 +206,18 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 ## Changelog
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
+
+### v2026.09.15.0915 — 2026-09-15
+
+- **Build and deployment**: Use lockfile-based installs (`npm ci`) in CI and Docker, align the Docker builder with CI on Node 24, and exclude local dependencies, Git metadata, editor files, and build output from the Docker context.
+
+### v2026.09.15.0914 — 2026-09-15
+
+- **Development**: Add a standalone strict application/test type check to npm scripts and CI, aligned with the build checker for dependency declarations. Correct the generated WASM exclusion and stale project instructions, and document the per-update calendar version policy.
+
+### v2026.09.15.0912 — 2026-09-15
+
+- **AI assistant**: Retry failed model downloads or initialization without reloading the page. Concurrent requests still share a single initialization, and a successfully loaded engine stays cached. Added a regression test for failure, retry, and reuse.
 
 ### [v2026.09.12.0952](https://github.com/BR1ZB3AR/Br1zzCAD/releases/tag/v2026.09.12.0952) — 2026-09-12
 

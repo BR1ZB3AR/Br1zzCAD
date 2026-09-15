@@ -6,6 +6,7 @@
 npm run dev            # Rspack dev server → localhost:8080
 npm run build          # Production build (Rspack + SWC)
 npm run test           # All tests (Rstest + Happy-DOM); npm run testc = with coverage
+npm run typecheck      # Check application and test types without emitting files
 npm run check          # Biome lint + auto-fix (run before commits)
 npm run format         # Biome + clang-format across all files
 npm run build:wasm     # C++ → WebAssembly (CMake + Emscripten); setup:wasm = one-time deps
@@ -50,7 +51,6 @@ OCCT v8.0.0 → `chili-wasm.wasm` via Emscripten. `cpp/src/`: `factory.cpp` (sha
 - **Undo/redo** — `Transaction` records snapshots, `History` keeps the stack; commands create transactions automatically.
 - **Plugins** — Loaded from URLs or `?plugin=`; manager in `core/src/plugin/` + `app/src/pluginManager.ts`; examples in `plugins/`.
 - **Global singleton** — `getCurrentApplication()` (from `core`) instead of DI threading.
-- **MCP server** (`packages/mcp/`) — `live_*` tools drive the user's open browser tab; headless tools (`run_cad_program`, `render_preview`, etc.) are a server-side scratchpad. Units: millimetres; angles: degrees.
 
 ## Testing
 
@@ -75,4 +75,8 @@ OCCT v8.0.0 → `chili-wasm.wasm` via Emscripten. `cpp/src/`: `factory.cpp` (sha
 
 ## Git
 
-Commits: `<emoji> <type>(<scope>): <description>` — ✨ `feat` · 🐛 `fix` · ♻️ `refactor` · ✅ `test` · 📝 `docs` · 💄 `style` · 🔧 `chore`. Scope = package name. Active branch: `dev` → PR to `main`.
+Commits: `<emoji> <type>(<scope>): <description>` — ✨ `feat` · 🐛 `fix` · ♻️ `refactor` · ✅ `test` · 📝 `docs` · 💄 `style` · 🔧 `chore`. Scope = package name. Check the current branch before work; target pull requests at `main`.
+
+## Versioning
+
+Every update or bugfix must get a new `vYYYY.MM.DD.HHMM` version using the current time in `Asia/Kuala_Lumpur`. Use the bare version in the root and application workspace package manifests and matching lockfile entries; use the `v` prefix in the README changelog. Record each update separately, with distinct minute timestamps. Change `documentVersion` only when the saved-document format changes. The release script also commits, tags, and pushes, so do not use it merely to update local version metadata.
