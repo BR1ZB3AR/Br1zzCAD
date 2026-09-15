@@ -207,6 +207,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### v2026.09.15.1816 — 2026-09-15
+
+- **Sketching**: Picking a vertex for a constraint (Coincident, Distance, and every other point-based constraint) now shows a bright orange marker over the exact point your click will select, instead of no distinct feedback at all when hovering near a line's endpoint. It turned out the shared highlighter's vertex state lit up an entire line's endpoints together rather than the one actually under the cursor - a real gap, not just a subtle one. Clicking still only ever targets vertices during these picks; edges were already excluded, so nothing changes about what gets selected.
+
 ### v2026.09.15.1545 — 2026-09-15
 
 - **Architecture**: Began migrating the document model toward a parametric feature tree — `SketchGroupNode` now implements a new `IFeatureNode` interface (`dependencies`, `compute()`), the first step away from a flat, feature-unaware node history. Added a new Distance constraint that pins two points to a named, editable length (rather than a fixed structural relationship like every other constraint) — editing its value in the Properties panel dispatches the sketch's constraints to the Web Worker solver added earlier today and writes the converged geometry back into the viewport live. Undo isn't fully atomic yet for this one constraint kind — reverting a distance edit takes two Undo steps (geometry, then the value) rather than one — a known, intentional limitation for this proof of concept, not the final design.
