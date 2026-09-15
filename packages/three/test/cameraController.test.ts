@@ -4,6 +4,7 @@
 import type { IDocument } from "@chili3d/core";
 import { createMockSelection } from "@chili3d/core/test-utils";
 import {
+    BoxGeometry,
     BufferAttribute,
     BufferGeometry,
     Mesh,
@@ -11,7 +12,10 @@ import {
     Object3D,
     OrthographicCamera,
     PerspectiveCamera,
+    Raycaster,
     Scene,
+    Vector2,
+    Vector3,
 } from "three";
 import { CameraController } from "../src/cameraController";
 import { Constants } from "../src/constants";
@@ -258,6 +262,117 @@ describe("CameraController — zoom", () => {
         // delta=0 takes the `delta > 0 ? f : -f` else-branch, so the distance
         // is scaled by (1 - 0.1) instead of staying unchanged.
         expect(cc.cameraPosition.distanceTo(cc.cameraTarget)).toBeCloseTo(origDist * 0.9);
+    });
+});
+
+describe("CameraController — orthographic close-up", () => {
+    function createPartView() {
+        const view = createFakeView();
+        const part = new Mesh(new BoxGeometry(200, 200, 200), new MeshBasicMaterial());
+        view.content.visualShapes.add(part);
+        const cc = new CameraController(view);
+        cc.setSize(800, 600);
+        cc.lookAt({ x: 0, y: 0, z: 500 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+        cc.cameraType = "orthographic";
+        return { cc, part };
+    }
+
+    test.each([
+        [0, 0, 500],
+        [0, -500, 0],
+        [500, 500, 500],
+    ])("keeps the entire depth visible while zooming from (%s, %s, %s)", (x, y, z) => {
+        const { cc, part } = createPartView();
+        try {
+            cc.lookAt({ x, y, z }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 1 });
+            const initialWidth = (cc.camera as OrthographicCamera).right * 2;
+            for (let i = 0; i < 60; i++) cc.zoom(400, 300, -120);
+
+            const camera = cc.camera as OrthographicCamera;
+            expect(camera.right * 2).toBeLessThan(initialWidth / 100);
+            camera.updateMatrixWorld(true);
+            for (const px of [-100, 100]) {
+                for (const py of [-100, 100]) {
+                    for (const pz of [-100, 100]) {
+                        const depth = new Vector3(px, py, pz).project(camera).z;
+                        expect(depth).toBeGreaterThan(-1);
+                        expect(depth).toBeLessThan(1);
+                    }
+                }
+            }
+            const ray = new Raycaster();
+            ray.setFromCamera(new Vector2(0, 0), camera);
+            expect(ray.intersectObject(part).length).toBeGreaterThan(0);
+        } finally {
+            part.geometry.dispose();
+            part.material.dispose();
+        }
+    });
+
+    test("keeps the point under the cursor fixed after the camera retreats", () => {
+        const { cc, part } = createPartView();
+        try {
+            for (let i = 0; i < 30; i++) cc.zoom(400, 300, -120);
+            cc.camera.updateMatrixWorld(true);
+            const point = new Vector3(0.5, 0.5, 0).unproject(cc.camera);
+            cc.zoom(600, 150, -120);
+            cc.camera.updateMatrixWorld(true);
+            const projected = point.project(cc.camera);
+            expect(projected.x).toBeCloseTo(0.5, 6);
+            expect(projected.y).toBeCloseTo(0.5, 6);
+            expect(cc.cameraTarget.z).toBeCloseTo(0, 6);
+        } finally {
+            part.geometry.dispose();
+            part.material.dispose();
+        }
+    });
+
+    test("keeps foreground and distant geometry inside the depth range at close range", () => {
+        const { cc, part } = createPartView();
+        const distantPart = part.clone();
+        const view = cc.view;
+        part.position.z = 5000;
+        distantPart.position.z = -5000;
+        view.content.visualShapes.add(distantPart);
+        try {
+            cc.lookAt({ x: 0, y: 0, z: 10 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+            for (const z of [-5100, -4900, 4900, 5100]) {
+                const depth = new Vector3(0, 0, z).project(cc.camera).z;
+                expect(depth).toBeGreaterThan(-1);
+                expect(depth).toBeLessThan(1);
+            }
+            const ray = new Raycaster();
+            ray.setFromCamera(new Vector2(0, 0), cc.camera);
+            const hits = ray.intersectObjects(view.content.visualShapes.children);
+            expect(hits.length).toBeGreaterThan(0);
+            expect(hits[0].object).toBe(part);
+            expect(hits[0].point.z).toBeCloseTo(5100);
+        } finally {
+            part.geometry.dispose();
+            part.material.dispose();
+        }
+    });
+
+    test("preserves close-up framing across resize, rotation, and saved-view restore", () => {
+        const { cc, part } = createPartView();
+        try {
+            for (let i = 0; i < 30; i++) cc.zoom(400, 300, -120);
+            const top = (cc.camera as OrthographicCamera).top;
+            const eye = cc.cameraPosition;
+            const target = cc.cameraTarget;
+            const up = cc.cameraUp;
+            cc.setSize(1000, 600);
+            expect((cc.camera as OrthographicCamera).top).toBeCloseTo(top);
+            cc.rotate(30, 20);
+            expect((cc.camera as OrthographicCamera).top).toBeCloseTo(top);
+            cc.fitContent();
+            expect((cc.camera as OrthographicCamera).top).toBeGreaterThan(top);
+            cc.lookAt(eye, target, up);
+            expect((cc.camera as OrthographicCamera).top).toBeCloseTo(top);
+        } finally {
+            part.geometry.dispose();
+            part.material.dispose();
+        }
     });
 });
 

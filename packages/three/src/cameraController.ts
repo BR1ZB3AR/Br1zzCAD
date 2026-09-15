@@ -43,6 +43,8 @@ export class CameraController extends Observable implements ICameraController {
     private _width: number = 100;
     private _height: number = 100;
     private _target: Vector3 = new Vector3();
+    // This distance controls framing and saved views. In orthographic mode,
+    // the rendered camera may sit farther back to keep the whole model visible.
     private _position: Vector3 = new Vector3(1500, 1500, 1500);
     private _rotateCenter: Vector3 | undefined;
     private _camera: PerspectiveCamera | OrthographicCamera;
@@ -53,9 +55,6 @@ export class CameraController extends Observable implements ICameraController {
     set cameraType(value: CameraType) {
         if (this.setProperty("cameraType", value)) {
             this._camera = this.createCamera(this._camera.near, this._camera.far);
-            if (this.camera instanceof OrthographicCamera) {
-                this.updateOrthographicCamera(this.camera);
-            }
             this.updateCameraPosionTarget();
         }
     }
@@ -134,7 +133,27 @@ export class CameraController extends Observable implements ICameraController {
     updateCameraPosionTarget() {
         this._camera.position.copy(this._position);
         this._camera.lookAt(this._target);
+        if (this._camera instanceof OrthographicCamera) {
+            this.updateOrthographicCamera(this._camera);
+            this.updateOrthographicDepth(this._camera);
+        }
         this._camera.updateProjectionMatrix();
+        this._camera.updateMatrixWorld(true);
+    }
+
+    private updateOrthographicDepth(camera: OrthographicCamera) {
+        // Use all model geometry, even when Fit is framing only a selection.
+        const box = new Box3().setFromObject(this.view.content.visualShapes);
+        if (box.isEmpty()) return;
+
+        const sphere = box.getBoundingSphere(new Sphere());
+        const direction = this._target.clone().sub(this._position).normalize();
+        const centerDepth = sphere.center.clone().sub(this._position).dot(direction);
+        const padding = Math.max(1, sphere.radius * 0.01);
+        const retreat = Math.max(0, sphere.radius + padding - centerDepth);
+        camera.position.addScaledVector(direction, -retreat);
+        camera.near = CAMERA_NEAR;
+        camera.far = Math.max(1000, centerDepth + retreat + sphere.radius + padding);
     }
 
     setSize(width: number, height: number): void {
@@ -245,10 +264,6 @@ export class CameraController extends Observable implements ICameraController {
         this._target.copy(sphere.center);
         this._position.copy(this._target.clone().sub(direction.clone().multiplyScalar(distance)));
 
-        if (this._camera instanceof OrthographicCamera) {
-            this.updateOrthographicCamera(this._camera);
-        }
-
         this.updateCameraNearFar();
         this.updateCameraPosionTarget();
     }
@@ -280,7 +295,10 @@ export class CameraController extends Observable implements ICameraController {
     zoom(x: number, y: number, delta: number): void {
         const vector = this._target.clone().sub(this._position);
 
-        const zoomFactor = this.caclueZoomFactor(x, y, vector);
+        const zoomFactor =
+            this._camera instanceof OrthographicCamera
+                ? ZOOM_SPEED_FACTOR
+                : this.caclueZoomFactor(x, y, vector);
         const scale = delta > 0 ? zoomFactor : -zoomFactor;
         let mouse = this.mouseToWorld(x, y);
         if (this._camera instanceof PerspectiveCamera) {
@@ -289,15 +307,12 @@ export class CameraController extends Observable implements ICameraController {
         const targetMoveVector = this._target.clone().sub(mouse).multiplyScalar(scale);
         this._target.add(targetMoveVector);
         this._position.copy(this._target.clone().sub(vector.clone().multiplyScalar(1 + scale)));
-        if (vector.length() < MIN_CARME_TO_TARGET) {
+        if (this._camera instanceof PerspectiveCamera && vector.length() < MIN_CARME_TO_TARGET) {
             this._target = this._position
                 .clone()
                 .add(vector.clone().normalize().multiplyScalar(MIN_CARME_TO_TARGET));
         }
 
-        if (this._camera instanceof OrthographicCamera) {
-            this.updateOrthographicCamera(this._camera);
-        }
         this.updateCameraNearFar();
         this.updateCameraPosionTarget();
     }
@@ -343,7 +358,7 @@ export class CameraController extends Observable implements ICameraController {
     private mouseToWorld(mx: number, my: number) {
         const x = (2.0 * mx) / this._width - 1;
         const y = (-2.0 * my) / this._height + 1;
-        const dist = this._position.distanceTo(this._target);
+        const dist = this._camera.position.distanceTo(this._target);
         const z = (this._camera.far + this._camera.near - 2 * dist) / (this._camera.near - this._camera.far);
 
         return new Vector3(x, y, z).unproject(this._camera);

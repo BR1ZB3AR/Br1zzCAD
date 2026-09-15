@@ -1,7 +1,7 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import type { CameraType, XYZ } from "@chili3d/core";
+import { type CameraType, XYZ } from "@chili3d/core";
 import { PerspectiveCamera, Vector3 } from "three";
 import type { CameraController } from "../src/cameraController";
 import type { ThreeView } from "../src/threeView";
@@ -100,6 +100,8 @@ interface MockController {
     camera: PerspectiveCamera;
     target: Vector3;
     cameraType: CameraType;
+    readonly cameraPosition: XYZ;
+    readonly cameraTarget: XYZ;
     rotate: ReturnType<typeof rs.fn>;
     setRotateCenterToSelected: ReturnType<typeof rs.fn>;
     lookAt: ReturnType<typeof rs.fn>;
@@ -110,6 +112,12 @@ function createGizmo(): { gizmo: ViewGizmo; cc: MockController; update: ReturnTy
         camera: new PerspectiveCamera(),
         target: new Vector3(0, 0, 0),
         cameraType: "perspective",
+        get cameraPosition() {
+            return new XYZ(this.camera.position);
+        },
+        get cameraTarget() {
+            return new XYZ(this.target);
+        },
         rotate: rs.fn(),
         setRotateCenterToSelected: rs.fn(),
         lookAt: rs.fn(),
@@ -358,6 +366,23 @@ describe("ViewGizmo — click to align camera", () => {
         expect(up.y).toBe(expectedUp[1]);
         expect(up.z).toBe(expectedUp[2]);
         expect(update).toHaveBeenCalledTimes(1);
+    });
+
+    test("a face click preserves framing when the rendered camera has retreated", () => {
+        const { gizmo, cc } = createGizmo();
+        const framingPosition = rs.spyOn(cc, "cameraPosition", "get");
+        framingPosition.mockReturnValue(new XYZ({ x: 0, y: 0, z: 10 }));
+        try {
+            (gizmo as any)._hoverPart = faceByLabel("RIGHT");
+            (gizmo as any)._onClick(pointerEvent({}));
+            expect(cc.lookAt).toHaveBeenCalledTimes(1);
+            const eye = cc.lookAt.mock.calls[0][0] as XYZ;
+            expect(eye.x).toBeCloseTo(10);
+            expect(eye.y).toBeCloseTo(0);
+            expect(eye.z).toBeCloseTo(0);
+        } finally {
+            framingPosition.mockRestore();
+        }
     });
 
     test("clicking an edge bevel snaps the camera to the diagonal between its two faces", () => {

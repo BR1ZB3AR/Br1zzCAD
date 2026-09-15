@@ -207,6 +207,10 @@ Before submitting a PR, run `npm run check` to ensure your code passes linting.
 
 Notable changes to this fork, newest first. Versions follow the calendar scheme `vYYYY.MM.DD.HHMM`. For upstream Chili3D's own changelog, see [Upstream](#upstream) below.
 
+### v2026.09.15.0946 — 2026-09-15
+
+- **Orthographic zoom**: Keep the rendered camera in front of all model geometry while zoom changes framing, preventing close-up views from slicing through parts. Size the depth range to the complete model and keep foreground surfaces selectable. Preserve cursor anchoring, view-cube framing, resize behavior, and saved-view restoration; remove the perspective-only distance limit from orthographic zoom.
+
 ### v2026.09.15.0915 — 2026-09-15
 
 - **Build and deployment**: Use lockfile-based installs (`npm ci`) in CI and Docker, align the Docker builder with CI on Node 24, and exclude local dependencies, Git metadata, editor files, and build output from the Docker context.

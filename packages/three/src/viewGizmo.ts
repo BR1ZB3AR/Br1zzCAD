@@ -198,7 +198,9 @@ export class ViewGizmo extends HTMLElement implements IViewGizmo {
                 this.cameraController.cameraType = "orthographic";
             }
             const direction = this._hoverPart.direction;
-            const distance = this.cameraController.camera.position.distanceTo(this.cameraController.target);
+            const distance = this.cameraController.cameraPosition.distanceTo(
+                this.cameraController.cameraTarget,
+            );
             const position = direction.clone().multiplyScalar(distance).add(this.cameraController.target);
             this.cameraController.camera.position.copy(position);
             // A direction that's purely +-Z is parallel to the default up
