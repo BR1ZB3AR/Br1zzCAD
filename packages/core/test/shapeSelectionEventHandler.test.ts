@@ -615,6 +615,91 @@ describe("SubshapeSelectionHandler", () => {
         });
     });
 
+    describe("vertex hover marker", () => {
+        test("shows a marker when picking vertices and a point is detected", () => {
+            const { handler, view, context } = setupSubshapeSelectionHandler({
+                shapeType: ShapeTypes.vertex,
+            });
+
+            const displayMeshCalls: unknown[][] = [];
+            context.displayMesh = (...args: unknown[]) => {
+                displayMeshCalls.push(args);
+                return 42;
+            };
+
+            const shapeData = createVisualShapeData({ point: { x: 1, y: 2, z: 3 } as any });
+            (handler as any).highlightDetecteds(view, [shapeData]);
+
+            expect(displayMeshCalls).toHaveLength(1);
+            expect((handler as any)._hoverVertexMeshId).toBe(42);
+        });
+
+        test("does not show a marker for non-vertex shape types", () => {
+            const { handler, view, context } = setupSubshapeSelectionHandler({
+                shapeType: ShapeTypes.edge,
+            });
+
+            let displayMeshCalled = false;
+            context.displayMesh = () => {
+                displayMeshCalled = true;
+                return 1;
+            };
+
+            const shapeData = createVisualShapeData({ point: { x: 1, y: 2, z: 3 } as any });
+            (handler as any).highlightDetecteds(view, [shapeData]);
+
+            expect(displayMeshCalled).toBe(false);
+        });
+
+        test("does not show a marker when the detected shape has no point", () => {
+            const { handler, view, context } = setupSubshapeSelectionHandler({
+                shapeType: ShapeTypes.vertex,
+            });
+
+            let displayMeshCalled = false;
+            context.displayMesh = () => {
+                displayMeshCalled = true;
+                return 1;
+            };
+
+            const shapeData = createVisualShapeData();
+            (handler as any).highlightDetecteds(view, [shapeData]);
+
+            expect(displayMeshCalled).toBe(false);
+        });
+
+        test("removes the marker when highlights are cleaned", () => {
+            const { handler, view, context } = setupSubshapeSelectionHandler({
+                shapeType: ShapeTypes.vertex,
+            });
+
+            context.displayMesh = () => 7;
+            const removeMeshCalls: number[] = [];
+            context.removeMesh = (id: number) => {
+                removeMeshCalls.push(id);
+            };
+
+            const shapeData = createVisualShapeData({ point: { x: 1, y: 2, z: 3 } as any });
+            (handler as any).highlightDetecteds(view, [shapeData]);
+            (handler as any).cleanHighlights();
+
+            expect(removeMeshCalls).toEqual([7]);
+            expect((handler as any)._hoverVertexMeshId).toBeUndefined();
+        });
+
+        test("cleanHighlights is a no-op for the marker when none was shown", () => {
+            const { handler, context } = setupSubshapeSelectionHandler({ shapeType: ShapeTypes.vertex });
+
+            let removeMeshCalled = false;
+            context.removeMesh = () => {
+                removeMeshCalled = true;
+            };
+
+            (handler as any).cleanHighlights();
+            expect(removeMeshCalled).toBe(false);
+        });
+    });
+
     describe("dispose", () => {
         test("should only dispose once", () => {
             const { handler } = setupSubshapeSelectionHandler();

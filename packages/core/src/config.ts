@@ -41,6 +41,14 @@ export class VisualItemConfig extends Observable {
     temporaryVertexSize = 5;
     temporaryVertexColor = 0x33ff33;
     temporaryEdgeColor = 0x33ff33;
+    /** Hover marker shown over the nearest vertex while a vertex-only pick
+     * is active (`ShapeSelectionHandler`, e.g. every sketch constraint
+     * command's point-picking step) - bigger and a different hue from every
+     * other vertex indicator above (all a variant of green, used for
+     * drawing/snapping) so "this is the point my click will select" reads
+     * unambiguously against a line passing right through it. */
+    hoverVertexSize = 9;
+    hoverVertexColor = 0xff9800;
 
     get defaultEdgeColor() {
         return this.getPrivateValue("defaultEdgeColor", DefaultLightEdgeColor);
