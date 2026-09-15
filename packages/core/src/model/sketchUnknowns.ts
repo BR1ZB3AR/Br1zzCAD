@@ -35,6 +35,13 @@ export interface BuiltSketchUnknowns {
     /** Per (parameterized) owner: is this solution geometrically valid
      * (e.g. a rectangle's width/height didn't collapse to zero)? */
     validators: ((values: Unknowns) => boolean)[];
+    /** True if any owner took the parameterized-quartet branch (today:
+     * `RectNode`) - that owner kind's point derivation needs live
+     * document-model access mid-iteration (see `readers` above), which
+     * cannot cross a Web Worker's `postMessage` boundary. Callers that
+     * offload solving to a worker (`packages/worker`) use this to reject
+     * up front rather than silently produce wrong geometry. */
+    hasParameterizedOwner: boolean;
 }
 
 function emptyResult(status: "missingPoint" | "invalidGeometry"): BuiltSketchUnknowns {
@@ -47,6 +54,7 @@ function emptyResult(status: "missingPoint" | "invalidGeometry"): BuiltSketchUnk
         readers: [],
         writers: [],
         validators: [],
+        hasParameterizedOwner: false,
     };
 }
 
@@ -84,6 +92,7 @@ export function buildSketchUnknowns(
     const readers: ((values: Unknowns) => void)[] = [];
     const writers: ((values: Unknowns) => void)[] = [];
     const validators: ((values: Unknowns) => boolean)[] = [];
+    let hasParameterizedOwner = false;
 
     const claim = (id: string, ...indices: number[]) => {
         const existing = ownerUnknownIndices.get(id);
@@ -105,6 +114,7 @@ export function buildSketchUnknowns(
         if (fixedNodeIds.has(id)) continue;
 
         if (owner.getSketchParameters && owner.getParameterizedSketchPoint && owner.setSketchParameters) {
+            hasParameterizedOwner = true;
             const parameters = owner.getSketchParameters(sketch.plane);
             const offset = initial.length;
             initial.push(...parameters);
@@ -147,5 +157,15 @@ export function buildSketchUnknowns(
         return emptyResult("invalidGeometry");
     }
 
-    return { status: "ok", offsets, pointValues, initial, ownerUnknownIndices, readers, writers, validators };
+    return {
+        status: "ok",
+        offsets,
+        pointValues,
+        initial,
+        ownerUnknownIndices,
+        readers,
+        writers,
+        validators,
+        hasParameterizedOwner,
+    };
 }

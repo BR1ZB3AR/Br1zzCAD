@@ -6,6 +6,7 @@ export * from "./component";
 export * from "./dimensionEditHandler";
 export * from "./dimensionGeometry";
 export * from "./facebaseNode";
+export * from "./featureNode";
 export * from "./folderNode";
 export * from "./geometryNode";
 export * from "./groupNode";

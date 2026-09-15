@@ -1,11 +1,22 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import { CoincidentConstraint, Serializer, SketchPointHandle } from "@chili3d/core";
+import {
+    CoincidentConstraint,
+    FolderNode,
+    type ISketchPointOwner,
+    Plane,
+    Serializer,
+    SketchConstraintNode,
+    SketchGroupNode,
+    SketchPointHandle,
+    XYZ,
+} from "@chili3d/core";
+import { TestDocument } from "@chili3d/core/test-utils";
 import { RpcHandlerRegistry } from "../../src/rpc/handlerRegistry";
 import type { RpcRequest } from "../../src/rpc/protocol";
 import { solveSketchInWorker } from "../../src/sketchSolver/sketchSolverWorkerApi";
-import { SketchSolveSession } from "../../src/sketchSolver/solveSketchAsync";
+import { resolveSketchViaWorker, SketchSolveSession } from "../../src/sketchSolver/solveSketchAsync";
 import { MockWorker } from "../mockWorker";
 
 function buildPayload(x: number, y: number) {
@@ -115,4 +126,132 @@ describe("SketchSolveSession", () => {
         expect(() => session.dispose()).not.toThrow();
         void pending;
     });
+});
+
+/** Mirrors the mock used throughout `packages/core`'s own sketch-solver
+ * tests - a minimal `ISketchPointOwner` leaf, deliberately not a real
+ * `LineNode` (which lives in `packages/app`). */
+class MockPointOwnerNode extends FolderNode implements ISketchPointOwner {
+    private readonly points = new Map<string, XYZ>();
+
+    setPoint(role: string, point: XYZ) {
+        this.points.set(role, point);
+    }
+
+    sketchPointRoles(): readonly string[] {
+        return Array.from(this.points.keys());
+    }
+
+    getSketchPoint(role: string): XYZ | undefined {
+        return this.points.get(role);
+    }
+
+    setSketchPoint(role: string, point: XYZ): void {
+        this.points.set(role, point);
+    }
+}
+
+function buildSketch(doc: TestDocument) {
+    const sketch = new SketchGroupNode({ document: doc, name: "Sketch", plane: Plane.XY });
+    const nodeA = new MockPointOwnerNode({ document: doc, name: "a" });
+    nodeA.setPoint("p", new XYZ({ x: 0, y: 0, z: 0 }));
+    const nodeB = new MockPointOwnerNode({ document: doc, name: "b" });
+    nodeB.setPoint("p", new XYZ({ x: 10, y: 10, z: 0 }));
+    sketch.add(nodeA, nodeB);
+    sketch.add(
+        new SketchConstraintNode({
+            document: doc,
+            constraint: new CoincidentConstraint({
+                p1: new SketchPointHandle({ nodeId: nodeA.id, role: "p" }),
+                p2: new SketchPointHandle({ nodeId: nodeB.id, role: "p" }),
+            }),
+        }),
+    );
+    return { sketch, nodeA, nodeB };
+}
+
+/** A minimal parameterized-quartet owner (mirrors `RectNode`'s shape,
+ * `packages/app/src/bodys/rect.ts`) - just enough to make
+ * `buildSketchUnknowns` set `hasParameterizedOwner`, exercising
+ * `resolveSketchViaWorker`'s rejection path without depending on the app
+ * layer. */
+class MockParameterizedOwnerNode extends FolderNode implements ISketchPointOwner {
+    private u = 0;
+    private v = 0;
+
+    sketchPointRoles(): readonly string[] {
+        return ["corner"];
+    }
+    getSketchPoint(): XYZ | undefined {
+        return new XYZ({ x: this.u, y: this.v, z: 0 });
+    }
+    setSketchPoint(): void {}
+    getSketchParameters(): number[] {
+        return [this.u, this.v];
+    }
+    getParameterizedSketchPoint(_role: string, parameters: readonly number[]): XYZ | undefined {
+        return new XYZ({ x: parameters[0], y: parameters[1], z: 0 });
+    }
+    setSketchParameters(parameters: readonly number[]): void {
+        [this.u, this.v] = parameters;
+    }
+}
+
+describe("resolveSketchViaWorker", () => {
+    test("rejects (does not write anything) when the sketch has a parameterized owner", async () => {
+        const doc = new TestDocument();
+        const sketch = new SketchGroupNode({ document: doc, name: "Sketch", plane: Plane.XY });
+        const rect = new MockParameterizedOwnerNode({ document: doc, name: "rect" });
+        sketch.add(rect);
+        sketch.add(
+            new SketchConstraintNode({
+                document: doc,
+                constraint: new CoincidentConstraint({
+                    p1: new SketchPointHandle({ nodeId: rect.id, role: "corner" }),
+                    p2: new SketchPointHandle({ nodeId: rect.id, role: "corner" }),
+                }),
+            }),
+        );
+        const session = new SketchSolveSession(new MockWorker(buildRegistry()));
+
+        const outcome = await resolveSketchViaWorker(sketch, session);
+
+        expect(outcome.status).toBe("invalidGeometry");
+        session.dispose();
+    });
+
+    test("writes a converged result back into the live document nodes", async () => {
+        const doc = new TestDocument();
+        const { sketch, nodeA, nodeB } = buildSketch(doc);
+        const session = new SketchSolveSession(new MockWorker(buildRegistry()));
+
+        const outcome = await resolveSketchViaWorker(sketch, session);
+
+        expect(outcome.status).toBe("converged");
+        expect(nodeA.getSketchPoint("p")!.distanceTo(nodeB.getSketchPoint("p")!)).toBeLessThan(1e-7);
+        session.dispose();
+    });
+
+    test("a sketch with no constraints converges trivially without touching the worker", async () => {
+        const doc = new TestDocument();
+        const sketch = new SketchGroupNode({ document: doc, name: "Sketch", plane: Plane.XY });
+        const session = new SketchSolveSession(new MockWorker(buildRegistry()));
+
+        const outcome = await resolveSketchViaWorker(sketch, session);
+
+        expect(outcome.status).toBe("converged");
+        expect(outcome.finalResidualNorm).toBe(0);
+        session.dispose();
+    });
+
+    // Note: whether the write-back records exactly one undo entry can't be
+    // meaningfully asserted against `MockPointOwnerNode` - like the mocks
+    // `packages/core/test/sketchSolverRunner.test.ts` already uses, its
+    // `setSketchPoint` is a bare map write, not a real `@property`-backed
+    // setter, so it never reaches `Transaction.add` regardless of whether
+    // `resolveSketchViaWorker` wraps the write-back in a transaction or
+    // not. The wrapping itself is a direct, one-line call in the source
+    // (`Transaction.execute(sketch.document, "resolve sketch (worker)", ...)`)
+    // - covered by real usage once a real `LineNode` is involved (see the
+    // live Playwright verification in this feature's shipping checklist).
 });

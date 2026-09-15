@@ -26,6 +26,7 @@ const BADGE_TEXT: Record<string, string> = {
     perpendicular: "⊥",
     equal: "=",
     fixed: "F",
+    distance: "D",
 };
 
 /**

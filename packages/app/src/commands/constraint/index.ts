@@ -2,6 +2,7 @@
 // See LICENSE file in the project root for full license information.
 
 export * from "./coincident";
+export * from "./distance";
 export * from "./equal";
 export * from "./fixed";
 export * from "./horizontal";

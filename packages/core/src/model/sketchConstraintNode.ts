@@ -2,11 +2,12 @@
 // See LICENSE file in the project root for full license information.
 
 import type { IDocument } from "../document";
-import { Id } from "../foundation";
+import { Id, PropertyHistoryRecord, Transaction } from "../foundation";
 import { I18n, type I18nKeys } from "../i18n";
 import type { BoundingBox } from "../math";
+import { property } from "../property";
 import { serializable, serialize } from "../serialize";
-import type { SketchConstraint } from "./sketchConstraint";
+import { DistanceConstraint, type SketchConstraint } from "./sketchConstraint";
 import { VisualNode } from "./visualNode";
 
 export interface SketchConstraintNodeOptions {
@@ -23,6 +24,7 @@ const DISPLAY_KEYS: Record<string, I18nKeys> = {
     perpendicular: "body.constraint.perpendicular",
     equal: "body.constraint.equal",
     fixed: "body.constraint.fixed",
+    distance: "body.constraint.distance",
 };
 
 /**
@@ -54,5 +56,37 @@ export class SketchConstraintNode extends VisualNode {
 
     override boundingBox(): BoundingBox | undefined {
         return undefined;
+    }
+
+    /** A generic passthrough to the wrapped constraint's own editable
+     * dimensional value - `undefined` for every kind except `distance`,
+     * since `SketchConstraintNode` wraps all constraint kinds through one
+     * class (a `kind` discriminant, not per-kind subclasses), matching this
+     * project's established rationale for that shape. Shown/edited in the
+     * Properties panel like any other node property - editing it commits
+     * through the same `Transaction`-joining path every property edit in
+     * this app already uses (see `packages/ui/src/property/input.ts`), so
+     * the value itself gets standard undo/redo for free. The resulting
+     * geometry re-solve (triggered reactively elsewhere, see
+     * `packages/three/src/sketchWorkerSolveCoordinator.ts`) is a separate,
+     * later transaction - not yet folded into this one, since the solve
+     * runs asynchronously in a worker and holding this transaction open
+     * across that gap would risk colliding with any other edit the user
+     * makes in the meantime. */
+    @property("constraint.distance")
+    get distance(): number | undefined {
+        return this.constraint instanceof DistanceConstraint ? this.constraint.distance : undefined;
+    }
+
+    set distance(value: number) {
+        if (!(this.constraint instanceof DistanceConstraint) || !Number.isFinite(value)) return;
+        const oldValue = this.constraint.distance;
+        if (oldValue === value) return;
+        this.constraint.distance = value;
+        Transaction.add(
+            this.document,
+            new PropertyHistoryRecord(this.constraint, "distance", oldValue, value),
+        );
+        this.emitPropertyChanged("distance", oldValue);
     }
 }

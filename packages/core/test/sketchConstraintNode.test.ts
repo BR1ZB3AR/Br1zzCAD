@@ -3,6 +3,7 @@
 
 import {
     CoincidentConstraint,
+    DistanceConstraint,
     EqualConstraint,
     HorizontalConstraint,
     type IDocument,
@@ -66,6 +67,68 @@ describe("SketchConstraintNode", () => {
         expect(withId.id).toBe("fixed-id");
         expect(withoutId.id).not.toBe("fixed-id");
         expect(typeof withoutId.id).toBe("string");
+    });
+
+    describe("distance", () => {
+        test("is undefined for every constraint kind except DistanceConstraint", () => {
+            const node = new SketchConstraintNode({
+                document: doc,
+                constraint: new CoincidentConstraint({ p1, p2 }),
+            });
+            expect(node.distance).toBeUndefined();
+        });
+
+        test("reads the wrapped DistanceConstraint's value", () => {
+            const node = new SketchConstraintNode({
+                document: doc,
+                constraint: new DistanceConstraint({ p1, p2, distance: 50 }),
+            });
+            expect(node.distance).toBe(50);
+        });
+
+        test("setting it updates the constraint, emits a change, and records an undoable step", () => {
+            const localDoc = new TestDocument() as unknown as IDocument;
+            const constraint = new DistanceConstraint({ p1, p2, distance: 50 });
+            const node = new SketchConstraintNode({ document: localDoc, constraint });
+            const before = localDoc.history.undoCount();
+
+            node.distance = 75;
+
+            expect(constraint.distance).toBe(75);
+            expect(node.distance).toBe(75);
+            expect(localDoc.history.undoCount()).toBe(before + 1);
+
+            localDoc.history.undo();
+            expect(constraint.distance).toBe(50);
+
+            localDoc.history.redo();
+            expect(constraint.distance).toBe(75);
+        });
+
+        test("setting it on a non-DistanceConstraint node is a no-op", () => {
+            const localDoc = new TestDocument() as unknown as IDocument;
+            const node = new SketchConstraintNode({
+                document: localDoc,
+                constraint: new CoincidentConstraint({ p1, p2 }),
+            });
+            const before = localDoc.history.undoCount();
+
+            node.distance = 75;
+
+            expect(node.distance).toBeUndefined();
+            expect(localDoc.history.undoCount()).toBe(before);
+        });
+
+        test("setting the same value is a no-op - no extra undo step", () => {
+            const localDoc = new TestDocument() as unknown as IDocument;
+            const constraint = new DistanceConstraint({ p1, p2, distance: 50 });
+            const node = new SketchConstraintNode({ document: localDoc, constraint });
+            const before = localDoc.history.undoCount();
+
+            node.distance = 50;
+
+            expect(localDoc.history.undoCount()).toBe(before);
+        });
     });
 
     describe("serialization", () => {

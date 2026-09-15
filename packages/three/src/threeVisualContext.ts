@@ -35,6 +35,7 @@ import {
     XY,
     type XYZ,
 } from "@chili3d/core";
+import { SketchSolveSession } from "@chili3d/worker";
 import {
     Box3,
     BufferAttribute,
@@ -51,6 +52,7 @@ import {
     type Material as ThreeMaterial,
     Vector3,
 } from "three";
+import { SketchWorkerSolveCoordinator } from "./sketchWorkerSolveCoordinator";
 import { ThreeRefSegmentAnnotation } from "./threeAnnotation";
 import { ThreeDimensionAnnotation } from "./threeDimensionAnnotation";
 import { ThreeGeometry } from "./threeGeometry";
@@ -70,6 +72,8 @@ export class ThreeVisualContext implements IVisualContext {
     readonly cssObjects: Group;
 
     private _dofCoordinator?: ThreeSketchDofCoordinator;
+    private _workerSolveCoordinator?: SketchWorkerSolveCoordinator;
+    private _sketchSolveSession?: SketchSolveSession;
 
     constructor(
         readonly visual: IVisual,
@@ -84,19 +88,43 @@ export class ThreeVisualContext implements IVisualContext {
         visual.document.modelManager.onPropertyChanged(this.handleModelManagerPropertyChanged);
     }
 
-    /** DOF status coloring only applies while a sketch is the active edit
-     * target (`ModelManager.currentNode`) - matches how the working-plane
-     * grid, snap points, and other sketch-only overlays already behave,
-     * rather than staying visible across the whole 3D model view. */
+    /** DOF status coloring and worker-backed parameter resolving only apply
+     * while a sketch is the active edit target (`ModelManager.currentNode`)
+     * - matches how the working-plane grid, snap points, and other
+     * sketch-only overlays already behave, rather than staying active
+     * across the whole 3D model view. */
     private readonly handleModelManagerPropertyChanged = (property: string) => {
         if (property !== "currentNode") return;
         this._dofCoordinator?.dispose();
         this._dofCoordinator = undefined;
+        this._workerSolveCoordinator?.dispose();
+        this._workerSolveCoordinator = undefined;
         const current = this.visual.document.modelManager.currentNode;
         if (current instanceof SketchGroupNode) {
             this._dofCoordinator = new ThreeSketchDofCoordinator(this, current);
+            this._workerSolveCoordinator = new SketchWorkerSolveCoordinator(
+                this,
+                current,
+                this.getSketchSolveSession(),
+            );
         }
     };
+
+    /** The Web Worker + RPC session is shared and long-lived across every
+     * sketch-edit session in this view (not recreated per `currentNode`
+     * change), created lazily on first use so a document that never
+     * touches a Distance constraint never spins up a worker thread at
+     * all. */
+    private getSketchSolveSession(): SketchSolveSession {
+        if (!this._sketchSolveSession) {
+            const worker = new Worker(
+                new URL("../../worker/src/sketchSolver/sketchSolver.worker.ts", import.meta.url),
+                { type: "module" },
+            );
+            this._sketchSolveSession = new SketchSolveSession(worker);
+        }
+        return this._sketchSolveSession;
+    }
 
     private readonly onMaterialCollectionChanged = (args: CollectionChangedArgs) => {
         if (args.action === "add") {
@@ -186,6 +214,10 @@ export class ThreeVisualContext implements IVisualContext {
     dispose() {
         this._dofCoordinator?.dispose();
         this._dofCoordinator = undefined;
+        this._workerSolveCoordinator?.dispose();
+        this._workerSolveCoordinator = undefined;
+        this._sketchSolveSession?.dispose();
+        this._sketchSolveSession = undefined;
         this.visualShapes.traverse((x) => {
             if (isDisposable(x)) x.dispose();
         });

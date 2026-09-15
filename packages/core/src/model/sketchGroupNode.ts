@@ -3,10 +3,12 @@
 
 import type { Plane } from "../math";
 import { serializable, serialize } from "../serialize";
+import type { IFeatureNode } from "./featureNode";
 import { GroupNode, type GroupNodeOptions } from "./groupNode";
 import { NodeUtils } from "./node";
 import type { SketchConstraint } from "./sketchConstraint";
 import { SketchConstraintNode } from "./sketchConstraintNode";
+import { type SketchSolveOutcome, solveSketch } from "./sketchSolverRunner";
 
 export interface SketchGroupNodeOptions extends GroupNodeOptions {
     plane: Plane;
@@ -16,9 +18,14 @@ export interface SketchGroupNodeOptions extends GroupNodeOptions {
  * A `GroupNode` created by `sketch.pickPlane` to collect one sketch's
  * geometry/dimensions. Remembers the working plane it was created on so
  * `sketch.edit` can restore it when re-entering the sketch later.
+ *
+ * Also the first (and, for now, only) node in the document's parametric
+ * feature tree (`IFeatureNode`) - a sketch's entities and constraints
+ * already are exactly what a "feature" is meant to encapsulate, so this is
+ * an additive interface on the existing class, not a parallel structure.
  */
 @serializable()
-export class SketchGroupNode extends GroupNode {
+export class SketchGroupNode extends GroupNode implements IFeatureNode {
     @serialize()
     readonly plane: Plane;
 
@@ -36,8 +43,20 @@ export class SketchGroupNode extends GroupNode {
         );
     }
 
+    /** No cross-feature dependencies exist anywhere in this app yet - see
+     * `IFeatureNode.dependencies`'s own doc. */
+    get dependencies(): readonly IFeatureNode[] {
+        return [];
+    }
+
     constructor(options: SketchGroupNodeOptions) {
         super(options);
         this.plane = options.plane;
+    }
+
+    /** Recomputes this sketch's geometry from its current constraints/
+     * parameters - the existing, unchanged synchronous solve path. */
+    compute(): SketchSolveOutcome {
+        return solveSketch(this);
     }
 }

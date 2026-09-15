@@ -78,4 +78,20 @@ describe("SketchGroupNode", () => {
             expect(descriptor?.get).toBeDefined();
         });
     });
+
+    describe("IFeatureNode", () => {
+        test("has no cross-feature dependencies today", () => {
+            const sketch = new SketchGroupNode({ document: doc, name: "Sketch 1", plane: Plane.XY });
+            expect(sketch.dependencies).toEqual([]);
+        });
+
+        test("compute() delegates to the existing solveSketch", () => {
+            const sketch = new SketchGroupNode({ document: doc, name: "Sketch 1", plane: Plane.XY });
+
+            const outcome = sketch.compute();
+
+            expect(outcome.status).toBe("converged");
+            expect(outcome.finalResidualNorm).toBe(0);
+        });
+    });
 });

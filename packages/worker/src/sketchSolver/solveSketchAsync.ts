@@ -1,7 +1,16 @@
 // Part of the Chili3d Project, under the AGPL-3.0 License.
 // See LICENSE file in the project root for full license information.
 
-import type { IDisposable } from "@chili3d/core";
+import {
+    buildSketchUnknowns,
+    handleKey,
+    type IDisposable,
+    Serializer,
+    type SketchGroupNode,
+    type SketchSolveOutcome,
+    Transaction,
+    withSketchSolveGuard,
+} from "@chili3d/core";
 import { RpcClient, type WorkerLike } from "../rpc/client";
 import type { SketchSolveWorkerPayload, SketchSolveWorkerResult } from "./sketchSolverWorkerApi";
 
@@ -48,4 +57,62 @@ export class SketchSolveSession implements IDisposable {
     dispose(): void {
         this.client.dispose();
     }
+}
+
+/**
+ * The document-aware half of worker-backed solving: reads a sketch's
+ * current geometry/constraints (via the same `buildSketchUnknowns` the
+ * synchronous `prepareSketchSolve` already uses, unchanged), dispatches the
+ * numeric solve to `session`, and - only on a genuine, non-stale,
+ * converged result - writes it back into the live document nodes inside a
+ * real `Transaction`. This lives in `packages/worker`, not `packages/core`,
+ * because it needs `SketchSolveSession`; `core` stays worker-agnostic (the
+ * existing one-way dependency direction - `three`/`worker`/`wasm` depend on
+ * `core`, never the reverse).
+ *
+ * Only ever applies the constraint VALUE edit's own undo step (already
+ * recorded separately, see `SketchConstraintNode.distance`'s setter) plus
+ * this geometry write-back as a second, later transaction - not one atomic
+ * step, since holding a transaction open across this unbounded async gap
+ * would risk colliding with any other edit the user makes in the meantime
+ * (`Transaction.start()` throws if one is already active on the document).
+ */
+export async function resolveSketchViaWorker(
+    sketch: SketchGroupNode,
+    session: SketchSolveSession,
+): Promise<SketchSolveOutcome> {
+    const constraints = sketch.constraints;
+    if (constraints.length === 0) return { status: "converged", finalResidualNorm: 0 };
+
+    const handles = Array.from(
+        new Map(constraints.flatMap((c) => c.handles().map((h) => [handleKey(h), h] as const))).values(),
+    );
+    const built = buildSketchUnknowns(sketch, handles, new Set());
+    if (built.status !== "ok") return { status: built.status, finalResidualNorm: Number.NaN };
+
+    const result = await session.solve({
+        initial: Float64Array.from(built.initial),
+        constraints: constraints.map((c) => Serializer.serializeObject(c)),
+        offsets: built.offsets,
+        hasParameterizedOwner: built.hasParameterizedOwner,
+    });
+
+    if (!result) {
+        // Superseded by a newer request before this one's response arrived
+        // - nothing to apply, and nothing went wrong either.
+        return { status: "singular", finalResidualNorm: Number.NaN };
+    }
+    if (result.rejected) {
+        return { status: "invalidGeometry", finalResidualNorm: Number.NaN };
+    }
+    if (result.status !== "converged") {
+        return { status: result.status, finalResidualNorm: result.finalResidualNorm };
+    }
+
+    Transaction.execute(sketch.document, "resolve sketch (worker)", () =>
+        withSketchSolveGuard(sketch, () => {
+            for (const write of built.writers) write(result.unknowns);
+        }),
+    );
+    return { status: "converged", finalResidualNorm: result.finalResidualNorm };
 }

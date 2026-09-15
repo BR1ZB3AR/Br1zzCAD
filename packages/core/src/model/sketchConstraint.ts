@@ -335,3 +335,52 @@ export class EqualConstraint extends SketchConstraint {
         ];
     }
 }
+
+export interface DistanceConstraintOptions extends SketchConstraintOptions {
+    p1: SketchPointHandle;
+    p2: SketchPointHandle;
+    distance: number;
+}
+
+/**
+ * Pins the distance between two points to a named, editable numeric value -
+ * unlike every other constraint kind (all immutable once applied), `distance`
+ * is deliberately mutable: it represents a live dimensional parameter, not a
+ * fixed structural relationship. Edited via the Properties panel on the
+ * wrapping `SketchConstraintNode` (see its `distance` accessor), which
+ * re-solves the sketch whenever it changes.
+ */
+@serializable()
+export class DistanceConstraint extends SketchConstraint {
+    readonly kind = "distance";
+
+    @serialize()
+    readonly p1: SketchPointHandle;
+    @serialize()
+    readonly p2: SketchPointHandle;
+    @serialize()
+    distance: number;
+
+    constructor(options: DistanceConstraintOptions) {
+        super(options);
+        this.p1 = options.p1;
+        this.p2 = options.p2;
+        this.distance = options.distance;
+    }
+
+    handles(): readonly SketchPointHandle[] {
+        return [this.p1, this.p2];
+    }
+
+    residuals(index: UnknownIndex): Residual[] {
+        const i1 = index(this.p1);
+        const i2 = index(this.p2);
+        return [
+            (u) => {
+                const dx = u[i2] - u[i1];
+                const dy = u[i2 + 1] - u[i1 + 1];
+                return Math.sqrt(dx * dx + dy * dy) - this.distance;
+            },
+        ];
+    }
+}
